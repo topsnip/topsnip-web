@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err) {
-    console.error("Stripe webhook signature verification failed:", err);
+    console.error("Stripe webhook signature verification failed:", err instanceof Error ? err.message : "unknown error");
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
         .from("profiles")
         .update({
           plan: "pro",
+          stripe_customer_id: session.customer as string,
           stripe_subscription_id: session.subscription as string,
           subscription_status: "active",
           updated_at: new Date().toISOString(),
@@ -109,7 +110,9 @@ export async function POST(req: NextRequest) {
       break;
     }
 
-    // Payment failed — downgrade to free to prevent unpaid access
+    // Payment failed — mark as past_due but keep Pro access
+    // Stripe retries failed payments over several days.
+    // Only downgrade when customer.subscription.deleted fires (all retries exhausted).
     case "invoice.payment_failed": {
       const invoice = event.data.object as Stripe.Invoice;
       const customerId = invoice.customer as string;
@@ -117,7 +120,6 @@ export async function POST(req: NextRequest) {
       const { error } = await db
         .from("profiles")
         .update({
-          plan: "free",
           subscription_status: "past_due",
           updated_at: new Date().toISOString(),
         })

@@ -103,7 +103,7 @@ export default function AboutPage() {
             Try it now →
           </Link>
           <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
-            3 free searches. No account required.
+            3 free searches per day. No account required.
           </p>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Search, ArrowLeft, ExternalLink, ChevronDown } from "lucide-react";
 import { SignUpGate } from "@/components/SignUpGate";
@@ -45,6 +45,14 @@ const LOADING_STAGES = [
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function ResultPage() {
+  return (
+    <Suspense>
+      <ResultContent />
+    </Suspense>
+  );
+}
+
+function ResultContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const query = searchParams.get("q") ?? "";
@@ -122,8 +130,9 @@ export default function ResultPage() {
       const data: SearchResult = await res.json();
       setResult(data);
 
-      // Increment guest counter on success (only if not logged in)
-      if (!isLoggedIn) incrementGuestSearchCount();
+      // Increment guest counter on success (check auth fresh to avoid race condition)
+      const { data: authData } = await createClient().auth.getUser();
+      if (!authData.user) incrementGuestSearchCount();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

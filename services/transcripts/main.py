@@ -11,6 +11,7 @@ from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFoun
 from typing import Dict, List
 import logging
 import os
+import re
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -22,6 +23,12 @@ TRANSCRIPT_SERVICE_SECRET = os.environ.get("TRANSCRIPT_SERVICE_SECRET", "")
 
 # Initialize the transcript API client
 ytt = YouTubeTranscriptApi()
+
+# Video ID validation pattern (11 chars: alphanumeric, hyphens, underscores)
+VIDEO_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_-]{11}$')
+
+# Debug mode — only enable debug endpoint when explicitly set
+DEBUG_MODE = os.environ.get("DEBUG", "").lower() in ("true", "1", "yes")
 
 
 def verify_auth(request: Request):
@@ -44,7 +51,9 @@ def health():
 
 @app.get("/debug/{video_id}")
 def debug_transcript(video_id: str, request: Request):
-    """Debug endpoint — test a single video and return detailed error info."""
+    """Debug endpoint — only available when DEBUG=true env var is set."""
+    if not DEBUG_MODE:
+        raise HTTPException(status_code=404, detail="Not found")
     verify_auth(request)
     try:
         transcript = ytt.fetch(video_id, languages=["en", "en-US", "en-GB"])
@@ -73,6 +82,11 @@ def get_transcripts(req: TranscriptRequest, request: Request) -> Dict[str, str]:
     errors: Dict[str, str] = {}
 
     for video_id in req.video_ids:
+        if not VIDEO_ID_PATTERN.match(video_id):
+            errors[video_id] = "invalid_video_id"
+            logger.info(f"Skipping invalid video ID: {video_id}")
+            continue
+
         try:
             transcript = ytt.fetch(
                 video_id,

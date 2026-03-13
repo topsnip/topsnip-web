@@ -228,7 +228,12 @@ async function synthesize(query: string, transcripts: TranscriptResult[]) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { query } = await req.json();
+    // C3: Limit request body size to prevent OOM from oversized payloads
+    const body = await req.text();
+    if (body.length > 1024) {
+      return NextResponse.json({ error: "Request too large" }, { status: 413 });
+    }
+    const { query } = JSON.parse(body);
 
     if (!query || typeof query !== "string" || query.trim().length < 2) {
       return NextResponse.json({ error: "Invalid query" }, { status: 400 });
