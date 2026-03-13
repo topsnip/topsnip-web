@@ -42,6 +42,19 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/debug/{video_id}")
+def debug_transcript(video_id: str, request: Request):
+    """Debug endpoint — test a single video and return detailed error info."""
+    verify_auth(request)
+    try:
+        transcript = ytt.fetch(video_id, languages=["en", "en-US", "en-GB"])
+        snippet_count = len(transcript.snippets)
+        full_text = " ".join(s.text.strip() for s in transcript.snippets if s.text.strip())
+        return {"status": "ok", "snippets": snippet_count, "chars": len(full_text), "preview": full_text[:200]}
+    except Exception as e:
+        return {"status": "error", "error_type": type(e).__name__, "error": str(e)}
+
+
 @app.post("/transcripts")
 def get_transcripts(req: TranscriptRequest, request: Request) -> Dict[str, str]:
     """
@@ -57,6 +70,7 @@ def get_transcripts(req: TranscriptRequest, request: Request) -> Dict[str, str]:
         raise HTTPException(status_code=400, detail="Max 20 video IDs per request")
 
     results: Dict[str, str] = {}
+    errors: Dict[str, str] = {}
 
     for video_id in req.video_ids:
         try:
@@ -73,9 +87,18 @@ def get_transcripts(req: TranscriptRequest, request: Request) -> Dict[str, str]:
             if full_text:
                 results[video_id] = full_text
                 logger.info(f"Fetched transcript for {video_id} ({len(full_text)} chars)")
-        except (TranscriptsDisabled, NoTranscriptFound):
-            logger.info(f"No transcript available for {video_id} — skipping")
+            else:
+                errors[video_id] = "empty_transcript"
+                logger.info(f"Empty transcript for {video_id}")
+        except (TranscriptsDisabled, NoTranscriptFound) as e:
+            errors[video_id] = type(e).__name__
+            logger.info(f"No transcript available for {video_id} — {type(e).__name__}")
         except Exception as e:
-            logger.warning(f"Error fetching transcript for {video_id}: {e}")
+            errors[video_id] = f"{type(e).__name__}: {e}"
+            logger.warning(f"Error fetching transcript for {video_id}: {type(e).__name__}: {e}")
+
+    logger.info(f"Results: {len(results)} transcripts, {len(errors)} errors out of {len(req.video_ids)} videos")
+    if errors:
+        logger.info(f"Error details: {errors}")
 
     return results
