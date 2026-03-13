@@ -6,7 +6,8 @@ Deploy on Railway (Hobby $5/month is sufficient)
 
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
-from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound
 from typing import Dict, List
 import logging
 import os
@@ -18,6 +19,9 @@ app = FastAPI(title="Topsnip Transcript Service", version="1.0.0")
 
 # Shared secret for authenticating requests from the Next.js app
 TRANSCRIPT_SERVICE_SECRET = os.environ.get("TRANSCRIPT_SERVICE_SECRET", "")
+
+# Initialize the transcript API client
+ytt = YouTubeTranscriptApi()
 
 
 def verify_auth(request: Request):
@@ -56,15 +60,15 @@ def get_transcripts(req: TranscriptRequest, request: Request) -> Dict[str, str]:
 
     for video_id in req.video_ids:
         try:
-            transcript_list = YouTubeTranscriptApi.get_transcript(
+            transcript = ytt.fetch(
                 video_id,
                 languages=["en", "en-US", "en-GB"],
             )
-            # Join all text segments into a single string
+            # Join all text snippets into a single string
             full_text = " ".join(
-                segment["text"].strip()
-                for segment in transcript_list
-                if segment.get("text", "").strip()
+                snippet.text.strip()
+                for snippet in transcript.snippets
+                if snippet.text.strip()
             )
             if full_text:
                 results[video_id] = full_text
