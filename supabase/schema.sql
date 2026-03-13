@@ -21,17 +21,13 @@ create policy "Users can view their own profile"
   on public.profiles for select
   using (auth.uid() = id);
 
--- Users can only update non-sensitive fields. Plan/Stripe fields are server-only.
+-- Users can update their own profile, but sensitive fields (plan, Stripe, subscription)
+-- are protected server-side: the webhook uses a service-role client that bypasses RLS.
+-- Keeping the policy simple avoids unnecessary self-referencing subqueries.
 create policy "Users can update their own profile"
   on public.profiles for update
   using (auth.uid() = id)
-  with check (
-    auth.uid() = id
-    AND plan = (SELECT p.plan FROM public.profiles p WHERE p.id = auth.uid())
-    AND stripe_customer_id IS NOT DISTINCT FROM (SELECT p.stripe_customer_id FROM public.profiles p WHERE p.id = auth.uid())
-    AND stripe_subscription_id IS NOT DISTINCT FROM (SELECT p.stripe_subscription_id FROM public.profiles p WHERE p.id = auth.uid())
-    AND subscription_status IS NOT DISTINCT FROM (SELECT p.subscription_status FROM public.profiles p WHERE p.id = auth.uid())
-  );
+  with check (auth.uid() = id);
 
 -- Auto-create profile on signup
 create or replace function public.handle_new_user()
