@@ -3,6 +3,9 @@
 # Topsnip
 .env.local
 .archive/
+.claude/
+.gemini/
+__pycache__/
 
 # dependencies
 /node_modules
