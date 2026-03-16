@@ -5,8 +5,8 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/ingest/service-client"; // [M1 fix] use shared client with env validation
 import { anonymousSearchLimiter, proSearchLimiter, freeSearchLimiter } from "@/lib/ratelimit";
 import {
-  buildExplainerSystemPrompt,
-  buildExplainerUserPrompt,
+  buildOnDemandSystemPrompt,
+  buildOnDemandUserPrompt,
 } from "@/lib/content/prompts";
 import type { Role } from "@/lib/content/types";
 
@@ -125,15 +125,10 @@ async function generateOnDemandBrief(
 ): Promise<GeneratedBrief> {
   const anthropic = getAnthropic();
 
-  const systemPrompt = buildExplainerSystemPrompt(role);
-  const userPrompt = buildExplainerUserPrompt(query, [
-    {
-      title: query,
-      url: "",
-      contentSnippet: `User is searching for information about: ${query}. Generate a learning brief based on your knowledge of this AI topic. Be specific and factual — only include information you are confident about. Clearly state if something is uncertain.`,
-      platform: "search",
-    },
-  ]);
+  // On-demand uses a different system prompt — Claude uses its own knowledge
+  // since we don't have ingested source material for arbitrary search queries.
+  const systemPrompt = buildOnDemandSystemPrompt(role);
+  const userPrompt = buildOnDemandUserPrompt(query);
 
   // [M6 fix] Add timeout to Claude API call
   const message = await anthropic.messages.create({

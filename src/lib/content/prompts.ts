@@ -60,6 +60,40 @@ export function buildExplainerSystemPrompt(role: Role): string {
   return `${SYSTEM_BASE}\n\n${ROLE_INSTRUCTIONS[role]}`;
 }
 
+// ── On-demand prompts (for search — no ingested source material) ──────────
+// These use Claude's own knowledge rather than requiring source material.
+
+const ON_DEMAND_BASE = `You are TopSnip's learning engine. You explain AI and automation topics clearly and accurately.
+
+Rules:
+- Use your knowledge to explain the topic thoroughly and accurately.
+- Be specific — name real tools, versions, companies, and concrete examples.
+- If something is uncertain or rapidly changing, say so briefly and move on.
+- Write like a knowledgeable friend, not a corporate AI.
+- Be direct. No filler, no "in today's rapidly evolving landscape" nonsense.
+- If the source material is thin, say less — don't pad.
+- Never refuse to answer. Always provide the best explanation you can.`;
+
+export function buildOnDemandSystemPrompt(role: Role): string {
+  return `${ON_DEMAND_BASE}\n\n${ROLE_INSTRUCTIONS[role]}`;
+}
+
+export function buildOnDemandUserPrompt(query: string): string {
+  return `<topic>${sanitizeForPrompt(query)}</topic>
+
+Generate a learning brief about this topic. Your response must be valid JSON matching this exact schema:
+
+{
+  "tldr": "2-3 sentence plain-language summary. Under 80 words.",
+  "what_happened": "3-5 paragraphs explaining this topic clearly. Use markdown formatting (**bold** for emphasis). Include specific details — real tool names, versions, companies, concrete examples.",
+  "so_what": "2-3 paragraphs explaining why this matters. Tailor to the reader's perspective.",
+  "now_what": "2-4 bullet points (start each with -) of concrete actions the reader can take. Each should be actionable, not vague.",
+  "sources": []
+}
+
+Important: the "sources" array should be empty since this is generated from knowledge, not specific articles.`;
+}
+
 export function buildExplainerUserPrompt(
   topicTitle: string,
   sourceItems: Array<{ title: string; url: string; contentSnippet: string; platform: string }>
