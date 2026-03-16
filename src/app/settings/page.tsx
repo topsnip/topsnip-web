@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, LogOut, Crown, User } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { AuthNav } from "@/components/AuthNav";
 
 /* ─── Types ────────────────────────────────────────────────────────────────── */
 
@@ -218,25 +219,7 @@ export default function SettingsPage() {
       />
 
       {/* ── Nav ────────────────────────────────────────────────────────────── */}
-      <nav className="fixed top-4 left-4 right-4 z-50 flex justify-center">
-        <div className="floating-nav rounded-full px-6 py-3 flex items-center justify-between w-full max-w-3xl">
-          <Link
-            href="/"
-            className="font-bold tracking-tight text-white"
-            style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif", fontSize: "1.1rem" }}
-          >
-            top<span style={{ color: "var(--ts-accent)" }}>snip</span>
-          </Link>
-          <Link
-            href="/feed"
-            className="flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-white"
-            style={{ color: "var(--ts-text-2)" }}
-          >
-            <ArrowLeft size={14} />
-            Back
-          </Link>
-        </div>
-      </nav>
+      <AuthNav />
 
       {/* ── Content ────────────────────────────────────────────────────────── */}
       <div className="w-full max-w-2xl mx-auto px-4 pt-28 pb-16 sm:pt-32 flex flex-col gap-8 relative z-10">

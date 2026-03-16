@@ -169,7 +169,7 @@ export default function OnboardingPage() {
         {/* Header */}
         <div className="text-center flex flex-col gap-3">
           <Link
-            href="/"
+            href="/feed"
             className="text-xl font-extrabold tracking-tight text-white mx-auto"
             style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif" }}
           >

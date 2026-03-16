@@ -245,7 +245,7 @@ function ResultContent() {
       >
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.push(isLoggedIn ? "/feed" : "/")}
             aria-label="Go to homepage"
             className="text-sm font-bold tracking-tight text-white flex-shrink-0 transition-opacity hover:opacity-70 cursor-pointer"
             style={{ fontFamily: headingFont }}
@@ -581,7 +581,7 @@ function ResultContent() {
 
             {/* Back link */}
             <button
-              onClick={() => router.push("/")}
+              onClick={() => router.push(isLoggedIn ? "/feed" : "/")}
               aria-label="Start a new search"
               className="flex items-center gap-1.5 text-xs self-start transition-opacity hover:opacity-80 cursor-pointer"
               style={{ color: "var(--ts-text-2)", animation: "fadeInUp 0.35s ease 0.42s both" }}

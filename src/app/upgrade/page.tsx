@@ -99,7 +99,7 @@ function UpgradeContent() {
             </p>
           </div>
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/feed")}
             className="flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 w-full justify-center shadow-[0_0_20px_rgba(124,106,247,0.3)]"
             style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
           >
@@ -134,7 +134,7 @@ function UpgradeContent() {
             Unlimited searches. No limits.
           </p>
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/feed")}
             className="text-sm font-medium transition-opacity hover:opacity-80"
             style={{ color: "var(--ts-accent)" }}
           >
@@ -161,7 +161,7 @@ function UpgradeContent() {
 
         {/* Wordmark */}
         <button
-          onClick={() => router.push("/")}
+          onClick={() => router.push("/feed")}
           className="text-xl font-extrabold tracking-tight text-white transition-opacity hover:opacity-70"
         >
           top<span style={{ color: "var(--ts-accent)" }}>snip</span>

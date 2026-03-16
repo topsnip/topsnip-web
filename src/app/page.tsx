@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import {
   Search,
   ArrowRight,
@@ -76,6 +77,14 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
   const [bottomQuery, setBottomQuery] = useState("");
+
+  // Redirect logged-in users to /feed
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data }) => {
+      if (data.user) router.replace("/feed");
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Randomize 4 suggestions on each visit
   const suggestions = useMemo(

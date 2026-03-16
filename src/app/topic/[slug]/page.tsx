@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { notFound, redirect } from "next/navigation";
 import { decodeHtml } from "@/lib/utils/decode-html";
+import { AuthNav } from "@/components/AuthNav";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -150,34 +151,7 @@ export default async function TopicDetailPage({
       {user && <ReadTracker userId={user.id} topicId={topic.id} />}
 
       {/* Top nav */}
-      <header
-        className="sticky top-0 z-20 border-b px-4 py-3"
-        style={{
-          background: "rgba(6,6,10,0.85)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          borderColor: "var(--border)",
-        }}
-      >
-        <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <Link
-            href="/"
-            className="text-sm font-bold tracking-tight text-white flex-shrink-0 transition-opacity hover:opacity-70"
-            style={{ fontFamily: headingFont }}
-          >
-            top<span style={{ color: "var(--ts-accent)" }}>snip</span>
-          </Link>
-          <div className="flex-1" />
-          <Link
-            href="/feed"
-            className="flex items-center gap-1.5 text-xs transition-opacity hover:opacity-80"
-            style={{ color: "var(--ts-text-2)" }}
-          >
-            <ArrowLeft size={12} />
-            Back to feed
-          </Link>
-        </div>
-      </header>
+      <AuthNav />
 
       {/* Main content */}
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">

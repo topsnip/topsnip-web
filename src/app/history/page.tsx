@@ -1,7 +1,10 @@
+export const dynamic = "force-dynamic";
+
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Clock, Search } from "lucide-react";
+import { Clock } from "lucide-react";
+import { AuthNav } from "@/components/AuthNav";
 
 export default async function HistoryPage() {
   const supabase = await createClient();
@@ -19,41 +22,29 @@ export default async function HistoryPage() {
     .limit(50);
 
   return (
-    <main className="min-h-screen px-4 py-10">
-      <div className="max-w-2xl mx-auto flex flex-col gap-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-1">
-            <Link href="/" className="text-xl font-extrabold tracking-tight text-white">
-              top<span style={{ color: "var(--ts-accent)" }}>snip</span>
-            </Link>
-            <h1 className="text-base font-semibold text-white">Search history</h1>
-          </div>
-          <Link
-            href="/"
-            className="flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all hover:border-[var(--border-focus)]"
-            style={{ borderColor: "var(--border)", color: "var(--ts-text-2)" }}
-          >
-            <Search size={12} />
-            New search
-          </Link>
-        </div>
+    <main className="min-h-screen px-4 relative">
+      <AuthNav />
 
-        {/* History list */}
+      <div className="max-w-2xl mx-auto flex flex-col gap-8 pt-24 pb-10">
+        <h1
+          className="text-xl font-bold text-white"
+          style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif" }}
+        >
+          Search history
+        </h1>
+
         {!history || history.length === 0 ? (
-          <div
-            className="glass-card rounded-xl p-8 text-center flex flex-col items-center gap-3"
-          >
+          <div className="glass-card rounded-xl p-8 text-center flex flex-col items-center gap-3">
             <Clock size={24} style={{ color: "var(--ts-muted)" }} />
             <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>
               No searches yet. Start by searching a topic.
             </p>
             <Link
-              href="/"
+              href="/feed"
               className="text-sm font-medium"
               style={{ color: "var(--ts-accent)" }}
             >
-              Go search something →
+              Go to feed →
             </Link>
           </div>
         ) : (

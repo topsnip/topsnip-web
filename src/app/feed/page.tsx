@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { decodeHtml } from "@/lib/utils/decode-html";
 import { FeedSearchBar } from "./feed-search-bar";
+import { AuthNav } from "@/components/AuthNav";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -143,46 +144,7 @@ export default async function FeedPage() {
       />
 
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
-      <nav className="fixed top-4 left-4 right-4 z-50 flex justify-center">
-        <div className="floating-nav rounded-full px-6 py-3 flex items-center justify-between w-full max-w-3xl">
-          <Link
-            href="/"
-            className="font-bold tracking-tight text-white"
-            style={{ fontFamily: headingFont, fontSize: "1.1rem" }}
-          >
-            top<span style={{ color: "var(--ts-accent)" }}>snip</span>
-          </Link>
-          <div className="flex items-center gap-5">
-            <Link
-              href="/feed"
-              className="text-sm font-medium text-white"
-            >
-              Feed
-            </Link>
-            <Link
-              href="/history"
-              className="text-sm font-medium transition-colors hover:text-white"
-              style={{ color: "var(--ts-text-2)" }}
-            >
-              History
-            </Link>
-            <Link
-              href="/upgrade"
-              className="text-sm font-medium transition-colors hover:text-white"
-              style={{ color: "var(--ts-text-2)" }}
-            >
-              Pro
-            </Link>
-            <Link
-              href="/settings"
-              className="text-sm font-medium transition-colors hover:text-white"
-              style={{ color: "var(--ts-text-2)" }}
-            >
-              Settings
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <AuthNav />
 
       {/* ── Main Content ────────────────────────────────────────────────── */}
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 pt-28 pb-16 relative z-10">
@@ -272,7 +234,8 @@ export default async function FeedPage() {
               </p>
             </div>
             <Link
-              href="/"
+              href="#"
+              onClick={(e: React.MouseEvent) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90"
               style={{
                 background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
@@ -383,7 +346,7 @@ export default async function FeedPage() {
       >
         <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <Link
-            href="/"
+            href="/feed"
             className="text-base font-bold tracking-tight text-white"
             style={{ fontFamily: headingFont }}
           >
