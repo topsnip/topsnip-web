@@ -8,8 +8,9 @@ import { generateForTopic } from "./generator";
 import { findAndSaveYouTubeRecs } from "./youtube-recs";
 import { buildDailyDigests } from "./quiet-day";
 
-/** Max topics to process per run (budget guard — each topic = ~5 Claude calls) */
-const MAX_TOPICS_PER_RUN = 5;
+/** Max topics to process per run (budget guard — each topic = ~5 Claude calls)
+ * Vercel Hobby has 60s function limit. Each topic ~10-15s. Keep at 2 for safety. */
+const MAX_TOPICS_PER_RUN = 2;
 
 /**
  * Full content generation pipeline:
