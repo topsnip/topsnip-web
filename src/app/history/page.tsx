@@ -12,7 +12,7 @@ export default async function HistoryPage() {
   }
 
   const { data: history } = await supabase
-    .from("search_history")
+    .from("user_searches")
     .select("id, query, query_slug, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
@@ -42,8 +42,7 @@ export default async function HistoryPage() {
         {/* History list */}
         {!history || history.length === 0 ? (
           <div
-            className="rounded-xl border p-8 text-center flex flex-col items-center gap-3"
-            style={{ borderColor: "var(--border)", background: "var(--ts-surface)" }}
+            className="glass-card rounded-xl p-8 text-center flex flex-col items-center gap-3"
           >
             <Clock size={24} style={{ color: "var(--ts-muted)" }} />
             <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>
@@ -64,7 +63,7 @@ export default async function HistoryPage() {
                 key={item.id}
                 href={`/s/${item.query_slug}?q=${encodeURIComponent(item.query)}`}
                 className="flex items-center justify-between rounded-xl border px-4 py-3 transition-all hover:border-[var(--ts-accent)] group"
-                style={{ background: "var(--ts-surface)", borderColor: "var(--border)" }}
+                style={{ background: "var(--ts-surface)", borderColor: "var(--border)", backdropFilter: "blur(8px)", boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.03)" }}
               >
                 <span className="text-sm font-medium text-white group-hover:text-[var(--ts-accent-2)] transition-colors">
                   {item.query}

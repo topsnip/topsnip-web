@@ -58,8 +58,7 @@ export default function AboutPage() {
             ].map(({ step, title, desc }) => (
               <div
                 key={step}
-                className="flex gap-4 rounded-xl border p-4"
-                style={{ background: "var(--ts-surface)", borderColor: "var(--border)" }}
+                className="glass-card flex gap-4 rounded-xl p-4"
               >
                 <span
                   className="text-xs font-bold flex-shrink-0 mt-0.5"
@@ -81,7 +80,7 @@ export default function AboutPage() {
         {/* Niche */}
         <div
           className="rounded-xl border p-5 flex flex-col gap-3"
-          style={{ background: "var(--ts-surface)", borderColor: "rgba(124,106,247,0.3)" }}
+          style={{ background: "var(--ts-surface)", borderColor: "rgba(124,106,247,0.3)", backdropFilter: "blur(12px)", boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.05)" }}
         >
           <p className="text-sm font-semibold" style={{ color: "var(--ts-accent)" }}>
             Currently: AI & automation only
@@ -97,8 +96,8 @@ export default function AboutPage() {
         <div className="flex flex-col items-start gap-3">
           <Link
             href="/"
-            className="flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-90"
-            style={{ background: "var(--ts-accent)" }}
+            className="flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 shadow-[0_0_20px_rgba(124,106,247,0.3)]"
+            style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
           >
             Try it now →
           </Link>

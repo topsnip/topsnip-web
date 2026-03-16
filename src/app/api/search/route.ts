@@ -43,35 +43,52 @@ function sanitizeQuery(raw: string): string {
     .slice(0, 200);
 }
 
-// ── IP-based rate limiting (in-memory, per-instance) ────────────────────────
-// In production with multiple Vercel instances this is per-isolate,
-// which is still effective as a first-line defense. For stricter limits,
-// upgrade to Upstash Redis.
+// ── IP hashing (privacy-preserving anonymous tracking) ──────────────────────
+
+async function hashIP(ip: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(ip + (process.env.CRON_SECRET ?? "topsnip-salt"));
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// ── Rate limiting ───────────────────────────────────────────────────────────
+// In-memory rate limiter as first-line defense (per-isolate on Vercel).
+// For stricter cross-instance limits, upgrade to Upstash Redis.
+// Combined with DB-backed limits for authenticated users (claim_search_slot).
 
 const ipRequestLog = new Map<string, { count: number; resetAt: number }>();
 const ANON_RATE_LIMIT = 5;       // max requests per window for unauthenticated users
+const PRO_RATE_LIMIT = 20;       // max requests per window for Pro users (prevents denial-of-wallet)
 const RATE_LIMIT_WINDOW = 60_000; // 1 minute
 
-function isRateLimited(ip: string): boolean {
+function checkRateLimit(key: string, limit: number): boolean {
   const now = Date.now();
-  const entry = ipRequestLog.get(ip);
+  const entry = ipRequestLog.get(key);
 
   if (!entry || now > entry.resetAt) {
-    ipRequestLog.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    ipRequestLog.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
     return false;
   }
 
   entry.count += 1;
-  return entry.count > ANON_RATE_LIMIT;
+  return entry.count > limit;
 }
 
-// Periodic cleanup to prevent memory leaks (every 5 minutes)
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, entry] of ipRequestLog) {
-    if (now > entry.resetAt) ipRequestLog.delete(ip);
+// Periodic cleanup to prevent memory leaks (runs in warm instances)
+if (typeof globalThis !== "undefined") {
+  const cleanupKey = "__ts_rate_limit_cleanup";
+  if (!(globalThis as Record<string, unknown>)[cleanupKey]) {
+    (globalThis as Record<string, unknown>)[cleanupKey] = true;
+    setInterval(() => {
+      const now = Date.now();
+      for (const [ip, entry] of ipRequestLog) {
+        if (now > entry.resetAt) ipRequestLog.delete(ip);
+      }
+    }, 5 * 60_000);
   }
-}, 5 * 60_000);
+}
 
 // ── YouTube search ─────────────────────────────────────────────────────────
 
@@ -271,6 +288,12 @@ export async function POST(req: NextRequest) {
     let userId: string | null = null;
     let userPlan: string | null = null;
 
+    // Resolve IP for rate limiting (used for both anon and as fallback for auth)
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      req.headers.get("x-real-ip") ??
+      "unknown";
+
     if (user) {
       userId = user.id;
 
@@ -283,9 +306,16 @@ export async function POST(req: NextRequest) {
       if (profile) {
         userPlan = profile.plan;
 
-        if (profile.plan === "free") {
-          // C3: Atomic increment — claim a slot BEFORE running the pipeline.
-          // The RPC handles day-reset and limit check in a single atomic operation.
+        if (profile.plan === "pro") {
+          // Pro users: per-minute rate limit to prevent denial-of-wallet
+          if (checkRateLimit(`pro:${userId}`, PRO_RATE_LIMIT)) {
+            return NextResponse.json(
+              { error: "Too many requests. Please slow down.", code: "rate_limit" },
+              { status: 429 }
+            );
+          }
+        } else {
+          // Free users: atomic daily limit (10/day)
           const { data: claimed, error: claimErr } = await serviceClient
             .rpc("claim_search_slot", { p_user_id: userId, p_limit: 10 });
 
@@ -298,15 +328,22 @@ export async function POST(req: NextRequest) {
         }
       }
     } else {
-      // C2: Server-side rate limiting for unauthenticated users
-      const ip =
-        req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-        req.headers.get("x-real-ip") ??
-        "unknown";
-
-      if (isRateLimited(ip)) {
+      // Anonymous users: in-memory IP rate limit + DB-backed daily limit
+      if (checkRateLimit(`anon:${ip}`, ANON_RATE_LIMIT)) {
         return NextResponse.json(
           { error: "Too many requests. Please sign up for more searches.", code: "rate_limit" },
+          { status: 429 }
+        );
+      }
+
+      // Server-side daily limit using anonymous_searches table (3/day per IP)
+      const ipHash = await hashIP(ip);
+      const { data: canSearch } = await serviceClient
+        .rpc("check_anonymous_limit", { p_ip_hash: ipHash });
+
+      if (canSearch === false) {
+        return NextResponse.json(
+          { error: "Daily guest limit reached. Sign up for 10 free searches/day.", code: "guest_limit" },
           { status: 429 }
         );
       }
@@ -352,17 +389,23 @@ export async function POST(req: NextRequest) {
       { onConflict: "query_slug" }
     );
 
-    // 7. Post-synthesis per-user writes
+    // 7. Post-synthesis writes
     if (userId) {
-      // Save to search history
-      await serviceClient.from("search_history").insert({
+      // Save to user search history
+      await serviceClient.from("user_searches").insert({
         user_id: userId,
         query: q,
         query_slug: slug,
         result,
       });
-
-      // Note: search counter was already incremented atomically in step 2 (C3)
+      // Note: search counter was already incremented atomically in step 2
+    } else {
+      // Track anonymous search server-side (for daily limit enforcement)
+      const ipHash = await hashIP(ip);
+      await serviceClient.from("anonymous_searches").insert({
+        ip_hash: ipHash,
+        query: q,
+      });
     }
 
     return NextResponse.json(result);

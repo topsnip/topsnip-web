@@ -42,6 +42,57 @@ const LOADING_STAGES = [
   "Synthesizing the signal...",
 ];
 
+// ── Skeleton component ────────────────────────────────────────────────────
+
+function Skeleton({ className = "" }: { className?: string }) {
+  return (
+    <div
+      className={`animate-pulse rounded-md ${className}`}
+      style={{ background: "var(--ts-surface-2)" }}
+    />
+  );
+}
+
+function ResultSkeleton() {
+  return (
+    <div className="flex flex-col gap-8">
+      {/* Title skeleton */}
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-6 w-3/4" />
+        <Skeleton className="h-3 w-40" />
+      </div>
+      {/* TL;DR skeleton */}
+      <div className="rounded-xl border p-5 tldr-card" style={{ borderColor: "var(--border)", background: "var(--ts-surface)" }}>
+        <Skeleton className="h-3 w-12 mb-3" />
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+      </div>
+      {/* Key points skeleton */}
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-3 w-36" />
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-lg border p-4" style={{ borderColor: "var(--border)", background: "var(--ts-surface)" }}>
+            <Skeleton className="h-4 w-full" />
+          </div>
+        ))}
+      </div>
+      {/* Concepts skeleton */}
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-3 w-24" />
+        <div className="flex gap-2">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-6 w-20 rounded-full" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function ResultPage() {
@@ -74,7 +125,6 @@ function ResultContent() {
   useEffect(() => {
     if (!query) return;
 
-    // Guest limit check — before any API call
     if (guestLimitReached()) {
       setGate("guest");
       setLoading(false);
@@ -130,7 +180,6 @@ function ResultContent() {
       const data: SearchResult = await res.json();
       setResult(data);
 
-      // Increment guest counter on success (check auth fresh to avoid race condition)
       const { data: authData } = await createClient().auth.getUser();
       if (!authData.user) incrementGuestSearchCount();
     } catch (err) {
@@ -161,25 +210,30 @@ function ResultContent() {
     ? result?.key_points ?? []
     : (result?.key_points ?? []).slice(0, 4);
 
+  const headingFont = "var(--font-heading), 'Space Grotesk', sans-serif";
+
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--background)" }}>
       {/* Freemium gates */}
-      {gate === "guest" && (
-        <SignUpGate reason="guest" currentPath={currentPath} />
-      )}
-      {gate === "free" && (
-        <SignUpGate reason="free" currentPath={currentPath} />
-      )}
+      {gate === "guest" && <SignUpGate reason="guest" currentPath={currentPath} />}
+      {gate === "free" && <SignUpGate reason="free" currentPath={currentPath} />}
 
       {/* Top nav */}
       <header
         className="sticky top-0 z-20 border-b px-4 py-3"
-        style={{ background: "var(--background)", borderColor: "var(--border)" }}
+        style={{
+          background: "rgba(6,6,10,0.85)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          borderColor: "var(--border)",
+        }}
       >
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <button
             onClick={() => router.push("/")}
-            className="text-sm font-extrabold tracking-tight text-white flex-shrink-0 transition-opacity hover:opacity-70"
+            aria-label="Go to homepage"
+            className="text-sm font-bold tracking-tight text-white flex-shrink-0 transition-opacity hover:opacity-70 cursor-pointer"
+            style={{ fontFamily: headingFont }}
           >
             top<span style={{ color: "var(--ts-accent)" }}>snip</span>
           </button>
@@ -187,7 +241,11 @@ function ResultContent() {
           <form onSubmit={handleNewSearch} className="flex-1 flex items-center gap-2">
             <div
               className="flex-1 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm"
-              style={{ background: "var(--ts-surface)", borderColor: "var(--border)" }}
+              style={{
+                background: "var(--ts-surface)",
+                borderColor: "var(--border)",
+                backdropFilter: "blur(8px)",
+              }}
             >
               <Search size={14} style={{ color: "var(--ts-muted)", flexShrink: 0 }} />
               <input
@@ -196,12 +254,13 @@ function ResultContent() {
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="flex-1 bg-transparent outline-none text-sm"
                 style={{ color: "var(--foreground)" }}
+                aria-label="Search query"
               />
             </div>
             <button
               type="submit"
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all hover:opacity-90"
-              style={{ background: "var(--ts-accent)" }}
+              className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all duration-200 hover:opacity-90 cursor-pointer shadow-[0_0_12px_rgba(124,106,247,0.3)]"
+              style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
             >
               Search
             </button>
@@ -210,7 +269,7 @@ function ResultContent() {
           {isLoggedIn && (
             <button
               onClick={() => router.push("/history")}
-              className="text-xs font-medium flex-shrink-0 transition-opacity hover:opacity-80"
+              className="text-xs font-medium flex-shrink-0 transition-opacity hover:opacity-80 cursor-pointer"
               style={{ color: "var(--ts-text-2)" }}
             >
               History
@@ -221,12 +280,11 @@ function ResultContent() {
 
       {/* Main content */}
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
-
         {/* Loading state */}
         {loading && (
-          <div className="flex flex-col items-center justify-center gap-6 py-24">
-            <div className="flex flex-col items-center gap-4">
-              {/* Waveform signal loader — 5 bars at varying heights */}
+          <div className="flex flex-col gap-10">
+            {/* Waveform + stage text */}
+            <div className="flex flex-col items-center justify-center gap-5 pt-8">
               <div className="flex items-end gap-[5px] h-8">
                 {[0.55, 0.85, 1, 0.75, 0.45].map((scale, i) => (
                   <div
@@ -245,12 +303,15 @@ function ResultContent() {
               <p className="text-sm font-medium" style={{ color: "var(--ts-text-2)" }}>
                 {LOADING_STAGES[loadingStage]}
               </p>
+              <p className="text-xs text-center max-w-xs" style={{ color: "var(--ts-muted)" }}>
+                Reading multiple YouTube videos on{" "}
+                <span style={{ color: "var(--ts-accent)" }}>&ldquo;{query}&rdquo;</span>{" "}
+                so you don&apos;t have to.
+              </p>
             </div>
-            <p className="text-xs text-center max-w-xs" style={{ color: "var(--ts-muted)" }}>
-              Reading multiple YouTube videos on{" "}
-              <span style={{ color: "var(--ts-accent)" }}>&ldquo;{query}&rdquo;</span>{" "}
-              so you don&apos;t have to.
-            </p>
+
+            {/* Skeleton preview */}
+            <ResultSkeleton />
           </div>
         )}
 
@@ -262,7 +323,7 @@ function ResultContent() {
             </p>
             <button
               onClick={() => fetchResult(query)}
-              className="text-sm underline"
+              className="text-sm underline cursor-pointer"
               style={{ color: "var(--ts-accent)" }}
             >
               Try again
@@ -272,13 +333,21 @@ function ResultContent() {
 
         {/* Result */}
         {!loading && result && (
-          <div key={result.query} className="flex flex-col gap-8">
+          <div key={result.query} className="flex flex-col gap-8 pb-24">
             {/* Query heading */}
             <div className="flex flex-col gap-1" style={{ animation: "fadeInUp 0.35s ease both" }}>
-              <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--ts-muted)" }}>
+              <p
+                className="text-xs font-semibold uppercase tracking-widest"
+                style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
+              >
                 Topsnip result
               </p>
-              <h1 className="text-xl font-bold text-white leading-snug">{result.query}</h1>
+              <h1
+                className="text-xl font-bold text-white leading-snug"
+                style={{ fontFamily: headingFont }}
+              >
+                {result.query}
+              </h1>
               <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
                 Synthesized from {result.synthesized_from} YouTube videos
               </p>
@@ -286,10 +355,19 @@ function ResultContent() {
 
             {/* TL;DR */}
             <section
-              className="rounded-xl border p-5"
-              style={{ background: "var(--ts-surface)", borderColor: "var(--border)", animation: "fadeInUp 0.35s ease 0.06s both" }}
+              className="rounded-xl border p-5 tldr-card"
+              style={{
+                background: "var(--ts-surface)",
+                borderColor: "var(--border)",
+                backdropFilter: "blur(12px)",
+                boxShadow: "inset 0 1px 0 0 rgba(140,130,220,0.06)",
+                animation: "fadeInUp 0.35s ease 0.06s both",
+              }}
             >
-              <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--ts-accent)" }}>
+              <p
+                className="text-xs font-semibold uppercase tracking-widest mb-3"
+                style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
+              >
                 TL;DR
               </p>
               <p className="text-base leading-relaxed text-white font-medium">{result.tldr}</p>
@@ -298,7 +376,10 @@ function ResultContent() {
             {/* Key points */}
             {result.key_points.length > 0 && (
               <section className="flex flex-col gap-4" style={{ animation: "fadeInUp 0.35s ease 0.12s both" }}>
-                <h2 className="text-sm font-semibold uppercase tracking-widest" style={{ color: "var(--ts-muted)" }}>
+                <h2
+                  className="text-sm font-semibold uppercase tracking-widest"
+                  style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
+                >
                   What you need to know
                 </h2>
                 <div className="flex flex-col gap-3">
@@ -310,7 +391,7 @@ function ResultContent() {
                     >
                       <span
                         className="text-xs font-bold mt-0.5 flex-shrink-0"
-                        style={{ color: "var(--ts-accent)" }}
+                        style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
                       >
                         {String(i + 1).padStart(2, "0")}
                       </span>
@@ -323,13 +404,13 @@ function ResultContent() {
                 {result.key_points.length > 4 && (
                   <button
                     onClick={() => setShowAllPoints(!showAllPoints)}
-                    className="flex items-center gap-1.5 text-sm font-medium self-start transition-opacity hover:opacity-80"
+                    className="flex items-center gap-1.5 text-sm font-medium self-start transition-opacity hover:opacity-80 cursor-pointer"
                     style={{ color: "var(--ts-accent)" }}
                   >
                     {showAllPoints ? "Show less" : `Show ${result.key_points.length - 4} more`}
                     <ChevronDown
                       size={14}
-                      className={`transition-transform ${showAllPoints ? "rotate-180" : ""}`}
+                      className={`transition-transform duration-200 ${showAllPoints ? "rotate-180" : ""}`}
                     />
                   </button>
                 )}
@@ -339,7 +420,10 @@ function ResultContent() {
             {/* Key concepts */}
             {result.key_concepts.length > 0 && (
               <section className="flex flex-col gap-3" style={{ animation: "fadeInUp 0.35s ease 0.18s both" }}>
-                <h2 className="text-sm font-semibold uppercase tracking-widest" style={{ color: "var(--ts-muted)" }}>
+                <h2
+                  className="text-sm font-semibold uppercase tracking-widest"
+                  style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
+                >
                   Key concepts
                 </h2>
                 <div className="flex flex-wrap gap-2">
@@ -348,9 +432,9 @@ function ResultContent() {
                       key={concept}
                       className="rounded-full border px-3 py-1 text-xs font-medium"
                       style={{
-                        borderColor: "rgba(124,106,247,0.3)",
+                        borderColor: "rgba(124,106,247,0.25)",
                         color: "var(--ts-accent-2)",
-                        background: "rgba(124,106,247,0.07)",
+                        background: "rgba(124,106,247,0.06)",
                       }}
                     >
                       {concept}
@@ -363,7 +447,10 @@ function ResultContent() {
             {/* Steps */}
             {result.steps && result.steps.length > 0 && (
               <section className="flex flex-col gap-3" style={{ animation: "fadeInUp 0.35s ease 0.24s both" }}>
-                <h2 className="text-sm font-semibold uppercase tracking-widest" style={{ color: "var(--ts-muted)" }}>
+                <h2
+                  className="text-sm font-semibold uppercase tracking-widest"
+                  style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
+                >
                   Step by step
                 </h2>
                 <ol className="flex flex-col gap-2">
@@ -371,7 +458,12 @@ function ResultContent() {
                     <li key={i} className="flex gap-3 items-start text-sm leading-relaxed">
                       <span
                         className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5"
-                        style={{ background: "var(--ts-surface)", color: "var(--ts-accent)", border: "1px solid var(--border)" }}
+                        style={{
+                          background: "var(--ts-surface)",
+                          color: "var(--ts-accent)",
+                          border: "1px solid var(--border)",
+                          fontFamily: headingFont,
+                        }}
                       >
                         {i + 1}
                       </span>
@@ -385,7 +477,10 @@ function ResultContent() {
             {/* Source videos */}
             {result.sources.length > 0 && (
               <section className="flex flex-col gap-3" style={{ animation: "fadeInUp 0.35s ease 0.30s both" }}>
-                <h2 className="text-sm font-semibold uppercase tracking-widest" style={{ color: "var(--ts-muted)" }}>
+                <h2
+                  className="text-sm font-semibold uppercase tracking-widest"
+                  style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
+                >
                   Synthesized from
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -395,10 +490,13 @@ function ResultContent() {
                       href={src.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex gap-3 rounded-xl border p-3 transition-all hover:border-[var(--ts-accent)] group"
+                      className="flex gap-3 rounded-xl border p-3 transition-all duration-200 hover:border-[rgba(124,106,247,0.3)] group cursor-pointer"
                       style={{ background: "var(--ts-surface)", borderColor: "var(--border)" }}
                     >
-                      <div className="w-24 flex-shrink-0 rounded-lg overflow-hidden bg-[var(--ts-surface-2)]" style={{ aspectRatio: "16/9" }}>
+                      <div
+                        className="w-24 flex-shrink-0 rounded-lg overflow-hidden relative"
+                        style={{ aspectRatio: "16/9", background: "var(--ts-surface-2)" }}
+                      >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={src.thumbnail}
@@ -406,59 +504,39 @@ function ResultContent() {
                           className="w-full h-full object-cover"
                           loading="lazy"
                         />
+                        {/* Duration badge */}
+                        {src.duration && (
+                          <span
+                            className="absolute bottom-1 right-1 rounded px-1 py-0.5 text-[10px] font-medium text-white"
+                            style={{ background: "rgba(0,0,0,0.75)" }}
+                          >
+                            {src.duration}
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-col gap-1 min-w-0 flex-1">
                         <p className="text-xs font-medium leading-snug text-white line-clamp-2 group-hover:text-[var(--ts-accent-2)] transition-colors">
                           {src.title}
                         </p>
                         <p className="text-xs" style={{ color: "var(--ts-muted)" }}>{src.channel}</p>
-                        {src.duration && (
-                          <p className="text-xs" style={{ color: "var(--ts-muted)" }}>{src.duration}</p>
-                        )}
                       </div>
-                      <ExternalLink size={12} className="flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity" style={{ color: "var(--ts-text-2)" }} />
+                      <ExternalLink
+                        size={12}
+                        className="flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity"
+                        style={{ color: "var(--ts-text-2)" }}
+                      />
                     </a>
                   ))}
                 </div>
               </section>
             )}
 
-            {/* Follow-up */}
-            <section
-              className="rounded-xl border p-4"
-              style={{ background: "var(--ts-surface)", borderColor: "var(--border)", animation: "fadeInUp 0.35s ease 0.36s both" }}
-            >
-              <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--ts-muted)" }}>
-                Ask a follow-up
-              </p>
-              <form onSubmit={handleFollowUp} className="flex gap-2">
-                <input
-                  type="text"
-                  value={followUp}
-                  onChange={(e) => setFollowUp(e.target.value)}
-                  placeholder={`Ask something about "${result.query}"...`}
-                  className="flex-1 bg-[var(--ts-surface-2)] border rounded-lg px-3 py-2 text-sm outline-none transition-colors"
-                  style={{
-                    borderColor: "var(--border)",
-                    color: "var(--foreground)",
-                  }}
-                />
-                <button
-                  type="submit"
-                  disabled={!followUp.trim()}
-                  className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all disabled:opacity-30 hover:opacity-90"
-                  style={{ background: "var(--ts-accent)" }}
-                >
-                  Ask
-                </button>
-              </form>
-            </section>
-
             {/* Back link */}
             <button
               onClick={() => router.push("/")}
-              className="flex items-center gap-1.5 text-xs self-start transition-opacity hover:opacity-80"
-              style={{ color: "var(--ts-text-2)", animation: "fadeInUp 0.35s ease 0.42s both" }}
+              aria-label="Start a new search"
+              className="flex items-center gap-1.5 text-xs self-start transition-opacity hover:opacity-80 cursor-pointer"
+              style={{ color: "var(--ts-text-2)", animation: "fadeInUp 0.35s ease 0.36s both" }}
             >
               <ArrowLeft size={12} />
               New search
@@ -466,6 +544,43 @@ function ResultContent() {
           </div>
         )}
       </main>
+
+      {/* Sticky follow-up bar — visible only when result is loaded */}
+      {!loading && result && (
+        <div
+          className="sticky bottom-0 z-20 border-t px-4 py-3"
+          style={{
+            background: "rgba(6,6,10,0.9)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            borderColor: "var(--border)",
+          }}
+        >
+          <form onSubmit={handleFollowUp} className="max-w-3xl mx-auto flex gap-2">
+            <input
+              type="text"
+              value={followUp}
+              onChange={(e) => setFollowUp(e.target.value)}
+              placeholder={`Ask a follow-up about "${result.query}"...`}
+              className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none transition-colors"
+              style={{
+                background: "var(--ts-surface)",
+                borderColor: "var(--border)",
+                color: "var(--foreground)",
+              }}
+              aria-label="Ask a follow-up question"
+            />
+            <button
+              type="submit"
+              disabled={!followUp.trim()}
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 hover:opacity-90 cursor-pointer shadow-[0_0_12px_rgba(124,106,247,0.3)]"
+              style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
+            >
+              Ask
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

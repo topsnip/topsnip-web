@@ -84,7 +84,7 @@ function UpgradeContent() {
         />
         <div
           className="w-full max-w-sm rounded-2xl border p-8 flex flex-col items-center gap-5 relative z-10 text-center"
-          style={{ background: "var(--ts-surface)", borderColor: "var(--border)" }}
+          style={{ background: "var(--ts-surface)", borderColor: "var(--border)", backdropFilter: "blur(16px)", boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.05)" }}
         >
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center"
@@ -100,8 +100,8 @@ function UpgradeContent() {
           </div>
           <button
             onClick={() => router.push("/")}
-            className="flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 w-full justify-center"
-            style={{ background: "var(--ts-accent)" }}
+            className="flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 w-full justify-center shadow-[0_0_20px_rgba(124,106,247,0.3)]"
+            style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
           >
             Start searching
             <ArrowRight size={14} />
@@ -124,7 +124,7 @@ function UpgradeContent() {
         />
         <div
           className="w-full max-w-sm rounded-2xl border p-8 flex flex-col items-center gap-4 relative z-10 text-center"
-          style={{ background: "var(--ts-surface)", borderColor: "var(--border)" }}
+          style={{ background: "var(--ts-surface)", borderColor: "var(--border)", backdropFilter: "blur(16px)", boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.05)" }}
         >
           <div className="text-xl font-extrabold tracking-tight text-white">
             top<span style={{ color: "var(--ts-accent)" }}>snip</span>
@@ -185,8 +185,7 @@ function UpgradeContent() {
 
           {/* Monthly */}
           <div
-            className="rounded-2xl border p-6 flex flex-col gap-5"
-            style={{ background: "var(--ts-surface)", borderColor: "var(--border)" }}
+            className="glass-card rounded-2xl p-6 flex flex-col gap-5"
           >
             <div className="flex flex-col gap-1">
               <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--ts-muted)" }}>
@@ -215,8 +214,8 @@ function UpgradeContent() {
             <button
               onClick={() => handleCheckout("monthly")}
               disabled={loadingPlan !== null}
-              className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-40 hover:opacity-90 mt-auto"
-              style={{ background: "var(--ts-accent)" }}
+              className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-40 hover:opacity-90 mt-auto shadow-[0_0_12px_rgba(124,106,247,0.3)]"
+              style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
             >
               {loadingPlan === "monthly" ? "Redirecting..." : "Get Pro — $9/mo"}
             </button>
@@ -224,16 +223,16 @@ function UpgradeContent() {
 
           {/* Yearly — highlighted */}
           <div
-            className="rounded-2xl border p-6 flex flex-col gap-5 relative"
-            style={{ background: "var(--ts-surface)", borderColor: "var(--ts-accent)" }}
+            className="pro-card-glow rounded-2xl p-6 flex flex-col gap-5 relative"
           >
             {/* Best value badge */}
             <div
               className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-semibold"
               style={{
-                background: "var(--ts-accent)",
+                background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
                 color: "#fff",
                 letterSpacing: "0.02em",
+                boxShadow: "0 0 10px rgba(124,106,247,0.5)",
               }}
             >
               Save $29/year
@@ -267,8 +266,8 @@ function UpgradeContent() {
             <button
               onClick={() => handleCheckout("yearly")}
               disabled={loadingPlan !== null}
-              className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-40 hover:opacity-90 mt-auto"
-              style={{ background: "var(--ts-accent)" }}
+              className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-40 hover:opacity-90 mt-auto shadow-[0_0_20px_rgba(124,106,247,0.3)]"
+              style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
             >
               {loadingPlan === "yearly" ? "Redirecting..." : "Get Pro — $79/yr"}
             </button>

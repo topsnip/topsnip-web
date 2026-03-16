@@ -52,12 +52,12 @@ function LoginForm() {
         className="pointer-events-none fixed top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full"
         style={{
           background:
-            "radial-gradient(ellipse at center, rgba(124,106,247,0.10) 0%, transparent 70%)",
+            "radial-gradient(ellipse at center, rgba(124,106,247,0.12) 0%, rgba(60,30,180,0.05) 40%, transparent 70%)",
         }}
       />
       <div
         className="w-full max-w-sm rounded-2xl border p-8 flex flex-col gap-6 relative z-10"
-        style={{ background: "var(--ts-surface)", borderColor: "var(--border)" }}
+        style={{ background: "var(--ts-surface)", borderColor: "var(--border)", backdropFilter: "blur(16px)", boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.4)" }}
       >
         {/* Wordmark */}
         <div className="text-center">
@@ -122,8 +122,8 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading || !email}
-                className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-40 hover:opacity-90"
-                style={{ background: "var(--ts-accent)" }}
+                className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-40 hover:opacity-90 shadow-[0_0_20px_rgba(124,106,247,0.3)]"
+                style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
               >
                 {loading ? "Sending..." : "Send magic link"}
               </button>
