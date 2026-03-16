@@ -23,19 +23,16 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = createServiceClient();
 
-    // [7.2 fix] Rate limit: check most recent topic publish time instead of digest created_at
-    // (digest uses upsert so created_at doesn't update on subsequent runs)
-    const { data: recentTopic } = await supabase
-      .from("topics")
-      .select("published_at")
-      .eq("status", "published")
-      .not("published_at", "is", null)
-      .order("published_at", { ascending: false })
+    // Rate limit: check most recent content generation timestamp
+    const { data: recentContent } = await supabase
+      .from("topic_content")
+      .select("generated_at")
+      .order("generated_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (recentTopic?.published_at) {
-      const elapsed = Date.now() - new Date(recentTopic.published_at).getTime();
+    if (recentContent?.generated_at) {
+      const elapsed = Date.now() - new Date(recentContent.generated_at).getTime();
       if (elapsed < MIN_INTERVAL_MS) {
         return NextResponse.json(
           { ok: false, error: "Too soon since last run" },
