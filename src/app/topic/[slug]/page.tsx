@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -62,10 +62,14 @@ export default async function TopicDetailPage({
   if (!topic) notFound();
 
   // ── Determine user role for content lookup ───────────────────────────────
-
+  // [H5 fix] Require auth — RLS on topic_content requires authenticated role
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(`/auth/login?redirect=/topic/${slug}`);
+  }
 
   let contentRole = "general";
 

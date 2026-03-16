@@ -228,7 +228,7 @@ export default function SettingsPage() {
             top<span style={{ color: "var(--ts-accent)" }}>snip</span>
           </Link>
           <Link
-            href="/"
+            href="/feed"
             className="flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-white"
             style={{ color: "var(--ts-text-2)" }}
           >

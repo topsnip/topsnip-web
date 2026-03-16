@@ -17,6 +17,8 @@ export function FeedSearchBar() {
       .toLowerCase()
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9-]/g, "");
+    // [M6 fix] Guard against empty slug (e.g., query of only special chars)
+    if (!slug) return;
     router.push(`/s/${slug}?q=${encodeURIComponent(trimmed)}`);
   }
 

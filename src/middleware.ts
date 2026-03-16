@@ -2,7 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Routes that require authentication — unauthenticated users are redirected to login
-const PROTECTED_ROUTES = ["/history", "/settings"];
+// [C1 fix] Add /feed and /onboarding to protected routes
+const PROTECTED_ROUTES = ["/history", "/settings", "/feed", "/onboarding"];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });

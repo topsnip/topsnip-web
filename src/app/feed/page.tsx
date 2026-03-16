@@ -67,7 +67,7 @@ export default async function FeedPage() {
   // Profile check — onboarding gate
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, onboarding_complete")
+    .select("role, plan, onboarding_complete")
     .eq("id", user.id)
     .single();
 
@@ -99,7 +99,7 @@ export default async function FeedPage() {
         .from("topic_content")
         .select("topic_id, tldr")
         .in("topic_id", topicIds)
-        .eq("role", profile.role),
+        .eq("role", profile.plan === "pro" ? profile.role : "general"),
     ]);
 
     const topics: Topic[] = topicsResult.data ?? [];
@@ -171,6 +171,13 @@ export default async function FeedPage() {
               style={{ color: "var(--ts-text-2)" }}
             >
               Pro
+            </Link>
+            <Link
+              href="/settings"
+              className="text-sm font-medium transition-colors hover:text-white"
+              style={{ color: "var(--ts-text-2)" }}
+            >
+              Settings
             </Link>
           </div>
         </div>

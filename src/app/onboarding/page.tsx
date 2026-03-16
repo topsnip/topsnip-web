@@ -112,8 +112,15 @@ export default function OnboardingPage() {
   }
 
   /* Save and redirect */
+  const submitting = useRef(false);
   async function handleFinish() {
     if (!role) return;
+    // [H1 fix] Validate role value
+    const validRoles = ROLES.map((r) => r.value);
+    if (!validRoles.includes(role)) return;
+    // [H3 fix] Prevent double-submit
+    if (submitting.current) return;
+    submitting.current = true;
 
     setSaving(true);
     setError(null);
@@ -140,6 +147,7 @@ export default function OnboardingPage() {
     if (updateError) {
       setError("Something went wrong. Try again.");
       setSaving(false);
+      submitting.current = false;
       return;
     }
 
