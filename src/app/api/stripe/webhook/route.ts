@@ -39,6 +39,29 @@ export async function POST(req: NextRequest) {
 
   const db = createServiceClient();
 
+  // ── Prevent Replay Attacks (Idempotency) ──────────────────────────────────
+  // Check if we've already processed this exact event ID
+  const { data: existingEvent } = await db
+    .from("stripe_events")
+    .select("id")
+    .eq("id", event.id)
+    .maybeSingle();
+
+  if (existingEvent) {
+    console.log(`[Stripe Webhook] Skipping duplicate event ${event.id}`);
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
+  // Insert event record before processing to lock it
+  const { error: insertError } = await db
+    .from("stripe_events")
+    .insert({ id: event.id, type: event.type });
+
+  if (insertError) {
+    console.error("[Stripe Webhook] Failed to record event idempotency key:", insertError);
+    // Continue anyway in case of DB stutter, but ideally this creates a lock
+  }
+
   // ── Handle events ──────────────────────────────────────────────────────────
   switch (event.type) {
 

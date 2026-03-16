@@ -11,10 +11,6 @@ function getYouTubeApiKey() {
   return process.env.YOUTUBE_API_KEY!;
 }
 
-function getTranscriptServiceUrl() {
-  return process.env.TRANSCRIPT_SERVICE_URL!;
-}
-
 // ── Service role client (bypasses RLS for server-side writes) ───────────────
 
 function createServiceClient() {
@@ -58,37 +54,7 @@ async function hashIP(ip: string): Promise<string> {
 // For stricter cross-instance limits, upgrade to Upstash Redis.
 // Combined with DB-backed limits for authenticated users (claim_search_slot).
 
-const ipRequestLog = new Map<string, { count: number; resetAt: number }>();
-const ANON_RATE_LIMIT = 5;       // max requests per window for unauthenticated users
-const PRO_RATE_LIMIT = 20;       // max requests per window for Pro users (prevents denial-of-wallet)
-const RATE_LIMIT_WINDOW = 60_000; // 1 minute
-
-function checkRateLimit(key: string, limit: number): boolean {
-  const now = Date.now();
-  const entry = ipRequestLog.get(key);
-
-  if (!entry || now > entry.resetAt) {
-    ipRequestLog.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-    return false;
-  }
-
-  entry.count += 1;
-  return entry.count > limit;
-}
-
-// Periodic cleanup to prevent memory leaks (runs in warm instances)
-if (typeof globalThis !== "undefined") {
-  const cleanupKey = "__ts_rate_limit_cleanup";
-  if (!(globalThis as Record<string, unknown>)[cleanupKey]) {
-    (globalThis as Record<string, unknown>)[cleanupKey] = true;
-    setInterval(() => {
-      const now = Date.now();
-      for (const [ip, entry] of ipRequestLog) {
-        if (now > entry.resetAt) ipRequestLog.delete(ip);
-      }
-    }, 5 * 60_000);
-  }
-}
+import { anonymousSearchLimiter, proSearchLimiter } from "@/lib/ratelimit";
 
 // ── YouTube search ─────────────────────────────────────────────────────────
 
@@ -148,35 +114,65 @@ interface TranscriptResult {
 async function fetchTranscripts(
   videos: Awaited<ReturnType<typeof searchYouTube>>
 ): Promise<TranscriptResult[]> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+  const serviceUrl = process.env.TRANSCRIPT_SERVICE_URL;
 
-  // Add shared secret if configured (M1: transcript service auth)
-  const secret = process.env.TRANSCRIPT_SERVICE_SECRET;
-  if (secret) {
-    headers["Authorization"] = `Bearer ${secret}`;
-  }
-
-  const res = await fetch(`${getTranscriptServiceUrl()}/transcripts`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ video_ids: videos.map((v) => v.video_id) }),
-    signal: AbortSignal.timeout(15_000),
-  });
-
-  if (!res.ok) {
-    throw new Error("Transcript service unavailable");
-  }
-
-  const transcriptMap: Record<string, string> = await res.json();
-
-  return videos
-    .filter((v) => transcriptMap[v.video_id])
-    .map((v) => ({
+  // If transcript service is not configured, fall back to metadata-only mode
+  if (!serviceUrl) {
+    console.warn("[/api/search] TRANSCRIPT_SERVICE_URL not set — using metadata-only synthesis");
+    return videos.map((v) => ({
       ...v,
-      transcript: transcriptMap[v.video_id],
+      transcript: `Video: "${v.title}" by ${v.channel}. No transcript available — synthesize from title and metadata only.`,
     }));
+  }
+
+  try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    const secret = process.env.TRANSCRIPT_SERVICE_SECRET;
+    if (secret) {
+      headers["Authorization"] = `Bearer ${secret}`;
+    }
+
+    const res = await fetch(`${serviceUrl}/transcripts`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ video_ids: videos.map((v) => v.video_id) }),
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Transcript service returned ${res.status}`);
+    }
+
+    const transcriptMap: Record<string, string> = await res.json();
+
+    const withTranscripts = videos
+      .filter((v) => transcriptMap[v.video_id])
+      .map((v) => ({
+        ...v,
+        transcript: transcriptMap[v.video_id],
+      }));
+
+    if (withTranscripts.length > 0) return withTranscripts;
+
+    console.warn("[/api/search] Transcript service returned no transcripts — falling back to metadata");
+    return videos.map((v) => ({
+      ...v,
+      transcript: `Video: "${v.title}" by ${v.channel}. No transcript available.`,
+    }));
+  } catch (err) {
+    // Transcript service down — degrade gracefully instead of failing the whole search
+    console.error(
+      "[/api/search] Transcript fetch failed, using metadata fallback:",
+      err instanceof Error ? err.message : "Unknown error"
+    );
+    return videos.map((v) => ({
+      ...v,
+      transcript: `Video: "${v.title}" by ${v.channel}. No transcript available — synthesize from title and metadata only.`,
+    }));
+  }
 }
 
 // ── Claude synthesis ───────────────────────────────────────────────────────
@@ -308,7 +304,7 @@ export async function POST(req: NextRequest) {
 
         if (profile.plan === "pro") {
           // Pro users: per-minute rate limit to prevent denial-of-wallet
-          if (checkRateLimit(`pro:${userId}`, PRO_RATE_LIMIT)) {
+          if (proSearchLimiter.check(`pro:${userId}`)) {
             return NextResponse.json(
               { error: "Too many requests. Please slow down.", code: "rate_limit" },
               { status: 429 }
@@ -329,7 +325,7 @@ export async function POST(req: NextRequest) {
       }
     } else {
       // Anonymous users: in-memory IP rate limit + DB-backed daily limit
-      if (checkRateLimit(`anon:${ip}`, ANON_RATE_LIMIT)) {
+      if (anonymousSearchLimiter.check(`anon:${ip}`)) {
         return NextResponse.json(
           { error: "Too many requests. Please sign up for more searches.", code: "rate_limit" },
           { status: 429 }

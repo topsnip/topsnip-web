@@ -2,6 +2,15 @@
   "functions": {
     "src/app/api/search/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/ingest/run/route.ts": {
+      "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/ingest/run",
+      "schedule": "0 */2 * * *"
+    }
+  ]
 }

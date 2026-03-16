@@ -14,6 +14,9 @@ function createServiceClient() {
   );
 }
 
+// ── Rate limiting (prevent Stripe API spam) ────────────────────────────────
+import { checkoutLimiter } from "@/lib/ratelimit";
+
 export async function POST(req: NextRequest) {
   const { interval } = await req.json();
 
@@ -39,6 +42,14 @@ export async function POST(req: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  // Rate limit checkout creation to prevent Stripe API spam
+  if (checkoutLimiter.check(user.id)) {
+    return NextResponse.json(
+      { error: "Too many checkout attempts. Please wait a moment." },
+      { status: 429 }
+    );
   }
 
   // ── Get or create Stripe customer ──────────────────────────────────────────

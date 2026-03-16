@@ -423,7 +423,7 @@ begin
 end;
 $$;
 
--- ── Check anonymous search limit (1/day per IP hash) ────────────────────────
+-- ── Check anonymous search limit (3/day per IP hash) ────────────────────────
 
 create or replace function public.check_anonymous_limit(p_ip_hash text)
 returns boolean language plpgsql security definer set search_path = public
@@ -436,7 +436,7 @@ begin
   where ip_hash = p_ip_hash
     and created_at > current_date::timestamptz;
 
-  return v_count < 1;
+  return v_count < 3;
 end;
 $$;
 
