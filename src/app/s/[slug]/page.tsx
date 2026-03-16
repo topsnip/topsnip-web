@@ -8,6 +8,7 @@ import {
   guestLimitReached,
   incrementGuestSearchCount,
 } from "@/lib/search-limits";
+import { decodeHtml } from "@/lib/utils/decode-html";
 import { createClient } from "@/lib/supabase/client";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -189,6 +190,12 @@ function ResultContent() {
       }
 
       const data: SearchResult = await res.json();
+      // Decode HTML entities from API/DB content
+      data.tldr = decodeHtml(data.tldr);
+      data.what_happened = decodeHtml(data.what_happened);
+      data.so_what = decodeHtml(data.so_what);
+      data.now_what = decodeHtml(data.now_what);
+      data.query = decodeHtml(data.query);
       setResult(data);
 
       const { data: authData } = await createClient().auth.getUser();

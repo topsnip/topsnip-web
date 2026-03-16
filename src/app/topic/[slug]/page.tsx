@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { notFound, redirect } from "next/navigation";
+import { decodeHtml } from "@/lib/utils/decode-html";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -107,6 +108,13 @@ export default async function TopicDetailPage({
   }
 
   if (!content) notFound();
+
+  // ── Decode HTML entities (fixes double-encoded data from ingestion) ─────
+  topic.title = decodeHtml(topic.title);
+  content.tldr = decodeHtml(content.tldr);
+  content.what_happened = decodeHtml(content.what_happened);
+  content.so_what = decodeHtml(content.so_what);
+  content.now_what = decodeHtml(content.now_what);
 
   // ── Fetch YouTube recommendations ────────────────────────────────────────
 

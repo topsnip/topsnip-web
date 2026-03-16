@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { decodeHtml } from "@/lib/utils/decode-html";
 import { FeedSearchBar } from "./feed-search-bar";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -332,7 +333,7 @@ export default async function FeedPage() {
                     className="text-lg font-bold text-white leading-snug"
                     style={{ fontFamily: headingFont }}
                   >
-                    {topic.title}
+                    {decodeHtml(topic.title)}
                   </h2>
                 </div>
 
@@ -342,7 +343,7 @@ export default async function FeedPage() {
                     className="text-sm leading-relaxed line-clamp-3"
                     style={{ color: "var(--ts-text-2)" }}
                   >
-                    {topic.tldr}
+                    {decodeHtml(topic.tldr)}
                   </p>
                 )}
 

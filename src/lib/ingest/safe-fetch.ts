@@ -96,11 +96,29 @@ export async function safeText(res: Response, maxBytes = 5_000_000): Promise<str
 }
 
 /**
+ * Decode HTML entities that may already be in source data (YouTube API,
+ * RSS feeds, etc. often return pre-encoded strings).
+ */
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)));
+}
+
+/**
  * Sanitize text content before storing in database.
- * Prevents stored XSS by encoding HTML entities.
+ * Decodes any pre-existing HTML entities first (from APIs/RSS), then
+ * re-encodes to prevent stored XSS. This prevents double-encoding.
  */
 export function sanitizeText(text: string): string {
-  return text
+  // Decode first to normalize — source APIs often return pre-encoded text
+  const decoded = decodeHtmlEntities(text);
+  return decoded
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
