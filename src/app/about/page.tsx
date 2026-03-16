@@ -12,21 +12,21 @@ export default function AboutPage() {
         {/* Hero */}
         <div className="flex flex-col gap-4">
           <h1 className="text-3xl font-extrabold tracking-tight text-white">
-            What is Topsnip?
+            What is TopSnip?
           </h1>
           <p className="text-base leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
-            You know the feeling. You want to learn something — maybe how to build an
-            AI agent in n8n, or which automation tool to use. So you open YouTube and
-            find 10 videos on the topic. Each one is 20–30 minutes. Each one starts with
-            an intro, a channel plug, and 5 minutes of context you already know.
+            You know the feeling. Something big happens in AI — a new model drops, an API
+            changes, a framework gets released. You see the headline, but you don&apos;t really
+            understand it. So you open 10 tabs: blog posts, Reddit threads, YouTube videos,
+            Hacker News discussions.
           </p>
           <p className="text-base leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
-            You end up with 10 browser tabs and still don&apos;t have the answer.
+            An hour later, you&apos;ve read a lot of words but still can&apos;t explain it to someone else.
           </p>
           <p className="text-base leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
-            <strong className="text-white">Topsnip fixes that.</strong> Type a topic.
-            We watch the best YouTube videos on it, strip the noise, and give you one
-            clean, structured summary — the signal, without the filler.
+            <strong className="text-white">TopSnip fixes that.</strong> We monitor AI developments
+            across official blogs, Hacker News, Reddit, arXiv, GitHub, and YouTube — then turn
+            raw source material into clear, structured learning briefs you can actually understand.
           </p>
         </div>
 
@@ -37,23 +37,23 @@ export default function AboutPage() {
             {[
               {
                 step: "01",
-                title: "You type a topic",
-                desc: "Any AI or automation topic — n8n workflows, Claude Code, LangChain basics, Cursor tips, Make vs Zapier.",
+                title: "We monitor everything",
+                desc: "6 platforms tracked continuously: official AI blogs, Hacker News, Reddit, arXiv papers, GitHub releases, and YouTube.",
               },
               {
                 step: "02",
-                title: "We find the best videos",
-                desc: "Topsnip searches YouTube and identifies the 8 most relevant videos for your query.",
+                title: "We detect what matters",
+                desc: "Cross-platform scoring identifies what's actually significant vs. noise. A topic trending on 2+ platforms = worth covering.",
               },
               {
                 step: "03",
-                title: "We read all of them",
-                desc: "Every transcript is fetched and fed into Claude — our AI synthesis engine. It reads all 8 videos simultaneously.",
+                title: "AI generates learning briefs",
+                desc: "Each topic gets a structured explainer: what happened, why it matters, and what to do next — grounded in source material, never hallucinated.",
               },
               {
                 step: "04",
-                title: "You get the signal",
-                desc: "A structured summary: TL;DR, key points, concepts, and sources — so you can verify everything.",
+                title: "You understand it",
+                desc: "Read the brief, check the sources, watch the recommended videos if you want to go deeper. 3 minutes, not 3 hours.",
               },
             ].map(({ step, title, desc }) => (
               <div
@@ -77,18 +77,19 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Niche */}
+        {/* Pro tier */}
         <div
           className="rounded-xl border p-5 flex flex-col gap-3"
           style={{ background: "var(--ts-surface)", borderColor: "rgba(124,106,247,0.3)", backdropFilter: "blur(12px)", boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.05)" }}
         >
           <p className="text-sm font-semibold" style={{ color: "var(--ts-accent)" }}>
-            Currently: AI & automation only
+            Free vs. Pro
           </p>
           <p className="text-sm leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
-            Topsnip is starting with AI and automation tools — n8n, Make, Zapier, Claude,
-            LangChain, Cursor, and more. We&apos;re going deep on one niche before expanding.
-            More topics are coming.
+            Everyone gets plain-language explainers, trending topics, and YouTube recommendations
+            for free. <strong className="text-white">Pro</strong> adds role-specific depth — if you&apos;re a developer,
+            you get code examples and migration paths. If you&apos;re a PM, you get product implications
+            and sprint actions. Plus personalized feeds and knowledge tracking.
           </p>
         </div>
 

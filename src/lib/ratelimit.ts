@@ -58,5 +58,6 @@ export class RateLimiter {
 
 // Instantiate specific limiters (shared across module)
 export const anonymousSearchLimiter = new RateLimiter({ limit: 5, windowMs: 60_000 });
+export const freeSearchLimiter = new RateLimiter({ limit: 5, windowMs: 60_000 }); // [H3 fix] Burst protection for free users
 export const proSearchLimiter = new RateLimiter({ limit: 20, windowMs: 60_000 });
 export const checkoutLimiter = new RateLimiter({ limit: 3, windowMs: 60_000 });

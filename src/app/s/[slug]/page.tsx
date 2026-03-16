@@ -12,34 +12,40 @@ import { createClient } from "@/lib/supabase/client";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-interface SourceVideo {
+interface YouTubeRec {
   video_id: string;
   title: string;
   channel: string;
   thumbnail: string;
   duration?: string;
-  view_count?: string;
-  published_at?: string;
+  reason?: string;
   url: string;
 }
 
+interface SourceAttribution {
+  title: string;
+  url: string;
+  platform: string;
+}
+
 interface SearchResult {
-  tldr: string;
-  key_points: string[];
-  key_concepts: string[];
-  steps?: string[];
-  sources: SourceVideo[];
   query: string;
-  synthesized_from: number;
+  tldr: string;
+  what_happened: string;
+  so_what: string;
+  now_what: string;
+  sources: SourceAttribution[];
+  youtube_recs: YouTubeRec[];
+  source_type: "pre_generated" | "on_demand";
 }
 
 // ── Loading stages ─────────────────────────────────────────────────────────
 
 const LOADING_STAGES = [
-  "Searching YouTube...",
-  "Finding the best videos...",
-  "Reading transcripts...",
-  "Synthesizing the signal...",
+  "Searching sources...",
+  "Gathering official announcements...",
+  "Cross-referencing platforms...",
+  "Generating your learning brief...",
 ];
 
 // ── Skeleton component ────────────────────────────────────────────────────
@@ -56,13 +62,11 @@ function Skeleton({ className = "" }: { className?: string }) {
 function ResultSkeleton() {
   return (
     <div className="flex flex-col gap-8">
-      {/* Title skeleton */}
       <div className="flex flex-col gap-2">
         <Skeleton className="h-3 w-24" />
         <Skeleton className="h-6 w-3/4" />
         <Skeleton className="h-3 w-40" />
       </div>
-      {/* TL;DR skeleton */}
       <div className="rounded-xl border p-5 tldr-card" style={{ borderColor: "var(--border)", background: "var(--ts-surface)" }}>
         <Skeleton className="h-3 w-12 mb-3" />
         <div className="flex flex-col gap-2">
@@ -71,25 +75,28 @@ function ResultSkeleton() {
           <Skeleton className="h-4 w-2/3" />
         </div>
       </div>
-      {/* Key points skeleton */}
       <div className="flex flex-col gap-3">
         <Skeleton className="h-3 w-36" />
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-lg border p-4" style={{ borderColor: "var(--border)", background: "var(--ts-surface)" }}>
-            <Skeleton className="h-4 w-full" />
-          </div>
-        ))}
-      </div>
-      {/* Concepts skeleton */}
-      <div className="flex flex-col gap-3">
-        <Skeleton className="h-3 w-24" />
-        <div className="flex gap-2">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-6 w-20 rounded-full" />
-          ))}
-        </div>
+        <Skeleton className="h-24 w-full rounded-lg" />
+        <Skeleton className="h-24 w-full rounded-lg" />
       </div>
     </div>
+  );
+}
+
+// ── Markdown-lite renderer (bold only) ──────────────────────────────────────
+
+function renderMarkdown(text: string) {
+  // Split on **bold** markers and render
+  const parts = text.split(/\*\*(.*?)\*\*/g);
+  return parts.map((part, i) =>
+    i % 2 === 1 ? (
+      <strong key={i} className="text-white font-semibold">
+        {part}
+      </strong>
+    ) : (
+      <span key={i}>{part}</span>
+    )
   );
 }
 
@@ -116,7 +123,6 @@ function ResultContent() {
   const [error, setError] = useState<string | null>(null);
   const [gate, setGate] = useState<"guest" | "free" | null>(null);
   const [followUp, setFollowUp] = useState("");
-  const [showAllPoints, setShowAllPoints] = useState(false);
   const [searchInput, setSearchInput] = useState(query);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -165,8 +171,13 @@ function ResultContent() {
 
       if (res.status === 429) {
         const data = await res.json().catch(() => ({}));
+        // [1.1/1.2 fix] Surface all limit codes as gates, not just "free_limit"
         if (data.code === "free_limit") {
           setGate("free");
+          return;
+        }
+        if (data.code === "guest_limit" || data.code === "anon_rate_limit") {
+          setGate("guest");
           return;
         }
         throw new Error(data.error ?? "Too many requests");
@@ -203,12 +214,9 @@ function ResultContent() {
     const q = followUp.trim();
     if (!q || !result) return;
     setFollowUp("");
-    fetchResult(`${result.query} — ${q}`);
+    const slug = q.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    router.push(`/s/${slug}?q=${encodeURIComponent(q)}`);
   }
-
-  const visiblePoints = showAllPoints
-    ? result?.key_points ?? []
-    : (result?.key_points ?? []).slice(0, 4);
 
   const headingFont = "var(--font-heading), 'Space Grotesk', sans-serif";
 
@@ -283,7 +291,6 @@ function ResultContent() {
         {/* Loading state */}
         {loading && (
           <div className="flex flex-col gap-10">
-            {/* Waveform + stage text */}
             <div className="flex flex-col items-center justify-center gap-5 pt-8">
               <div className="flex items-end gap-[5px] h-8">
                 {[0.55, 0.85, 1, 0.75, 0.45].map((scale, i) => (
@@ -304,13 +311,11 @@ function ResultContent() {
                 {LOADING_STAGES[loadingStage]}
               </p>
               <p className="text-xs text-center max-w-xs" style={{ color: "var(--ts-muted)" }}>
-                Reading multiple YouTube videos on{" "}
+                Analyzing sources on{" "}
                 <span style={{ color: "var(--ts-accent)" }}>&ldquo;{query}&rdquo;</span>{" "}
                 so you don&apos;t have to.
               </p>
             </div>
-
-            {/* Skeleton preview */}
             <ResultSkeleton />
           </div>
         )}
@@ -340,7 +345,7 @@ function ResultContent() {
                 className="text-xs font-semibold uppercase tracking-widest"
                 style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
               >
-                Topsnip result
+                Learning brief
               </p>
               <h1
                 className="text-xl font-bold text-white leading-snug"
@@ -349,7 +354,9 @@ function ResultContent() {
                 {result.query}
               </h1>
               <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
-                Synthesized from {result.synthesized_from} YouTube videos
+                {result.sources.length > 0
+                  ? `Sourced from ${result.sources.length} sources`
+                  : "Generated from available knowledge"}
               </p>
             </div>
 
@@ -373,121 +380,151 @@ function ResultContent() {
               <p className="text-base leading-relaxed text-white font-medium">{result.tldr}</p>
             </section>
 
-            {/* Key points */}
-            {result.key_points.length > 0 && (
-              <section className="flex flex-col gap-4" style={{ animation: "fadeInUp 0.35s ease 0.12s both" }}>
+            {/* What Happened */}
+            {result.what_happened && (
+              <section className="flex flex-col gap-3" style={{ animation: "fadeInUp 0.35s ease 0.12s both" }}>
                 <h2
                   className="text-sm font-semibold uppercase tracking-widest"
                   style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
                 >
-                  What you need to know
+                  What happened
                 </h2>
-                <div className="flex flex-col gap-3">
-                  {visiblePoints.map((point, i) => (
-                    <div
-                      key={i}
-                      className="flex gap-3 rounded-lg border p-4"
-                      style={{ background: "var(--ts-surface)", borderColor: "var(--border)" }}
-                    >
-                      <span
-                        className="text-xs font-bold mt-0.5 flex-shrink-0"
-                        style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
-                      >
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-                        {point}
-                      </p>
-                    </div>
+                <div
+                  className="rounded-lg border p-5 text-sm leading-relaxed prose-content"
+                  style={{
+                    background: "var(--ts-surface)",
+                    borderColor: "var(--border)",
+                    color: "var(--foreground)",
+                  }}
+                >
+                  {result.what_happened.split("\n\n").map((para, i) => (
+                    <p key={i} className={i > 0 ? "mt-3" : ""}>
+                      {renderMarkdown(para)}
+                    </p>
                   ))}
                 </div>
-                {result.key_points.length > 4 && (
-                  <button
-                    onClick={() => setShowAllPoints(!showAllPoints)}
-                    className="flex items-center gap-1.5 text-sm font-medium self-start transition-opacity hover:opacity-80 cursor-pointer"
-                    style={{ color: "var(--ts-accent)" }}
-                  >
-                    {showAllPoints ? "Show less" : `Show ${result.key_points.length - 4} more`}
-                    <ChevronDown
-                      size={14}
-                      className={`transition-transform duration-200 ${showAllPoints ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                )}
               </section>
             )}
 
-            {/* Key concepts */}
-            {result.key_concepts.length > 0 && (
+            {/* So What */}
+            {result.so_what && (
               <section className="flex flex-col gap-3" style={{ animation: "fadeInUp 0.35s ease 0.18s both" }}>
                 <h2
                   className="text-sm font-semibold uppercase tracking-widest"
-                  style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
+                  style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
                 >
-                  Key concepts
+                  So what?
                 </h2>
-                <div className="flex flex-wrap gap-2">
-                  {result.key_concepts.map((concept) => (
-                    <span
-                      key={concept}
-                      className="rounded-full border px-3 py-1 text-xs font-medium"
-                      style={{
-                        borderColor: "rgba(124,106,247,0.25)",
-                        color: "var(--ts-accent-2)",
-                        background: "rgba(124,106,247,0.06)",
-                      }}
-                    >
-                      {concept}
-                    </span>
+                <div
+                  className="rounded-lg border p-5 text-sm leading-relaxed"
+                  style={{
+                    background: "rgba(124,106,247,0.03)",
+                    borderColor: "rgba(124,106,247,0.15)",
+                    color: "var(--foreground)",
+                  }}
+                >
+                  {result.so_what.split("\n\n").map((para, i) => (
+                    <p key={i} className={i > 0 ? "mt-3" : ""}>
+                      {renderMarkdown(para)}
+                    </p>
                   ))}
                 </div>
               </section>
             )}
 
-            {/* Steps */}
-            {result.steps && result.steps.length > 0 && (
+            {/* Now What */}
+            {result.now_what && (
               <section className="flex flex-col gap-3" style={{ animation: "fadeInUp 0.35s ease 0.24s both" }}>
                 <h2
                   className="text-sm font-semibold uppercase tracking-widest"
-                  style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
+                  style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
                 >
-                  Step by step
+                  Now what?
                 </h2>
-                <ol className="flex flex-col gap-2">
-                  {result.steps.map((step, i) => (
-                    <li key={i} className="flex gap-3 items-start text-sm leading-relaxed">
-                      <span
-                        className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5"
-                        style={{
-                          background: "var(--ts-surface)",
-                          color: "var(--ts-accent)",
-                          border: "1px solid var(--border)",
-                          fontFamily: headingFont,
-                        }}
-                      >
-                        {i + 1}
-                      </span>
-                      <span style={{ color: "var(--foreground)" }}>{step}</span>
-                    </li>
-                  ))}
-                </ol>
+                <div
+                  className="rounded-lg border p-5 text-sm leading-relaxed"
+                  style={{
+                    background: "rgba(52,211,153,0.03)",
+                    borderColor: "rgba(52,211,153,0.12)",
+                    color: "var(--foreground)",
+                  }}
+                >
+                  {result.now_what.split("\n").map((line, i) => {
+                    const trimmed = line.trim();
+                    if (!trimmed) return null;
+                    // Render bullet points
+                    const isBullet = trimmed.startsWith("-") || trimmed.startsWith("•");
+                    const text = isBullet ? trimmed.slice(1).trim() : trimmed;
+                    return (
+                      <div key={i} className={`flex gap-2 ${i > 0 ? "mt-2" : ""}`}>
+                        {isBullet && (
+                          <span className="text-xs mt-1 flex-shrink-0" style={{ color: "var(--success, #34d399)" }}>→</span>
+                        )}
+                        <span>{renderMarkdown(text)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </section>
             )}
 
-            {/* Source videos */}
+            {/* Source Attribution */}
             {result.sources.length > 0 && (
               <section className="flex flex-col gap-3" style={{ animation: "fadeInUp 0.35s ease 0.30s both" }}>
                 <h2
                   className="text-sm font-semibold uppercase tracking-widest"
                   style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
                 >
-                  Synthesized from
+                  Sources
+                </h2>
+                <div className="flex flex-col gap-2">
+                  {result.sources.filter((s) => s.url).map((src, i) => (
+                    <a
+                      key={i}
+                      href={src.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 rounded-lg border p-3 transition-all duration-200 hover:border-[rgba(124,106,247,0.3)] group cursor-pointer"
+                      style={{ background: "var(--ts-surface)", borderColor: "var(--border)" }}
+                    >
+                      <span
+                        className="rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider flex-shrink-0"
+                        style={{
+                          background: "rgba(124,106,247,0.08)",
+                          color: "var(--ts-accent)",
+                          border: "1px solid rgba(124,106,247,0.15)",
+                        }}
+                      >
+                        {src.platform}
+                      </span>
+                      <span className="text-sm text-white truncate flex-1 group-hover:text-[var(--ts-accent-2)] transition-colors">
+                        {src.title}
+                      </span>
+                      <ExternalLink
+                        size={12}
+                        className="flex-shrink-0 opacity-0 group-hover:opacity-50 transition-opacity"
+                        style={{ color: "var(--ts-text-2)" }}
+                      />
+                    </a>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* YouTube Recommendations — Go Deeper */}
+            {result.youtube_recs && result.youtube_recs.length > 0 && (
+              <section className="flex flex-col gap-3" style={{ animation: "fadeInUp 0.35s ease 0.36s both" }}>
+                <h2
+                  className="text-sm font-semibold uppercase tracking-widest"
+                  style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
+                >
+                  Go deeper
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {result.sources.map((src) => (
+                  {result.youtube_recs.map((rec) => (
                     <a
-                      key={src.video_id}
-                      href={src.url}
+                      key={rec.video_id}
+                      href={rec.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex gap-3 rounded-xl border p-3 transition-all duration-200 hover:border-[rgba(124,106,247,0.3)] group cursor-pointer"
@@ -499,26 +536,30 @@ function ResultContent() {
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={src.thumbnail}
-                          alt={src.title}
+                          src={rec.thumbnail}
+                          alt={rec.title}
                           className="w-full h-full object-cover"
                           loading="lazy"
                         />
-                        {/* Duration badge */}
-                        {src.duration && (
+                        {rec.duration && (
                           <span
                             className="absolute bottom-1 right-1 rounded px-1 py-0.5 text-[10px] font-medium text-white"
                             style={{ background: "rgba(0,0,0,0.75)" }}
                           >
-                            {src.duration}
+                            {rec.duration}
                           </span>
                         )}
                       </div>
                       <div className="flex flex-col gap-1 min-w-0 flex-1">
                         <p className="text-xs font-medium leading-snug text-white line-clamp-2 group-hover:text-[var(--ts-accent-2)] transition-colors">
-                          {src.title}
+                          {rec.title}
                         </p>
-                        <p className="text-xs" style={{ color: "var(--ts-muted)" }}>{src.channel}</p>
+                        <p className="text-xs" style={{ color: "var(--ts-muted)" }}>{rec.channel}</p>
+                        {rec.reason && (
+                          <p className="text-xs mt-1 line-clamp-2" style={{ color: "var(--ts-text-2)" }}>
+                            {rec.reason}
+                          </p>
+                        )}
                       </div>
                       <ExternalLink
                         size={12}
@@ -536,7 +577,7 @@ function ResultContent() {
               onClick={() => router.push("/")}
               aria-label="Start a new search"
               className="flex items-center gap-1.5 text-xs self-start transition-opacity hover:opacity-80 cursor-pointer"
-              style={{ color: "var(--ts-text-2)", animation: "fadeInUp 0.35s ease 0.36s both" }}
+              style={{ color: "var(--ts-text-2)", animation: "fadeInUp 0.35s ease 0.42s both" }}
             >
               <ArrowLeft size={12} />
               New search
@@ -545,7 +586,7 @@ function ResultContent() {
         )}
       </main>
 
-      {/* Sticky follow-up bar — visible only when result is loaded */}
+      {/* Sticky follow-up bar */}
       {!loading && result && (
         <div
           className="sticky bottom-0 z-20 border-t px-4 py-3"
@@ -561,14 +602,14 @@ function ResultContent() {
               type="text"
               value={followUp}
               onChange={(e) => setFollowUp(e.target.value)}
-              placeholder={`Ask a follow-up about "${result.query}"...`}
+              placeholder="Search another topic..."
               className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none transition-colors"
               style={{
                 background: "var(--ts-surface)",
                 borderColor: "var(--border)",
                 color: "var(--foreground)",
               }}
-              aria-label="Ask a follow-up question"
+              aria-label="Search another topic"
             />
             <button
               type="submit"
@@ -576,7 +617,7 @@ function ResultContent() {
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 hover:opacity-90 cursor-pointer shadow-[0_0_12px_rgba(124,106,247,0.3)]"
               style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
             >
-              Ask
+              Search
             </button>
           </form>
         </div>

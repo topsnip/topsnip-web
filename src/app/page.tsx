@@ -9,7 +9,6 @@ import {
   Zap,
   Layers,
   Clock,
-  Play,
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
@@ -188,8 +187,9 @@ export default function Home() {
               className="text-base sm:text-lg leading-relaxed max-w-lg mx-auto"
               style={{ color: "var(--ts-text-2)" }}
             >
-              Type a topic. Topsnip reads the 8 best YouTube videos on it and
-              gives you one distilled summary — in seconds, not hours.
+              Search any AI topic. Get a clear, structured explainer — sourced
+              from official announcements, developer discussions, and research.
+              In 3 minutes, not 3 hours.
             </p>
           </div>
 
@@ -236,7 +236,7 @@ export default function Home() {
                     "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
                 }}
               >
-                Summarize
+                Learn
                 <ArrowRight size={14} />
               </button>
             </div>
@@ -339,11 +339,11 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Mock source count */}
+            {/* Source count */}
             <div className="flex items-center gap-2">
-              <Play size={12} style={{ color: "var(--ts-muted)" }} />
+              <Layers size={12} style={{ color: "var(--ts-muted)" }} />
               <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
-                Synthesized from 8 YouTube videos
+                Sourced from 6 platforms — official blogs, HN, Reddit, arXiv
               </p>
             </div>
           </div>
@@ -381,19 +381,19 @@ export default function Home() {
               {
                 step: "01",
                 title: "Search a topic",
-                desc: "Type any AI or automation topic into the search bar.",
+                desc: "Type any AI or automation topic — or browse today's trending developments.",
                 icon: Search,
               },
               {
                 step: "02",
-                title: "AI reads 8 videos",
-                desc: "Topsnip finds the top YouTube videos and feeds every transcript to Claude.",
+                title: "AI reads the sources",
+                desc: "TopSnip pulls from official blogs, HN, Reddit, arXiv, GitHub, and YouTube to build a complete picture.",
                 icon: Layers,
               },
               {
                 step: "03",
-                title: "Get the signal",
-                desc: "One structured summary: TL;DR, key points, concepts, steps, and sources.",
+                title: "Understand it clearly",
+                desc: "Get a structured learning brief: what happened, why it matters, and what to do next.",
                 icon: Zap,
               },
             ].map(({ step, title, desc, icon: Icon }, i) => (
@@ -457,7 +457,7 @@ export default function Home() {
                 fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
               }}
             >
-              3 hours of YouTube → 30 seconds on Topsnip
+              3 hours of research → 3 minutes on TopSnip
             </h2>
           </RevealSection>
 
@@ -482,10 +482,10 @@ export default function Home() {
                 </p>
                 <ul className="flex flex-col gap-2.5">
                   {[
-                    "Watch 8 videos × 20 min = 2.5 hours",
-                    "Skip through intros and sponsor reads",
-                    "Piece together scattered information",
-                    "No structured takeaways",
+                    "Read 10 blog posts, Reddit threads, and papers",
+                    "Cross-reference conflicting information",
+                    "Piece together scattered announcements",
+                    "No clear takeaways or next steps",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2 text-sm" style={{ color: "var(--ts-text-2)" }}>
                       <span className="text-xs mt-1 flex-shrink-0" style={{ color: "#F87171" }}>✕</span>
@@ -518,10 +518,10 @@ export default function Home() {
                 </p>
                 <ul className="flex flex-col gap-2.5">
                   {[
-                    "One search, 8 videos analyzed",
-                    "Structured TL;DR + key points",
-                    "Multiple perspectives synthesized",
-                    "Full source transparency",
+                    "One search, 6 platforms analyzed",
+                    "Structured brief: what, so what, now what",
+                    "Multiple sources cross-referenced",
+                    "Full source attribution + Go Deeper links",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2 text-sm" style={{ color: "var(--ts-text-2)" }}>
                       <Check size={13} className="mt-0.5 flex-shrink-0" style={{ color: "var(--success)" }} />
@@ -593,8 +593,9 @@ export default function Home() {
                   {[
                     "3 searches/day (guest)",
                     "10 searches/day (signed in)",
-                    "Full result pages",
-                    "Search history",
+                    "Plain-language explainers",
+                    "Trending AI topics daily",
+                    "YouTube recommendations",
                   ].map((f) => (
                     <li key={f} className="flex items-start gap-2 text-sm" style={{ color: "var(--ts-text-2)" }}>
                       <Check size={13} className="mt-0.5 flex-shrink-0" style={{ color: "var(--ts-muted)" }} />
@@ -656,10 +657,11 @@ export default function Home() {
                 <ul className="flex flex-col gap-2.5 flex-1">
                   {[
                     "Unlimited searches",
-                    "Full result pages",
-                    "Search history",
+                    "Role-specific depth (dev, PM, CTO)",
+                    "\"So What\" + \"Now What\" sections",
+                    "Personalized daily feed",
+                    "Knowledge tracking + learning history",
                     "Priority processing",
-                    "Early access to new features",
                   ].map((f) => (
                     <li key={f} className="flex items-start gap-2 text-sm" style={{ color: "var(--ts-text-2)" }}>
                       <Check size={13} className="mt-0.5 flex-shrink-0" style={{ color: "var(--ts-accent)" }} />
@@ -701,7 +703,7 @@ export default function Home() {
             className="text-sm leading-relaxed max-w-md"
             style={{ color: "var(--ts-text-2)" }}
           >
-            Type a topic below and get distilled knowledge from 8 YouTube videos.
+            Search any AI topic and understand it clearly — sourced, structured, and actionable.
           </p>
           <form onSubmit={handleBottomSubmit} className="w-full flex gap-2 max-w-md">
             <div

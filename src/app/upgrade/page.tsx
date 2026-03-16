@@ -176,7 +176,7 @@ function UpgradeContent() {
             Unlimited searches.
           </h1>
           <p className="text-base max-w-sm mx-auto leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
-            The free tier gives you 10 searches a day. Pro removes the limit — entirely.
+            Free gets you the &ldquo;what.&rdquo; Pro gives you the &ldquo;so what&rdquo; and &ldquo;now what&rdquo; — tailored to your role.
           </p>
         </div>
 
@@ -200,9 +200,9 @@ function UpgradeContent() {
             <ul className="flex flex-col gap-2.5">
               {[
                 "Unlimited searches",
-                "All topics — AI, automation & more",
-                "Full result pages",
-                "Search history",
+                "Role-specific depth (dev, PM, CTO)",
+                "\"So What\" + \"Now What\" sections",
+                "Personalized feed + knowledge tracking",
               ].map((f) => (
                 <li key={f} className="flex items-center gap-2 text-sm" style={{ color: "var(--ts-text-2)" }}>
                   <Check size={13} style={{ color: "var(--ts-accent)", flexShrink: 0 }} />
@@ -252,9 +252,9 @@ function UpgradeContent() {
             <ul className="flex flex-col gap-2.5">
               {[
                 "Unlimited searches",
-                "All topics — AI, automation & more",
-                "Full result pages",
-                "Search history",
+                "Role-specific depth (dev, PM, CTO)",
+                "\"So What\" + \"Now What\" sections",
+                "Personalized feed + knowledge tracking",
               ].map((f) => (
                 <li key={f} className="flex items-center gap-2 text-sm" style={{ color: "var(--ts-text-2)" }}>
                   <Check size={13} style={{ color: "var(--ts-accent)", flexShrink: 0 }} />

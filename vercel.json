@@ -5,12 +5,19 @@
     },
     "src/app/api/ingest/run/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/content/generate/route.ts": {
+      "maxDuration": 120
     }
   },
   "crons": [
     {
       "path": "/api/ingest/run",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/content/generate",
+      "schedule": "30 8 * * *"
     }
   ]
 }
