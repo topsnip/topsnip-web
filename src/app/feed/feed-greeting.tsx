@@ -40,10 +40,10 @@ export function FeedGreeting({ email, isQuietDay, topicCount }: FeedGreetingProp
   const nameStr = firstName !== "there" ? `, ${firstName}` : "";
 
   const subtitle = isQuietDay
-    ? "Quiet day in AI — here are some topics worth exploring."
+    ? "Nothing major today — catch up on what you missed."
     : topicCount > 0
-      ? `${topicCount} topic${topicCount === 1 ? "" : "s"} trending in AI today`
-      : "Here's what happened in AI today.";
+      ? "Here\u2019s what happened in AI today."
+      : "The AI world is quiet today — explore something new.";
 
   const dateStr = new Date().toLocaleDateString("en-US", {
     weekday: "long",

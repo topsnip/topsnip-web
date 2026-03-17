@@ -1,9 +1,14 @@
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Knowledge Dashboard — Topsnip",
+  title: "Knowledge Dashboard — TopSnip",
   description:
-    "Track what you've learned, spot knowledge gaps, and stay current on AI.",
+    "Track what you've learned, spot knowledge gaps, and build your AI expertise streak. A Pro feature.",
+  openGraph: {
+    title: "Knowledge Dashboard — TopSnip",
+    description:
+      "Track what you've learned, spot knowledge gaps, and build your AI expertise streak.",
+  },
 };
 
 import { redirect } from "next/navigation";

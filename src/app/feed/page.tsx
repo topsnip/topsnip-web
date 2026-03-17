@@ -1,8 +1,14 @@
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Your Feed — Topsnip",
-  description: "Today's trending AI topics, curated and explained for you.",
+  title: "Your Feed — TopSnip",
+  description:
+    "Today's trending AI topics, curated and explained for you. Updated daily from 7+ platforms.",
+  openGraph: {
+    title: "Your Feed — TopSnip",
+    description:
+      "Today's trending AI topics, curated and explained for you. Updated daily from 7+ platforms.",
+  },
 };
 
 import { redirect } from "next/navigation";

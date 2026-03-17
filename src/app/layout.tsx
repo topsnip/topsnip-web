@@ -21,30 +21,36 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.topsnip.co"),
-  title: "Topsnip — Search any topic. Skip the noise.",
+  title: "TopSnip — Understand AI in 3 minutes, not 3 hours",
   description:
-    "Type a topic. Get one distilled, actionable summary from the best YouTube sources — with all the filler cut out. Just Topsnip it.",
+    "Search any AI topic and get a clear, structured explainer with sources. TopSnip monitors 7+ platforms so you don't have to.",
   keywords: [
+    "AI learning",
     "AI tools",
-    "automation",
-    "n8n",
+    "AI explainers",
     "Claude",
-    "learning",
-    "YouTube summary",
+    "MCP",
+    "RAG",
+    "AI trends",
+    "YouTube AI summary",
   ],
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
   },
   openGraph: {
-    title: "Topsnip — Search any topic. Skip the noise.",
-    description: "Distilled knowledge from the best YouTube sources. No noise.",
+    title: "TopSnip — Understand AI in 3 minutes, not 3 hours",
+    description:
+      "Search any AI topic and get a clear, structured explainer with sources. No noise, just signal.",
     type: "website",
+    siteName: "TopSnip",
+    url: "https://www.topsnip.co",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Topsnip — Search any topic. Skip the noise.",
-    description: "Distilled knowledge from the best YouTube sources. No noise.",
+    title: "TopSnip — Understand AI in 3 minutes, not 3 hours",
+    description:
+      "Search any AI topic and get a clear, structured explainer with sources. No noise, just signal.",
   },
 };
 
@@ -55,6 +61,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <meta name="theme-color" content="#0C0C0E" />
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body
         className={`${instrumentSerif.variable} ${inter.variable} ${geistMono.variable} antialiased`}
       >

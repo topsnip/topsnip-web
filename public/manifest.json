@@ -1,0 +1,12 @@
+{
+  "name": "TopSnip",
+  "short_name": "TopSnip",
+  "description": "Understand AI in 3 minutes, not 3 hours",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0C0C0E",
+  "theme_color": "#0C0C0E",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

@@ -1,8 +1,13 @@
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Search History — Topsnip",
-  description: "Your recent AI topic searches on Topsnip.",
+  title: "Search History — TopSnip",
+  description:
+    "Your recent AI topic searches on TopSnip. Pick up where you left off.",
+  openGraph: {
+    title: "Search History — TopSnip",
+    description: "Your recent AI topic searches on TopSnip.",
+  },
 };
 
 import { createClient } from "@/lib/supabase/server";

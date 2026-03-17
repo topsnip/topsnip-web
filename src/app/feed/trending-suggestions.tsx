@@ -64,20 +64,18 @@ export function TrendingSuggestions() {
     >
       {/* Welcome message */}
       <div className="text-center flex flex-col items-center gap-3">
-        <p
-          className="text-base font-semibold"
-          style={{
-            color: "var(--ts-text-2)",
-            fontFamily: headingFont,
-          }}
+        <h2
+          className="text-xl font-normal text-white"
+          style={{ fontFamily: headingFont }}
         >
-          Welcome! Here&apos;s what TopSnip can do for you.
-        </p>
+          Nothing ground-breaking today — and that&apos;s okay.
+        </h2>
         <p
           className="text-sm max-w-md"
           style={{ color: "var(--ts-muted)" }}
         >
-          Scanning AI sources... Check back soon or explore a topic
+          Our radar scanned 50+ sources and the AI world is catching its breath.
+          But here are topics dominating the conversation this week:
         </p>
       </div>
 
@@ -196,40 +194,23 @@ export function QuietDayState({ showLearningDebt }: QuietDayProps) {
       className="flex flex-col items-center text-center gap-6 py-4"
       style={{ animation: "fadeInUp 0.35s ease 0.06s both" }}
     >
-      {/* Large emoji */}
-      <div className="text-5xl" role="img" aria-label="sleeping face">
-        😴
-      </div>
-
       {/* Heading */}
       <div className="flex flex-col gap-2">
         <h2
           className="text-xl font-normal text-white"
           style={{ fontFamily: headingFont }}
         >
-          AI took a breather today.
+          The AI world is quiet today
         </h2>
 
-        {showLearningDebt && (
-          <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>
-            Catch up on what you missed, or explore something new.
-          </p>
-        )}
-        {!showLearningDebt && (
-          <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>
-            Nothing major happened today. Explore something new.
-          </p>
-        )}
+        <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>
+          No major announcements caught our radar. But don&apos;t leave
+          empty-handed — explore what&apos;s been trending:
+        </p>
       </div>
 
-      {/* Suggestion pills */}
+      {/* Suggestion pills + learning debt topics */}
       <div className="flex flex-col gap-2 items-center">
-        <span
-          className="text-xs font-medium"
-          style={{ color: "var(--ts-muted)" }}
-        >
-          Or explore something new
-        </span>
         <div className="flex flex-wrap justify-center gap-2">
           {["RAG pipelines", "AI agents", "Fine-tuning LLMs", "What is MCP?", "AI coding tools", "Prompt engineering"].map(
             (s) => (

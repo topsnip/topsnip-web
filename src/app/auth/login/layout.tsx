@@ -1,7 +1,12 @@
 export const metadata = {
-  title: "Sign In — Topsnip",
+  title: "Sign In — TopSnip",
   description:
-    "Sign in to Topsnip to access your personalized AI learning feed.",
+    "Sign in to TopSnip to access your personalized AI learning feed. No password needed.",
+  openGraph: {
+    title: "Sign In — TopSnip",
+    description:
+      "Sign in to TopSnip to access your personalized AI learning feed.",
+  },
 };
 
 export default function LoginLayout({
