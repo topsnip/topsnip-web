@@ -181,7 +181,13 @@ export async function POST(req: NextRequest) {
     if (body.length > 1024) {
       return NextResponse.json({ error: "Request too large" }, { status: 413 });
     }
-    const { query } = JSON.parse(body);
+    let parsed: { query?: unknown };
+    try {
+      parsed = JSON.parse(body);
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+    const { query } = parsed;
 
     if (!query || typeof query !== "string" || query.trim().length < 2) {
       return NextResponse.json({ error: "Invalid query" }, { status: 400 });
