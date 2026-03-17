@@ -11,7 +11,9 @@ function UpgradeContent() {
   const searchParams = useSearchParams();
   const upgraded = searchParams.get("upgraded") === "true";
 
-  const [loadingPlan, setLoadingPlan] = useState<"monthly" | "yearly" | null>(null);
+  const [loadingPlan, setLoadingPlan] = useState<"monthly" | "yearly" | null>(
+    null,
+  );
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [isPro, setIsPro] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -80,29 +82,45 @@ function UpgradeContent() {
           className="pointer-events-none fixed top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full"
           style={{
             background:
-              "radial-gradient(ellipse at center, rgba(124,106,247,0.12) 0%, transparent 70%)",
+              "radial-gradient(ellipse at center, var(--ts-accent-12) 0%, transparent 70%)",
           }}
         />
         <div
           className="w-full max-w-sm rounded-2xl border p-8 flex flex-col items-center gap-5 relative z-10 text-center"
-          style={{ background: "var(--ts-surface)", borderColor: "var(--border)", backdropFilter: "blur(16px)", boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.05)" }}
+          style={{
+            background: "var(--ts-surface)",
+            borderColor: "var(--border)",
+            backdropFilter: "blur(16px)",
+            boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.05)",
+          }}
         >
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)" }}
+            style={{
+              background: "var(--ts-success-10)",
+              border: "1px solid var(--ts-success-30)",
+            }}
           >
             <Check size={20} style={{ color: "var(--success)" }} />
           </div>
           <div className="flex flex-col gap-2">
-            <p className="text-base font-semibold text-white">You&apos;re on Pro.</p>
-            <p className="text-sm leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
+            <p className="text-base font-semibold text-white">
+              You&apos;re on Pro.
+            </p>
+            <p
+              className="text-sm leading-relaxed"
+              style={{ color: "var(--ts-text-2)" }}
+            >
               Unlimited searches, starting now. Go find something.
             </p>
           </div>
           <button
             onClick={() => router.push("/feed")}
-            className="flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 w-full justify-center shadow-[0_0_20px_rgba(124,106,247,0.3)]"
-            style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
+            className="flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 w-full justify-center shadow-[0_0_20px_var(--ts-accent-30)]"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+            }}
           >
             Start searching
             <ArrowRight size={14} />
@@ -120,17 +138,24 @@ function UpgradeContent() {
           className="pointer-events-none fixed top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full"
           style={{
             background:
-              "radial-gradient(ellipse at center, rgba(124,106,247,0.10) 0%, transparent 70%)",
+              "radial-gradient(ellipse at center, var(--ts-accent-10) 0%, transparent 70%)",
           }}
         />
         <div
           className="w-full max-w-sm rounded-2xl border p-8 flex flex-col items-center gap-4 relative z-10 text-center"
-          style={{ background: "var(--ts-surface)", borderColor: "var(--border)", backdropFilter: "blur(16px)", boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.05)" }}
+          style={{
+            background: "var(--ts-surface)",
+            borderColor: "var(--border)",
+            backdropFilter: "blur(16px)",
+            boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.05)",
+          }}
         >
           <div className="text-xl font-extrabold tracking-tight text-white">
             top<span style={{ color: "var(--ts-accent)" }}>snip</span>
           </div>
-          <p className="text-base font-semibold text-white">You&apos;re already on Pro.</p>
+          <p className="text-base font-semibold text-white">
+            You&apos;re already on Pro.
+          </p>
           <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>
             Unlimited searches. No limits.
           </p>
@@ -154,7 +179,7 @@ function UpgradeContent() {
         className="pointer-events-none fixed top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[500px] rounded-full"
         style={{
           background:
-            "radial-gradient(ellipse at center, rgba(124,106,247,0.09) 0%, transparent 70%)",
+            "radial-gradient(ellipse at center, var(--ts-accent-10) 0%, transparent 70%)",
         }}
       />
 
@@ -164,12 +189,19 @@ function UpgradeContent() {
           <Link
             href="/"
             className="font-bold tracking-tight text-white"
-            style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif", fontSize: "1.1rem" }}
+            style={{
+              fontFamily: "var(--font-heading), 'Instrument Serif', serif",
+              fontSize: "1.1rem",
+            }}
           >
             top<span style={{ color: "var(--ts-accent)" }}>snip</span>
           </Link>
           <div className="flex items-center gap-5">
-            <Link href="/about" className="text-sm font-medium transition-colors hover:text-white" style={{ color: "var(--ts-text-2)" }}>
+            <Link
+              href="/about"
+              className="text-sm font-medium transition-colors hover:text-white"
+              style={{ color: "var(--ts-text-2)" }}
+            >
               About
             </Link>
             <Link href="/upgrade" className="text-sm font-medium text-white">
@@ -178,7 +210,10 @@ function UpgradeContent() {
             <Link
               href="/auth/login"
               className="rounded-full px-4 py-1.5 text-xs font-semibold text-white transition-all hover:opacity-90"
-              style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+              }}
             >
               Sign in
             </Link>
@@ -187,7 +222,6 @@ function UpgradeContent() {
       </nav>
 
       <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-10 relative z-10 pt-20">
-
         {/* Heading */}
         <div className="text-center flex flex-col gap-3">
           <h1
@@ -196,25 +230,33 @@ function UpgradeContent() {
           >
             Unlimited searches.
           </h1>
-          <p className="text-base max-w-sm mx-auto leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
-            Free gets you the &ldquo;what.&rdquo; Pro gives you the &ldquo;so what&rdquo; and &ldquo;now what&rdquo; — tailored to your role.
+          <p
+            className="text-base max-w-sm mx-auto leading-relaxed"
+            style={{ color: "var(--ts-text-2)" }}
+          >
+            Free gets you the &ldquo;what.&rdquo; Pro gives you the &ldquo;so
+            what&rdquo; and &ldquo;now what&rdquo; — tailored to your role.
           </p>
         </div>
 
         {/* Pricing cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-xl">
-
           {/* Monthly */}
-          <div
-            className="glass-card rounded-2xl p-6 flex flex-col gap-5"
-          >
+          <div className="glass-card rounded-2xl p-6 flex flex-col gap-5">
             <div className="flex flex-col gap-1">
-              <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--ts-muted)" }}>
+              <p
+                className="text-xs font-semibold uppercase tracking-widest"
+                style={{ color: "var(--ts-muted)" }}
+              >
                 Pro — Monthly
               </p>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-extrabold tracking-tight text-white">$9.99</span>
-                <span className="text-sm" style={{ color: "var(--ts-text-2)" }}>/month</span>
+                <span className="text-3xl font-extrabold tracking-tight text-white">
+                  $9.99
+                </span>
+                <span className="text-sm" style={{ color: "var(--ts-text-2)" }}>
+                  /month
+                </span>
               </div>
             </div>
 
@@ -222,11 +264,18 @@ function UpgradeContent() {
               {[
                 "Unlimited searches",
                 "Role-specific depth (dev, PM, CTO)",
-                "\"So What\" + \"Now What\" sections",
+                '"So What" + "Now What" sections',
                 "Personalized feed + knowledge tracking",
               ].map((f) => (
-                <li key={f} className="flex items-center gap-2 text-sm" style={{ color: "var(--ts-text-2)" }}>
-                  <Check size={13} style={{ color: "var(--ts-accent)", flexShrink: 0 }} />
+                <li
+                  key={f}
+                  className="flex items-center gap-2 text-sm"
+                  style={{ color: "var(--ts-text-2)" }}
+                >
+                  <Check
+                    size={13}
+                    style={{ color: "var(--ts-accent)", flexShrink: 0 }}
+                  />
                   {f}
                 </li>
               ))}
@@ -235,50 +284,70 @@ function UpgradeContent() {
             <button
               onClick={() => handleCheckout("monthly")}
               disabled={loadingPlan !== null}
-              className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-40 hover:opacity-90 mt-auto shadow-[0_0_12px_rgba(124,106,247,0.3)]"
-              style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
+              className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-40 hover:opacity-90 mt-auto shadow-[0_0_12px_var(--ts-accent-30)]"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+              }}
             >
-              {loadingPlan === "monthly" ? "Redirecting..." : "Get Pro — $9.99/mo"}
+              {loadingPlan === "monthly"
+                ? "Redirecting..."
+                : "Get Pro — $9.99/mo"}
             </button>
           </div>
 
           {/* Yearly — highlighted */}
-          <div
-            className="pro-card-glow rounded-2xl p-6 flex flex-col gap-5 relative"
-          >
+          <div className="pro-card-glow rounded-2xl p-6 flex flex-col gap-5 relative">
             {/* Best value badge */}
             <div
               className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-semibold"
               style={{
-                background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+                background:
+                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
                 color: "#fff",
                 letterSpacing: "0.02em",
-                boxShadow: "0 0 10px rgba(124,106,247,0.5)",
+                boxShadow: "0 0 10px var(--ts-accent-50)",
               }}
             >
               Save $40/year
             </div>
 
             <div className="flex flex-col gap-1">
-              <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--ts-accent)" }}>
+              <p
+                className="text-xs font-semibold uppercase tracking-widest"
+                style={{ color: "var(--ts-accent)" }}
+              >
                 Pro — Yearly
               </p>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-extrabold tracking-tight text-white">$79</span>
-                <span className="text-sm" style={{ color: "var(--ts-text-2)" }}>/year</span>
+                <span className="text-3xl font-extrabold tracking-tight text-white">
+                  $79
+                </span>
+                <span className="text-sm" style={{ color: "var(--ts-text-2)" }}>
+                  /year
+                </span>
               </div>
-              <p className="text-xs" style={{ color: "var(--ts-muted)" }}>~$6.58/month</p>
+              <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
+                ~$6.58/month
+              </p>
             </div>
 
             <ul className="flex flex-col gap-2.5">
               {[
                 "Unlimited searches",
                 "Role-specific depth (dev, PM, CTO)",
-                "\"So What\" + \"Now What\" sections",
+                '"So What" + "Now What" sections',
                 "Personalized feed + knowledge tracking",
               ].map((f) => (
-                <li key={f} className="flex items-center gap-2 text-sm" style={{ color: "var(--ts-text-2)" }}>
-                  <Check size={13} style={{ color: "var(--ts-accent)", flexShrink: 0 }} />
+                <li
+                  key={f}
+                  className="flex items-center gap-2 text-sm"
+                  style={{ color: "var(--ts-text-2)" }}
+                >
+                  <Check
+                    size={13}
+                    style={{ color: "var(--ts-accent)", flexShrink: 0 }}
+                  />
                   {f}
                 </li>
               ))}
@@ -287,8 +356,11 @@ function UpgradeContent() {
             <button
               onClick={() => handleCheckout("yearly")}
               disabled={loadingPlan !== null}
-              className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-40 hover:opacity-90 mt-auto shadow-[0_0_20px_rgba(124,106,247,0.3)]"
-              style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
+              className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-40 hover:opacity-90 mt-auto shadow-[0_0_20px_var(--ts-accent-30)]"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+              }}
             >
               {loadingPlan === "yearly" ? "Redirecting..." : "Get Pro — $79/yr"}
             </button>
@@ -302,7 +374,10 @@ function UpgradeContent() {
         >
           <div
             className="grid grid-cols-2 md:grid-cols-4 px-4 py-2 text-xs font-semibold uppercase tracking-widest"
-            style={{ color: "var(--ts-muted)", background: "var(--ts-surface)" }}
+            style={{
+              color: "var(--ts-muted)",
+              background: "var(--ts-surface)",
+            }}
           >
             <span className="col-span-1 md:col-span-2">Tier</span>
             <span>Searches/day</span>
@@ -311,28 +386,56 @@ function UpgradeContent() {
           {[
             { tier: "Guest", searches: "3", price: "Free", muted: true },
             { tier: "Free account", searches: "10", price: "$0", muted: true },
-            { tier: "Pro", searches: "Unlimited", price: "From $6.58/mo", accent: true },
+            {
+              tier: "Pro",
+              searches: "Unlimited",
+              price: "From $6.58/mo",
+              accent: true,
+            },
           ].map((row) => (
             <div
               key={row.tier}
               className="grid grid-cols-2 md:grid-cols-4 px-4 py-3 text-sm border-t"
               style={{
                 borderColor: "var(--border)",
-                background: row.accent ? "rgba(124,106,247,0.04)" : "transparent",
+                background: row.accent
+                  ? "var(--ts-accent-4)"
+                  : "transparent",
               }}
             >
-              <span className="col-span-1 md:col-span-2 font-medium" style={{ color: row.accent ? "var(--foreground)" : "var(--ts-text-2)" }}>
+              <span
+                className="col-span-1 md:col-span-2 font-medium"
+                style={{
+                  color: row.accent ? "var(--foreground)" : "var(--ts-text-2)",
+                }}
+              >
                 {row.tier}
               </span>
-              <span style={{ color: row.accent ? "var(--ts-accent)" : "var(--ts-text-2)" }}>{row.searches}</span>
-              <span className="hidden md:block" style={{ color: row.muted ? "var(--ts-muted)" : "var(--ts-text-2)" }}>{row.price}</span>
+              <span
+                style={{
+                  color: row.accent ? "var(--ts-accent)" : "var(--ts-text-2)",
+                }}
+              >
+                {row.searches}
+              </span>
+              <span
+                className="hidden md:block"
+                style={{
+                  color: row.muted ? "var(--ts-muted)" : "var(--ts-text-2)",
+                }}
+              >
+                {row.price}
+              </span>
             </div>
           ))}
         </div>
 
         {/* Checkout error */}
         {checkoutError && (
-          <p className="text-sm text-center font-medium" style={{ color: "var(--error, #ef4444)" }}>
+          <p
+            className="text-sm text-center font-medium"
+            style={{ color: "var(--error, #ef4444)" }}
+          >
             {checkoutError}
           </p>
         )}

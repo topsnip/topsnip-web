@@ -68,7 +68,13 @@ function ResultSkeleton() {
         <Skeleton className="h-6 w-3/4" />
         <Skeleton className="h-3 w-40" />
       </div>
-      <div className="rounded-xl border p-5 tldr-card" style={{ borderColor: "var(--border)", background: "var(--ts-surface)" }}>
+      <div
+        className="rounded-xl border p-5 tldr-card"
+        style={{
+          borderColor: "var(--border)",
+          background: "var(--ts-surface)",
+        }}
+      >
         <Skeleton className="h-3 w-12 mb-3" />
         <div className="flex flex-col gap-2">
           <Skeleton className="h-4 w-full" />
@@ -97,7 +103,7 @@ function renderMarkdown(text: string) {
       </strong>
     ) : (
       <span key={i}>{part}</span>
-    )
+    ),
   );
 }
 
@@ -154,9 +160,11 @@ function ResultContent() {
   }, [query]);
 
   useEffect(() => {
-    createClient().auth.getUser().then(({ data }) => {
-      setIsLoggedIn(!!data.user);
-    });
+    createClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        setIsLoggedIn(!!data.user);
+      });
   }, []);
 
   async function fetchResult(q: string) {
@@ -215,7 +223,10 @@ function ResultContent() {
     e.preventDefault();
     const q = searchInput.trim();
     if (!q) return;
-    const slug = q.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const slug = q
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
     router.push(`/s/${slug}?q=${encodeURIComponent(q)}`);
   }
 
@@ -224,23 +235,33 @@ function ResultContent() {
     const q = followUp.trim();
     if (!q || !result) return;
     setFollowUp("");
-    const slug = q.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const slug = q
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
     router.push(`/s/${slug}?q=${encodeURIComponent(q)}`);
   }
 
-  const headingFont = "var(--font-heading), 'Space Grotesk', sans-serif";
+  const headingFont = "var(--font-heading), 'Instrument Serif', serif";
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "var(--background)" }}>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ background: "var(--background)" }}
+    >
       {/* Freemium gates */}
-      {gate === "guest" && <SignUpGate reason="guest" currentPath={currentPath} />}
-      {gate === "free" && <SignUpGate reason="free" currentPath={currentPath} />}
+      {gate === "guest" && (
+        <SignUpGate reason="guest" currentPath={currentPath} />
+      )}
+      {gate === "free" && (
+        <SignUpGate reason="free" currentPath={currentPath} />
+      )}
 
       {/* Top nav */}
       <header
         className="sticky top-0 z-20 border-b px-4 py-3"
         style={{
-          background: "rgba(6,6,10,0.85)",
+          background: "rgba(12,12,14,0.85)",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
           borderColor: "var(--border)",
@@ -256,7 +277,10 @@ function ResultContent() {
             top<span style={{ color: "var(--ts-accent)" }}>snip</span>
           </button>
 
-          <form onSubmit={handleNewSearch} className="flex-1 flex items-center gap-2">
+          <form
+            onSubmit={handleNewSearch}
+            className="flex-1 flex items-center gap-2"
+          >
             <div
               className="flex-1 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm"
               style={{
@@ -265,7 +289,10 @@ function ResultContent() {
                 backdropFilter: "blur(8px)",
               }}
             >
-              <Search size={14} style={{ color: "var(--ts-muted)", flexShrink: 0 }} />
+              <Search
+                size={14}
+                style={{ color: "var(--ts-muted)", flexShrink: 0 }}
+              />
               <input
                 type="text"
                 value={searchInput}
@@ -277,8 +304,11 @@ function ResultContent() {
             </div>
             <button
               type="submit"
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all duration-200 hover:opacity-90 cursor-pointer shadow-[0_0_12px_rgba(124,106,247,0.3)]"
-              style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
+              className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all duration-200 hover:opacity-90 cursor-pointer shadow-[0_0_12px_var(--ts-accent-30)]"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+              }}
             >
               Search
             </button>
@@ -333,12 +363,20 @@ function ResultContent() {
                   />
                 ))}
               </div>
-              <p className="text-sm font-medium" style={{ color: "var(--ts-text-2)" }}>
+              <p
+                className="text-sm font-medium"
+                style={{ color: "var(--ts-text-2)" }}
+              >
                 {LOADING_STAGES[loadingStage]}
               </p>
-              <p className="text-xs text-center max-w-xs" style={{ color: "var(--ts-muted)" }}>
+              <p
+                className="text-xs text-center max-w-xs"
+                style={{ color: "var(--ts-muted)" }}
+              >
                 Analyzing sources on{" "}
-                <span style={{ color: "var(--ts-accent)" }}>&ldquo;{query}&rdquo;</span>{" "}
+                <span style={{ color: "var(--ts-accent)" }}>
+                  &ldquo;{query}&rdquo;
+                </span>{" "}
                 so you don&apos;t have to.
               </p>
             </div>
@@ -349,7 +387,10 @@ function ResultContent() {
         {/* Error state */}
         {!loading && !gate && error && (
           <div className="flex flex-col items-center gap-4 py-24 text-center">
-            <p className="text-base font-medium" style={{ color: "var(--error)" }}>
+            <p
+              className="text-base font-medium"
+              style={{ color: "var(--error)" }}
+            >
               {error}
             </p>
             <button
@@ -366,7 +407,10 @@ function ResultContent() {
         {!loading && result && (
           <div key={result.query} className="flex flex-col gap-8 pb-24">
             {/* Query heading */}
-            <div className="flex flex-col gap-1" style={{ animation: "fadeInUp 0.35s ease both" }}>
+            <div
+              className="flex flex-col gap-1"
+              style={{ animation: "fadeInUp 0.35s ease both" }}
+            >
               <p
                 className="text-xs font-semibold uppercase tracking-widest"
                 style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
@@ -393,7 +437,7 @@ function ResultContent() {
                 background: "var(--ts-surface)",
                 borderColor: "var(--border)",
                 backdropFilter: "blur(12px)",
-                boxShadow: "inset 0 1px 0 0 rgba(140,130,220,0.06)",
+                boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.03)",
                 animation: "fadeInUp 0.35s ease 0.06s both",
               }}
             >
@@ -403,12 +447,17 @@ function ResultContent() {
               >
                 TL;DR
               </p>
-              <p className="text-base leading-relaxed text-white font-medium">{result.tldr}</p>
+              <p className="text-base leading-relaxed text-white font-medium">
+                {result.tldr}
+              </p>
             </section>
 
             {/* What Happened */}
             {result.what_happened && (
-              <section className="flex flex-col gap-3" style={{ animation: "fadeInUp 0.35s ease 0.12s both" }}>
+              <section
+                className="flex flex-col gap-3"
+                style={{ animation: "fadeInUp 0.35s ease 0.12s both" }}
+              >
                 <h2
                   className="text-sm font-semibold uppercase tracking-widest"
                   style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
@@ -434,7 +483,10 @@ function ResultContent() {
 
             {/* So What */}
             {result.so_what && (
-              <section className="flex flex-col gap-3" style={{ animation: "fadeInUp 0.35s ease 0.18s both" }}>
+              <section
+                className="flex flex-col gap-3"
+                style={{ animation: "fadeInUp 0.35s ease 0.18s both" }}
+              >
                 <h2
                   className="text-sm font-semibold uppercase tracking-widest"
                   style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
@@ -444,8 +496,8 @@ function ResultContent() {
                 <div
                   className="rounded-lg border p-5 text-sm leading-relaxed"
                   style={{
-                    background: "rgba(124,106,247,0.03)",
-                    borderColor: "rgba(124,106,247,0.15)",
+                    background: "var(--ts-accent-3)",
+                    borderColor: "var(--ts-glow)",
                     color: "var(--foreground)",
                   }}
                 >
@@ -460,7 +512,10 @@ function ResultContent() {
 
             {/* Now What */}
             {result.now_what && (
-              <section className="flex flex-col gap-3" style={{ animation: "fadeInUp 0.35s ease 0.24s both" }}>
+              <section
+                className="flex flex-col gap-3"
+                style={{ animation: "fadeInUp 0.35s ease 0.24s both" }}
+              >
                 <h2
                   className="text-sm font-semibold uppercase tracking-widest"
                   style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
@@ -470,8 +525,8 @@ function ResultContent() {
                 <div
                   className="rounded-lg border p-5 text-sm leading-relaxed"
                   style={{
-                    background: "rgba(52,211,153,0.03)",
-                    borderColor: "rgba(52,211,153,0.12)",
+                    background: "var(--ts-success-3)",
+                    borderColor: "var(--ts-success-12)",
                     color: "var(--foreground)",
                   }}
                 >
@@ -479,12 +534,21 @@ function ResultContent() {
                     const trimmed = line.trim();
                     if (!trimmed) return null;
                     // Render bullet points
-                    const isBullet = trimmed.startsWith("-") || trimmed.startsWith("•");
+                    const isBullet =
+                      trimmed.startsWith("-") || trimmed.startsWith("•");
                     const text = isBullet ? trimmed.slice(1).trim() : trimmed;
                     return (
-                      <div key={i} className={`flex gap-2 ${i > 0 ? "mt-2" : ""}`}>
+                      <div
+                        key={i}
+                        className={`flex gap-2 ${i > 0 ? "mt-2" : ""}`}
+                      >
                         {isBullet && (
-                          <span className="text-xs mt-1 flex-shrink-0" style={{ color: "var(--success, #34d399)" }}>→</span>
+                          <span
+                            className="text-xs mt-1 flex-shrink-0"
+                            style={{ color: "var(--success, #34d399)" }}
+                          >
+                            →
+                          </span>
                         )}
                         <span>{renderMarkdown(text)}</span>
                       </div>
@@ -496,7 +560,10 @@ function ResultContent() {
 
             {/* Source Attribution */}
             {result.sources.length > 0 && (
-              <section className="flex flex-col gap-3" style={{ animation: "fadeInUp 0.35s ease 0.30s both" }}>
+              <section
+                className="flex flex-col gap-3"
+                style={{ animation: "fadeInUp 0.35s ease 0.30s both" }}
+              >
                 <h2
                   className="text-sm font-semibold uppercase tracking-widest"
                   style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
@@ -504,42 +571,50 @@ function ResultContent() {
                   Sources
                 </h2>
                 <div className="flex flex-col gap-2">
-                  {result.sources.filter((s) => s.url).map((src, i) => (
-                    <a
-                      key={i}
-                      href={src.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 rounded-lg border p-3 transition-all duration-200 hover:border-[rgba(124,106,247,0.3)] group cursor-pointer"
-                      style={{ background: "var(--ts-surface)", borderColor: "var(--border)" }}
-                    >
-                      <span
-                        className="rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider flex-shrink-0"
+                  {result.sources
+                    .filter((s) => s.url)
+                    .map((src, i) => (
+                      <a
+                        key={i}
+                        href={src.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 rounded-lg border p-3 transition-all duration-200 hover:border-[var(--ts-accent-30)] group cursor-pointer"
                         style={{
-                          background: "rgba(124,106,247,0.08)",
-                          color: "var(--ts-accent)",
-                          border: "1px solid rgba(124,106,247,0.15)",
+                          background: "var(--ts-surface)",
+                          borderColor: "var(--border)",
                         }}
                       >
-                        {src.platform}
-                      </span>
-                      <span className="text-sm text-white truncate flex-1 group-hover:text-[var(--ts-accent-2)] transition-colors">
-                        {src.title}
-                      </span>
-                      <ExternalLink
-                        size={12}
-                        className="flex-shrink-0 opacity-0 group-hover:opacity-50 transition-opacity"
-                        style={{ color: "var(--ts-text-2)" }}
-                      />
-                    </a>
-                  ))}
+                        <span
+                          className="rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider flex-shrink-0"
+                          style={{
+                            background: "var(--ts-accent-8)",
+                            color: "var(--ts-accent)",
+                            border: "1px solid var(--ts-glow)",
+                          }}
+                        >
+                          {src.platform}
+                        </span>
+                        <span className="text-sm text-white truncate flex-1 group-hover:text-[var(--ts-accent-2)] transition-colors">
+                          {src.title}
+                        </span>
+                        <ExternalLink
+                          size={12}
+                          className="flex-shrink-0 opacity-0 group-hover:opacity-50 transition-opacity"
+                          style={{ color: "var(--ts-text-2)" }}
+                        />
+                      </a>
+                    ))}
                 </div>
               </section>
             )}
 
             {/* YouTube Recommendations — Go Deeper */}
             {result.youtube_recs && result.youtube_recs.length > 0 && (
-              <section className="flex flex-col gap-3" style={{ animation: "fadeInUp 0.35s ease 0.36s both" }}>
+              <section
+                className="flex flex-col gap-3"
+                style={{ animation: "fadeInUp 0.35s ease 0.36s both" }}
+              >
                 <h2
                   className="text-sm font-semibold uppercase tracking-widest"
                   style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
@@ -553,12 +628,18 @@ function ResultContent() {
                       href={rec.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex gap-3 rounded-xl border p-3 transition-all duration-200 hover:border-[rgba(124,106,247,0.3)] group cursor-pointer"
-                      style={{ background: "var(--ts-surface)", borderColor: "var(--border)" }}
+                      className="flex gap-3 rounded-xl border p-3 transition-all duration-200 hover:border-[var(--ts-accent-30)] group cursor-pointer"
+                      style={{
+                        background: "var(--ts-surface)",
+                        borderColor: "var(--border)",
+                      }}
                     >
                       <div
                         className="w-24 flex-shrink-0 rounded-lg overflow-hidden relative"
-                        style={{ aspectRatio: "16/9", background: "var(--ts-surface-2)" }}
+                        style={{
+                          aspectRatio: "16/9",
+                          background: "var(--ts-surface-2)",
+                        }}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -580,9 +661,17 @@ function ResultContent() {
                         <p className="text-xs font-medium leading-snug text-white line-clamp-2 group-hover:text-[var(--ts-accent-2)] transition-colors">
                           {rec.title}
                         </p>
-                        <p className="text-xs" style={{ color: "var(--ts-muted)" }}>{rec.channel}</p>
+                        <p
+                          className="text-xs"
+                          style={{ color: "var(--ts-muted)" }}
+                        >
+                          {rec.channel}
+                        </p>
                         {rec.reason && (
-                          <p className="text-xs mt-1 line-clamp-2" style={{ color: "var(--ts-text-2)" }}>
+                          <p
+                            className="text-xs mt-1 line-clamp-2"
+                            style={{ color: "var(--ts-text-2)" }}
+                          >
                             {rec.reason}
                           </p>
                         )}
@@ -603,7 +692,10 @@ function ResultContent() {
               onClick={() => router.push(isLoggedIn ? "/feed" : "/")}
               aria-label="Start a new search"
               className="flex items-center gap-1.5 text-xs self-start transition-opacity hover:opacity-80 cursor-pointer"
-              style={{ color: "var(--ts-text-2)", animation: "fadeInUp 0.35s ease 0.42s both" }}
+              style={{
+                color: "var(--ts-text-2)",
+                animation: "fadeInUp 0.35s ease 0.42s both",
+              }}
             >
               <ArrowLeft size={12} />
               New search
@@ -617,13 +709,16 @@ function ResultContent() {
         <div
           className="sticky bottom-0 z-20 border-t px-4 py-3"
           style={{
-            background: "rgba(6,6,10,0.9)",
+            background: "rgba(12,12,14,0.9)",
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",
             borderColor: "var(--border)",
           }}
         >
-          <form onSubmit={handleFollowUp} className="max-w-3xl mx-auto flex gap-2">
+          <form
+            onSubmit={handleFollowUp}
+            className="max-w-3xl mx-auto flex gap-2"
+          >
             <input
               type="text"
               value={followUp}
@@ -640,8 +735,11 @@ function ResultContent() {
             <button
               type="submit"
               disabled={!followUp.trim()}
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 hover:opacity-90 cursor-pointer shadow-[0_0_12px_rgba(124,106,247,0.3)]"
-              style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 hover:opacity-90 cursor-pointer shadow-[0_0_12px_var(--ts-accent-30)]"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+              }}
             >
               Search
             </button>

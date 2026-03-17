@@ -9,7 +9,11 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ReadTracker } from "./read-tracker";
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
   const { slug } = await params;
   const supabase = await createClient();
   const { data: topic } = await supabase
@@ -60,7 +64,7 @@ function renderMarkdown(text: string) {
       </strong>
     ) : (
       <span key={i}>{part}</span>
-    )
+    ),
   );
 }
 
@@ -78,7 +82,9 @@ export default async function TopicDetailPage({
 
   const { data: topic } = await supabase
     .from("topics")
-    .select("id, slug, title, status, trending_score, is_breaking, published_at")
+    .select(
+      "id, slug, title, status, trending_score, is_breaking, published_at",
+    )
     .eq("slug", slug)
     .eq("status", "published")
     .single();
@@ -114,7 +120,9 @@ export default async function TopicDetailPage({
 
   let { data: content } = await supabase
     .from("topic_content")
-    .select("id, topic_id, role, tldr, what_happened, so_what, now_what, sources_json")
+    .select(
+      "id, topic_id, role, tldr, what_happened, so_what, now_what, sources_json",
+    )
     .eq("topic_id", topic.id)
     .eq("role", contentRole)
     .single();
@@ -123,7 +131,9 @@ export default async function TopicDetailPage({
   if (!content && contentRole !== "general") {
     const { data: fallback } = await supabase
       .from("topic_content")
-      .select("id, topic_id, role, tldr, what_happened, so_what, now_what, sources_json")
+      .select(
+        "id, topic_id, role, tldr, what_happened, so_what, now_what, sources_json",
+      )
       .eq("topic_id", topic.id)
       .eq("role", "general")
       .single();
@@ -143,7 +153,9 @@ export default async function TopicDetailPage({
 
   const { data: youtubeRecs } = await supabase
     .from("youtube_recommendations")
-    .select("id, video_id, title, channel_name, thumbnail_url, duration, reason, position")
+    .select(
+      "id, video_id, title, channel_name, thumbnail_url, duration, reason, position",
+    )
     .eq("topic_content_id", content.id)
     .order("position", { ascending: true });
 
@@ -163,12 +175,15 @@ export default async function TopicDetailPage({
       })
     : null;
 
-  const headingFont = "var(--font-heading), 'Space Grotesk', sans-serif";
+  const headingFont = "var(--font-heading), 'Instrument Serif', serif";
 
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "var(--background)" }}>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ background: "var(--background)" }}
+    >
       {/* Read tracker (client component — records the read) */}
       {user && <ReadTracker userId={user.id} topicId={topic.id} />}
 
@@ -179,7 +194,10 @@ export default async function TopicDetailPage({
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
         <div className="flex flex-col gap-8 pb-24">
           {/* ── Topic heading ─────────────────────────────────────────────── */}
-          <div className="flex flex-col gap-1" style={{ animation: "fadeInUp 0.35s ease both" }}>
+          <div
+            className="flex flex-col gap-1"
+            style={{ animation: "fadeInUp 0.35s ease both" }}
+          >
             <div className="flex items-center gap-2 flex-wrap">
               <p
                 className="text-xs font-semibold uppercase tracking-widest"
@@ -191,9 +209,9 @@ export default async function TopicDetailPage({
                 <span
                   className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
                   style={{
-                    background: "rgba(248, 113, 113, 0.12)",
-                    color: "#F87171",
-                    border: "1px solid rgba(248, 113, 113, 0.25)",
+                    background: "var(--ts-error-12)",
+                    color: "var(--error)",
+                    border: "1px solid var(--ts-error-25)",
                   }}
                 >
                   Breaking
@@ -209,7 +227,8 @@ export default async function TopicDetailPage({
             {publishedDate && (
               <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
                 Published {publishedDate}
-                {sources.length > 0 && ` \u00B7 Sourced from ${sources.length} sources`}
+                {sources.length > 0 &&
+                  ` \u00B7 Sourced from ${sources.length} sources`}
               </p>
             )}
           </div>
@@ -221,7 +240,7 @@ export default async function TopicDetailPage({
               background: "var(--ts-surface)",
               borderColor: "var(--border)",
               backdropFilter: "blur(12px)",
-              boxShadow: "inset 0 1px 0 0 rgba(140,130,220,0.06)",
+              boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.03)",
               animation: "fadeInUp 0.35s ease 0.06s both",
             }}
           >
@@ -256,11 +275,13 @@ export default async function TopicDetailPage({
                   color: "var(--foreground)",
                 }}
               >
-                {content.what_happened.split("\n\n").map((para: string, i: number) => (
-                  <p key={i} className={i > 0 ? "mt-3" : ""}>
-                    {renderMarkdown(para)}
-                  </p>
-                ))}
+                {content.what_happened
+                  .split("\n\n")
+                  .map((para: string, i: number) => (
+                    <p key={i} className={i > 0 ? "mt-3" : ""}>
+                      {renderMarkdown(para)}
+                    </p>
+                  ))}
               </div>
             </section>
           )}
@@ -280,16 +301,18 @@ export default async function TopicDetailPage({
               <div
                 className="rounded-lg border p-5 text-sm leading-relaxed"
                 style={{
-                  background: "rgba(124,106,247,0.03)",
-                  borderColor: "rgba(124,106,247,0.15)",
+                  background: "var(--ts-accent-3)",
+                  borderColor: "var(--ts-glow)",
                   color: "var(--foreground)",
                 }}
               >
-                {content.so_what.split("\n\n").map((para: string, i: number) => (
-                  <p key={i} className={i > 0 ? "mt-3" : ""}>
-                    {renderMarkdown(para)}
-                  </p>
-                ))}
+                {content.so_what
+                  .split("\n\n")
+                  .map((para: string, i: number) => (
+                    <p key={i} className={i > 0 ? "mt-3" : ""}>
+                      {renderMarkdown(para)}
+                    </p>
+                  ))}
               </div>
             </section>
           )}
@@ -309,18 +332,22 @@ export default async function TopicDetailPage({
               <div
                 className="rounded-lg border p-5 text-sm leading-relaxed"
                 style={{
-                  background: "rgba(52,211,153,0.03)",
-                  borderColor: "rgba(52,211,153,0.12)",
+                  background: "var(--ts-success-3)",
+                  borderColor: "var(--ts-success-12)",
                   color: "var(--foreground)",
                 }}
               >
                 {content.now_what.split("\n").map((line: string, i: number) => {
                   const trimmed = line.trim();
                   if (!trimmed) return null;
-                  const isBullet = trimmed.startsWith("-") || trimmed.startsWith("\u2022");
+                  const isBullet =
+                    trimmed.startsWith("-") || trimmed.startsWith("\u2022");
                   const text = isBullet ? trimmed.slice(1).trim() : trimmed;
                   return (
-                    <div key={i} className={`flex gap-2 ${i > 0 ? "mt-2" : ""}`}>
+                    <div
+                      key={i}
+                      className={`flex gap-2 ${i > 0 ? "mt-2" : ""}`}
+                    >
                       {isBullet && (
                         <span
                           className="text-xs mt-1 flex-shrink-0"
@@ -358,7 +385,7 @@ export default async function TopicDetailPage({
                       href={src.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 rounded-lg border p-3 transition-all duration-200 hover:border-[rgba(124,106,247,0.3)] group cursor-pointer"
+                      className="flex items-center gap-3 rounded-lg border p-3 transition-all duration-200 hover:border-[var(--ts-accent-30)] group cursor-pointer"
                       style={{
                         background: "var(--ts-surface)",
                         borderColor: "var(--border)",
@@ -367,9 +394,9 @@ export default async function TopicDetailPage({
                       <span
                         className="rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider flex-shrink-0"
                         style={{
-                          background: "rgba(124,106,247,0.08)",
+                          background: "var(--ts-accent-8)",
                           color: "var(--ts-accent)",
-                          border: "1px solid rgba(124,106,247,0.15)",
+                          border: "1px solid var(--ts-glow)",
                         }}
                       >
                         {src.platform}
@@ -407,7 +434,7 @@ export default async function TopicDetailPage({
                     href={`https://www.youtube.com/watch?v=${rec.video_id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex gap-3 rounded-xl border p-3 transition-all duration-200 hover:border-[rgba(124,106,247,0.3)] group cursor-pointer"
+                    className="flex gap-3 rounded-xl border p-3 transition-all duration-200 hover:border-[var(--ts-accent-30)] group cursor-pointer"
                     style={{
                       background: "var(--ts-surface)",
                       borderColor: "var(--border)",
@@ -442,7 +469,10 @@ export default async function TopicDetailPage({
                       <p className="text-xs font-medium leading-snug text-white line-clamp-2 group-hover:text-[var(--ts-accent-2)] transition-colors">
                         {rec.title}
                       </p>
-                      <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
+                      <p
+                        className="text-xs"
+                        style={{ color: "var(--ts-muted)" }}
+                      >
                         {rec.channel_name}
                       </p>
                       {rec.reason && (

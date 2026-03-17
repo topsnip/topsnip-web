@@ -25,10 +25,26 @@ interface Tag {
 }
 
 const ROLES: { value: Role; label: string; description: string }[] = [
-  { value: "general", label: "General", description: "Broad AI coverage across all domains" },
-  { value: "developer", label: "Developer", description: "Code-level depth, APIs, frameworks, tools" },
-  { value: "pm", label: "Product Manager", description: "Strategy, roadmaps, competitive landscape" },
-  { value: "cto", label: "CTO / Tech Lead", description: "Architecture, scaling, team decisions" },
+  {
+    value: "general",
+    label: "General",
+    description: "Broad AI coverage across all domains",
+  },
+  {
+    value: "developer",
+    label: "Developer",
+    description: "Code-level depth, APIs, frameworks, tools",
+  },
+  {
+    value: "pm",
+    label: "Product Manager",
+    description: "Strategy, roadmaps, competitive landscape",
+  },
+  {
+    value: "cto",
+    label: "CTO / Tech Lead",
+    description: "Architecture, scaling, team decisions",
+  },
 ];
 
 /* ─── Page ─────────────────────────────────────────────────────────────────── */
@@ -59,14 +75,20 @@ export default function SettingsPage() {
     const sb = createClient();
 
     async function load() {
-      const { data: { user } } = await sb.auth.getUser();
+      const {
+        data: { user },
+      } = await sb.auth.getUser();
       if (!user) {
         router.push("/auth/login?redirect=/settings");
         return;
       }
 
       const [profileRes, tagsRes] = await Promise.all([
-        sb.from("profiles").select("email, plan, role, interests").eq("id", user.id).single(),
+        sb
+          .from("profiles")
+          .select("email, plan, role, interests")
+          .eq("id", user.id)
+          .single(),
         sb.from("tags").select("slug, label").order("label"),
       ]);
 
@@ -95,7 +117,9 @@ export default function SettingsPage() {
     setError(null);
 
     const sb = createClient();
-    const { data: { user } } = await sb.auth.getUser();
+    const {
+      data: { user },
+    } = await sb.auth.getUser();
     if (!user) return;
 
     const { error: err } = await sb
@@ -108,7 +132,7 @@ export default function SettingsPage() {
       setError("Failed to save role.");
     } else {
       setRoleSaved(true);
-      setProfile((prev) => prev ? { ...prev, role: selectedRole } : prev);
+      setProfile((prev) => (prev ? { ...prev, role: selectedRole } : prev));
       setTimeout(() => setRoleSaved(false), 2000);
     }
   }, [selectedRole]);
@@ -121,7 +145,9 @@ export default function SettingsPage() {
     setError(null);
 
     const sb = createClient();
-    const { data: { user } } = await sb.auth.getUser();
+    const {
+      data: { user },
+    } = await sb.auth.getUser();
     if (!user) return;
 
     const { error: err } = await sb
@@ -134,7 +160,9 @@ export default function SettingsPage() {
       setError("Failed to save interests.");
     } else {
       setInterestsSaved(true);
-      setProfile((prev) => prev ? { ...prev, interests: selectedInterests } : prev);
+      setProfile((prev) =>
+        prev ? { ...prev, interests: selectedInterests } : prev,
+      );
       setTimeout(() => setInterestsSaved(false), 2000);
     }
   }, [selectedInterests]);
@@ -143,7 +171,7 @@ export default function SettingsPage() {
 
   function toggleInterest(slug: string) {
     setSelectedInterests((prev) =>
-      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug],
     );
   }
 
@@ -177,9 +205,14 @@ export default function SettingsPage() {
         <div className="flex flex-col items-center gap-3">
           <div
             className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: "var(--ts-accent)", borderTopColor: "transparent" }}
+            style={{
+              borderColor: "var(--ts-accent)",
+              borderTopColor: "transparent",
+            }}
           />
-          <p className="text-sm" style={{ color: "var(--ts-muted)" }}>Loading settings...</p>
+          <p className="text-sm" style={{ color: "var(--ts-muted)" }}>
+            Loading settings...
+          </p>
         </div>
       </main>
     );
@@ -192,7 +225,11 @@ export default function SettingsPage() {
           <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>
             {error ?? "Unable to load profile."}
           </p>
-          <Link href="/" className="text-sm font-medium" style={{ color: "var(--ts-accent)" }}>
+          <Link
+            href="/"
+            className="text-sm font-medium"
+            style={{ color: "var(--ts-accent)" }}
+          >
             Back to home
           </Link>
         </div>
@@ -213,8 +250,7 @@ export default function SettingsPage() {
       <div
         className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full bg-glow"
         style={{
-          background:
-            "radial-gradient(ellipse at center, rgba(124,106,247,0.08) 0%, rgba(60,30,180,0.03) 40%, transparent 70%)",
+          background: "var(--ts-glow-radial)",
         }}
       />
 
@@ -225,7 +261,9 @@ export default function SettingsPage() {
       <div className="w-full max-w-2xl mx-auto px-4 pt-28 pb-16 sm:pt-32 flex flex-col gap-8 relative z-10">
         <h1
           className="text-2xl font-bold tracking-tight text-white"
-          style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif" }}
+          style={{
+            fontFamily: "var(--font-heading), 'Instrument Serif', serif",
+          }}
         >
           Settings
         </h1>
@@ -234,19 +272,28 @@ export default function SettingsPage() {
         {error && (
           <div
             className="rounded-xl px-4 py-3 text-sm font-medium"
-            style={{ background: "rgba(248,113,113,0.08)", color: "var(--error)", border: "1px solid rgba(248,113,113,0.2)" }}
+            style={{
+              background: "var(--ts-error-8)",
+              color: "var(--error)",
+              border: "1px solid var(--ts-error-20)",
+            }}
           >
             {error}
           </div>
         )}
 
         {/* ── Section: Profile ─────────────────────────────────────────────── */}
-        <section className="glass-card rounded-xl p-6 flex flex-col gap-4" style={{ cursor: "default" }}>
+        <section
+          className="glass-card rounded-xl p-6 flex flex-col gap-4"
+          style={{ cursor: "default" }}
+        >
           <div className="flex items-center gap-2">
             <User size={16} style={{ color: "var(--ts-accent)" }} />
             <h2
               className="text-base font-semibold text-white"
-              style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif" }}
+              style={{
+                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
+              }}
             >
               Profile
             </h2>
@@ -255,7 +302,10 @@ export default function SettingsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             {/* Email */}
             <div className="flex flex-col gap-1 flex-1">
-              <label className="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--ts-muted)" }}>
+              <label
+                className="text-xs font-medium uppercase tracking-widest"
+                style={{ color: "var(--ts-muted)" }}
+              >
                 Email
               </label>
               <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>
@@ -265,7 +315,10 @@ export default function SettingsPage() {
 
             {/* Plan badge */}
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--ts-muted)" }}>
+              <label
+                className="text-xs font-medium uppercase tracking-widest"
+                style={{ color: "var(--ts-muted)" }}
+              >
                 Plan
               </label>
               <span
@@ -273,9 +326,9 @@ export default function SettingsPage() {
                 style={
                   profile.plan === "pro"
                     ? {
-                        background: "rgba(124,106,247,0.12)",
+                        background: "var(--ts-accent-12)",
                         color: "var(--ts-accent)",
-                        border: "1px solid rgba(124,106,247,0.3)",
+                        border: "1px solid var(--ts-accent-30)",
                       }
                     : {
                         background: "var(--ts-surface-2)",
@@ -292,16 +345,24 @@ export default function SettingsPage() {
         </section>
 
         {/* ── Section: Role ────────────────────────────────────────────────── */}
-        <section className="glass-card rounded-xl p-6 flex flex-col gap-4" style={{ cursor: "default" }}>
+        <section
+          className="glass-card rounded-xl p-6 flex flex-col gap-4"
+          style={{ cursor: "default" }}
+        >
           <div className="flex items-center justify-between">
             <h2
               className="text-base font-semibold text-white"
-              style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif" }}
+              style={{
+                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
+              }}
             >
               Your Role
             </h2>
             {roleSaved && (
-              <span className="flex items-center gap-1 text-xs font-medium" style={{ color: "var(--success)" }}>
+              <span
+                className="flex items-center gap-1 text-xs font-medium"
+                style={{ color: "var(--success)" }}
+              >
                 <Check size={12} /> Saved
               </span>
             )}
@@ -319,17 +380,25 @@ export default function SettingsPage() {
                   onClick={() => setSelectedRole(r.value)}
                   className="rounded-xl p-4 text-left transition-all duration-200 cursor-pointer"
                   style={{
-                    background: active ? "rgba(124,106,247,0.08)" : "var(--ts-surface)",
+                    background: active
+                      ? "var(--ts-accent-8)"
+                      : "var(--ts-surface)",
                     border: active
-                      ? "1px solid rgba(124,106,247,0.4)"
+                      ? "1px solid var(--ring)"
                       : "1px solid var(--border)",
-                    boxShadow: active ? "0 0 16px rgba(124,106,247,0.1)" : "none",
+                    boxShadow: active
+                      ? "0 0 16px var(--ts-accent-10)"
+                      : "none",
                   }}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span
                       className="text-sm font-semibold"
-                      style={{ color: active ? "var(--foreground)" : "var(--ts-text-2)" }}
+                      style={{
+                        color: active
+                          ? "var(--foreground)"
+                          : "var(--ts-text-2)",
+                      }}
                     >
                       {r.label}
                     </span>
@@ -356,8 +425,9 @@ export default function SettingsPage() {
               disabled={savingRole}
               className="self-end rounded-xl px-5 py-2 text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-40 cursor-pointer"
               style={{
-                background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                boxShadow: "0 0 16px rgba(124,106,247,0.25)",
+                background:
+                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+                boxShadow: "0 0 16px var(--ts-accent-25)",
               }}
             >
               {savingRole ? "Saving..." : "Save role"}
@@ -366,16 +436,24 @@ export default function SettingsPage() {
         </section>
 
         {/* ── Section: Interests ───────────────────────────────────────────── */}
-        <section className="glass-card rounded-xl p-6 flex flex-col gap-4" style={{ cursor: "default" }}>
+        <section
+          className="glass-card rounded-xl p-6 flex flex-col gap-4"
+          style={{ cursor: "default" }}
+        >
           <div className="flex items-center justify-between">
             <h2
               className="text-base font-semibold text-white"
-              style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif" }}
+              style={{
+                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
+              }}
             >
               Interests
             </h2>
             {interestsSaved && (
-              <span className="flex items-center gap-1 text-xs font-medium" style={{ color: "var(--success)" }}>
+              <span
+                className="flex items-center gap-1 text-xs font-medium"
+                style={{ color: "var(--success)" }}
+              >
                 <Check size={12} /> Saved
               </span>
             )}
@@ -398,15 +476,25 @@ export default function SettingsPage() {
                     onClick={() => toggleInterest(tag.slug)}
                     className="rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-200 cursor-pointer"
                     style={{
-                      background: active ? "rgba(124,106,247,0.12)" : "var(--ts-surface)",
+                      background: active
+                        ? "var(--ts-accent-12)"
+                        : "var(--ts-surface)",
                       border: active
-                        ? "1px solid rgba(124,106,247,0.4)"
+                        ? "1px solid var(--ring)"
                         : "1px solid var(--border)",
                       color: active ? "var(--ts-accent)" : "var(--ts-text-2)",
-                      boxShadow: active ? "0 0 10px rgba(124,106,247,0.1)" : "none",
+                      boxShadow: active
+                        ? "0 0 10px var(--ts-accent-10)"
+                        : "none",
                     }}
                   >
-                    {active && <Check size={10} className="inline mr-1" style={{ verticalAlign: "-1px" }} />}
+                    {active && (
+                      <Check
+                        size={10}
+                        className="inline mr-1"
+                        style={{ verticalAlign: "-1px" }}
+                      />
+                    )}
                     {tag.label}
                   </button>
                 );
@@ -420,8 +508,9 @@ export default function SettingsPage() {
               disabled={savingInterests}
               className="self-end rounded-xl px-5 py-2 text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-40 cursor-pointer"
               style={{
-                background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                boxShadow: "0 0 16px rgba(124,106,247,0.25)",
+                background:
+                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+                boxShadow: "0 0 16px var(--ts-accent-25)",
               }}
             >
               {savingInterests ? "Saving..." : "Save interests"}
@@ -430,10 +519,15 @@ export default function SettingsPage() {
         </section>
 
         {/* ── Section: Subscription ────────────────────────────────────────── */}
-        <section className="glass-card rounded-xl p-6 flex flex-col gap-4" style={{ cursor: "default" }}>
+        <section
+          className="glass-card rounded-xl p-6 flex flex-col gap-4"
+          style={{ cursor: "default" }}
+        >
           <h2
             className="text-base font-semibold text-white"
-            style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif" }}
+            style={{
+              fontFamily: "var(--font-heading), 'Instrument Serif', serif",
+            }}
           >
             Subscription
           </h2>
@@ -442,7 +536,8 @@ export default function SettingsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex flex-col gap-1">
                 <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>
-                  You&apos;re on the <strong className="text-white">Free</strong> plan.
+                  You&apos;re on the{" "}
+                  <strong className="text-white">Free</strong> plan.
                 </p>
                 <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
                   Upgrade to Pro for unlimited searches and role-specific depth.
@@ -452,8 +547,9 @@ export default function SettingsPage() {
                 href="/upgrade"
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 whitespace-nowrap"
                 style={{
-                  background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                  boxShadow: "0 0 20px rgba(124,106,247,0.25)",
+                  background:
+                    "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+                  boxShadow: "0 0 20px var(--ts-accent-25)",
                 }}
               >
                 <Crown size={14} />
@@ -464,7 +560,9 @@ export default function SettingsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex flex-col gap-1">
                 <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>
-                  You&apos;re on the <strong style={{ color: "var(--ts-accent)" }}>Pro</strong> plan.
+                  You&apos;re on the{" "}
+                  <strong style={{ color: "var(--ts-accent)" }}>Pro</strong>{" "}
+                  plan.
                 </p>
                 <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
                   Manage billing, update payment method, or cancel.

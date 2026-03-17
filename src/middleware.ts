@@ -6,9 +6,14 @@ import { NextResponse, type NextRequest } from "next/server";
 const PROTECTED_ROUTES = ["/history", "/settings", "/feed", "/onboarding"];
 
 export async function middleware(request: NextRequest) {
-  // Canonical domain: redirect non-www → www to match Vercel/DNS config
+  // Canonical domain: redirect non-www → www (production only)
+  // Only redirect topsnip.co → www.topsnip.co; skip localhost and *.vercel.app
   const hostname = request.nextUrl.hostname;
-  if (hostname === "topsnip.co") {
+  if (
+    hostname === "topsnip.co" &&
+    !hostname.includes("localhost") &&
+    !hostname.endsWith(".vercel.app")
+  ) {
     const canonicalUrl = request.nextUrl.clone();
     canonicalUrl.hostname = "www.topsnip.co";
     canonicalUrl.port = "";

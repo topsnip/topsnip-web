@@ -31,18 +31,13 @@ export function FeedSearchBar() {
         style={{
           background: focused ? "rgba(6,6,10,0.6)" : "var(--ts-surface)",
           backdropFilter: "blur(16px)",
-          borderColor: focused
-            ? "rgba(124,106,247,0.5)"
-            : "var(--border)",
+          borderColor: focused ? "var(--ts-accent-50)" : "var(--border)",
           boxShadow: focused
-            ? "0 0 0 3px var(--ts-glow), 0 8px 40px -8px rgba(124,106,247,0.15)"
-            : "inset 0 1px 0 0 rgba(140,130,220,0.05)",
+            ? "0 0 0 3px var(--ts-glow), 0 8px 40px -8px var(--ts-glow)"
+            : "inset 0 1px 0 0 rgba(255,255,255,0.03)",
         }}
       >
-        <Search
-          size={16}
-          style={{ color: "var(--ts-muted)", flexShrink: 0 }}
-        />
+        <Search size={16} style={{ color: "var(--ts-muted)", flexShrink: 0 }} />
         <input
           type="text"
           value={query}
@@ -58,7 +53,7 @@ export function FeedSearchBar() {
         <button
           type="submit"
           disabled={!query.trim()}
-          className="flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold text-white transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-90 active:scale-95 cursor-pointer shadow-[0_0_12px_rgba(124,106,247,0.3)]"
+          className="flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold text-white transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-90 active:scale-95 cursor-pointer shadow-[0_0_12px_var(--ts-accent-30)]"
           style={{
             background:
               "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",

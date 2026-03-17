@@ -20,8 +20,12 @@ export function ReadTracker({
     supabase
       .from("user_reads")
       .upsert(
-        { user_id: userId, topic_id: topicId, read_at: new Date().toISOString() },
-        { onConflict: "user_id,topic_id" }
+        {
+          user_id: userId,
+          topic_id: topicId,
+          read_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,topic_id" },
       )
       .then(({ error }) => {
         if (error) {

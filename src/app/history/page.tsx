@@ -13,7 +13,9 @@ import { AuthNav } from "@/components/AuthNav";
 
 export default async function HistoryPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     redirect("/auth/login?redirect=/history");
@@ -33,7 +35,9 @@ export default async function HistoryPage() {
       <div className="max-w-2xl mx-auto flex flex-col gap-8 pt-24 pb-10">
         <h1
           className="text-xl font-bold text-white"
-          style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif" }}
+          style={{
+            fontFamily: "var(--font-heading), 'Instrument Serif', serif",
+          }}
         >
           Search history
         </h1>
@@ -59,12 +63,20 @@ export default async function HistoryPage() {
                 key={item.id}
                 href={`/s/${item.query_slug}?q=${encodeURIComponent(item.query)}`}
                 className="flex items-center justify-between rounded-xl border px-4 py-3 transition-all hover:border-[var(--ts-accent)] group"
-                style={{ background: "var(--ts-surface)", borderColor: "var(--border)", backdropFilter: "blur(8px)", boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.03)" }}
+                style={{
+                  background: "var(--ts-surface)",
+                  borderColor: "var(--border)",
+                  backdropFilter: "blur(8px)",
+                  boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.03)",
+                }}
               >
                 <span className="text-sm font-medium text-white group-hover:text-[var(--ts-accent-2)] transition-colors">
                   {item.query}
                 </span>
-                <span className="text-xs flex-shrink-0 ml-4" style={{ color: "var(--ts-muted)" }}>
+                <span
+                  className="text-xs flex-shrink-0 ml-4"
+                  style={{ color: "var(--ts-muted)" }}
+                >
                   {new Date(item.created_at).toLocaleDateString()}
                 </span>
               </Link>

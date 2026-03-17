@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const headingFont = "var(--font-heading), 'Space Grotesk', sans-serif";
+const headingFont = "var(--font-heading), 'Instrument Serif', serif";
 
 const NAV_LINKS = [
   { href: "/feed", label: "Feed" },
@@ -46,7 +46,9 @@ export function AuthNav() {
                 style={isActive ? undefined : { color: "var(--ts-text-2)" }}
               >
                 <span className="hidden sm:inline">{label}</span>
-                <span className="sm:hidden">{label.length > 4 ? label.slice(0, 4) : label}</span>
+                <span className="sm:hidden">
+                  {label.length > 4 ? label.slice(0, 4) : label}
+                </span>
               </Link>
             );
           })}

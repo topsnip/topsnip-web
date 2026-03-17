@@ -1,6 +1,9 @@
 export default function TopicLoading() {
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#080808" }}>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ background: "var(--background)" }}
+    >
       {/* Nav placeholder */}
       <div className="h-16" />
 
@@ -15,7 +18,7 @@ export default function TopicLoading() {
         <div className="flex flex-col gap-3 mb-8">
           <div
             className="h-4 w-24 rounded animate-pulse"
-            style={{ background: "rgba(124,106,247,0.1)" }}
+            style={{ background: "var(--ts-accent-10)" }}
           />
           <div
             className="h-8 w-3/4 rounded animate-pulse"
@@ -37,18 +40,31 @@ export default function TopicLoading() {
         >
           <div
             className="h-3 w-12 rounded mb-4"
-            style={{ background: "rgba(124,106,247,0.15)" }}
+            style={{ background: "var(--ts-glow)" }}
           />
           <div className="flex flex-col gap-2">
-            <div className="h-4 w-full rounded" style={{ background: "rgba(240,240,240,0.05)" }} />
-            <div className="h-4 w-full rounded" style={{ background: "rgba(240,240,240,0.05)" }} />
-            <div className="h-4 w-2/3 rounded" style={{ background: "rgba(240,240,240,0.05)" }} />
+            <div
+              className="h-4 w-full rounded"
+              style={{ background: "rgba(240,240,240,0.05)" }}
+            />
+            <div
+              className="h-4 w-full rounded"
+              style={{ background: "rgba(240,240,240,0.05)" }}
+            />
+            <div
+              className="h-4 w-2/3 rounded"
+              style={{ background: "rgba(240,240,240,0.05)" }}
+            />
           </div>
         </div>
 
         {/* Section skeletons */}
         {[0, 1, 2].map((i) => (
-          <div key={i} className="mb-8 animate-pulse" style={{ animationDelay: `${i * 0.1}s` }}>
+          <div
+            key={i}
+            className="mb-8 animate-pulse"
+            style={{ animationDelay: `${i * 0.1}s` }}
+          >
             <div
               className="h-3 w-32 rounded mb-3"
               style={{ background: "rgba(240,240,240,0.04)" }}
@@ -61,9 +77,18 @@ export default function TopicLoading() {
               }}
             >
               <div className="flex flex-col gap-2">
-                <div className="h-4 w-full rounded" style={{ background: "rgba(240,240,240,0.04)" }} />
-                <div className="h-4 w-full rounded" style={{ background: "rgba(240,240,240,0.04)" }} />
-                <div className="h-4 w-3/4 rounded" style={{ background: "rgba(240,240,240,0.04)" }} />
+                <div
+                  className="h-4 w-full rounded"
+                  style={{ background: "rgba(240,240,240,0.04)" }}
+                />
+                <div
+                  className="h-4 w-full rounded"
+                  style={{ background: "rgba(240,240,240,0.04)" }}
+                />
+                <div
+                  className="h-4 w-3/4 rounded"
+                  style={{ background: "rgba(240,240,240,0.04)" }}
+                />
               </div>
             </div>
           </div>

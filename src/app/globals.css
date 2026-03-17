@@ -32,7 +32,7 @@
   --color-ts-accent: var(--ts-accent);
   --color-ts-accent-2: var(--ts-accent-2);
   --color-ts-surface: var(--ts-surface);
-  --color-ts-surface-2: var(--ts-surface-2);
+  --color-ts-surface-hover: var(--ts-surface-hover);
   --color-ts-text-2: var(--ts-text-2);
   --color-ts-muted: var(--ts-muted);
   --color-ts-cta: var(--ts-cta);
@@ -46,42 +46,72 @@
 :root {
   color-scheme: dark;
 
-  /* Topsnip brand palette */
-  --ts-accent:    #7C6AF7;
-  --ts-accent-2:  #A78BFA;
-  --ts-glow:      rgba(124, 106, 247, 0.15);
-  --ts-cta:       #22C55E;
+  /* Topsnip brand palette (Editorial Direction) */
+  --ts-accent: #e8734a;
+  --ts-accent-2: #f08862;
+  --ts-cta: #e8734a;
+
+  /* Accent opacity scale — single source of truth for all coral tints */
+  --ts-accent-3: rgba(232, 115, 74, 0.03);
+  --ts-accent-4: rgba(232, 115, 74, 0.04);
+  --ts-accent-6: rgba(232, 115, 74, 0.06);
+  --ts-accent-8: rgba(232, 115, 74, 0.08);
+  --ts-accent-10: rgba(232, 115, 74, 0.10);
+  --ts-accent-12: rgba(232, 115, 74, 0.12);
+  --ts-glow: rgba(232, 115, 74, 0.15);
+  --ts-accent-20: rgba(232, 115, 74, 0.20);
+  --ts-accent-25: rgba(232, 115, 74, 0.25);
+  --ts-accent-30: rgba(232, 115, 74, 0.30);
+  --ts-accent-50: rgba(232, 115, 74, 0.50);
+
+  /* Background glow radial */
+  --ts-glow-radial: radial-gradient(ellipse at center, var(--ts-accent-10) 0%, var(--ts-accent-4) 40%, transparent 70%);
+
+  /* Success opacity scale */
+  --ts-success-3: rgba(52, 211, 153, 0.03);
+  --ts-success-10: rgba(52, 211, 153, 0.10);
+  --ts-success-12: rgba(52, 211, 153, 0.12);
+  --ts-success-15: rgba(52, 211, 153, 0.15);
+  --ts-success-30: rgba(52, 211, 153, 0.30);
+
+  /* Error opacity scale */
+  --ts-error-3: rgba(248, 113, 113, 0.03);
+  --ts-error-8: rgba(248, 113, 113, 0.08);
+  --ts-error-12: rgba(248, 113, 113, 0.12);
+  --ts-error-20: rgba(248, 113, 113, 0.20);
+  --ts-error-25: rgba(248, 113, 113, 0.25);
 
   /* Mapped to shadcn tokens — dark-first */
-  --background:          #06060A;
-  --foreground:          #EDEDF0;
-  --ts-surface:          rgba(140, 130, 220, 0.03);
-  --ts-surface-2:        rgba(140, 130, 220, 0.06);
-  --card:                rgba(140, 130, 220, 0.02);
-  --card-foreground:     #EDEDF0;
-  --popover:             #06060A;
-  --popover-foreground:  #EDEDF0;
-  --primary:             #7C6AF7;
-  --primary-foreground:  #ffffff;
-  --secondary:           #141419;
-  --secondary-foreground:#F0F0F0;
-  --muted:               #141419;
-  --muted-foreground:    #706F7A;
-  --ts-text-2:           #94939B;
-  --ts-muted:            #4A4952;
-  --accent:              #141419;
-  --accent-foreground:   #F0F0F0;
-  --destructive:         #F87171;
-  --border:              rgba(140, 130, 200, 0.08);
-  --border-focus:        rgba(140, 130, 200, 0.18);
-  --input:               rgba(140, 130, 220, 0.04);
-  --ring:                rgba(124, 106, 247, 0.4);
-  --radius:              0.625rem;
+  --background: #0c0c0e;
+  --foreground: #ededef;
+  --ts-surface: #161618;
+  --ts-surface-2: #1a1a1c;
+  --ts-surface-hover: #1c1c1f;
+  --card: #161618;
+  --card-foreground: #ededef;
+  --popover: #0c0c0e;
+  --popover-foreground: #ededef;
+  --primary: #e8734a;
+  --primary-foreground: #ffffff;
+  --secondary: #1c1c1f;
+  --secondary-foreground: #f0f0f0;
+  --muted: #161618;
+  --muted-foreground: #8a8a8e;
+  --ts-text-2: #8a8a8e;
+  --ts-muted: #4e4e52;
+  --accent: #1c1c1f;
+  --accent-foreground: #f0f0f0;
+  --destructive: #f87171;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-focus: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.04);
+  --ring: rgba(232, 115, 74, 0.4);
+  --radius: 0.625rem;
 
   /* Semantic */
-  --success:  #34D399;
-  --warning:  #FBBF24;
-  --error:    #F87171;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --error: #f87171;
 }
 
 @layer base {
@@ -90,24 +120,26 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: var(--font-body), 'DM Sans', sans-serif;
+    font-family: var(--font-body), "Inter", sans-serif;
   }
   html {
     @apply font-sans;
   }
 
   /* Typography scale */
-  h1, h2, h3 {
-    font-family: var(--font-heading), 'Space Grotesk', sans-serif;
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading), "Instrument Serif", serif;
   }
   h1 {
-    @apply text-3xl font-bold tracking-tight;
+    @apply text-3xl font-normal tracking-tight;
   }
   h2 {
-    @apply text-xl font-semibold tracking-tight;
+    @apply text-xl font-normal tracking-tight;
   }
   h3 {
-    @apply text-lg font-semibold;
+    @apply text-lg font-normal;
   }
 }
 
@@ -119,29 +151,35 @@
 /* Glassmorphism card utilities */
 .glass-card {
   background: var(--ts-surface);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  /* Subdued glass effect */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--border);
-  border-top-color: rgba(140, 130, 200, 0.12);
-  box-shadow: inset 0 1px 0 0 rgba(140, 130, 220, 0.06);
-  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
 }
 
 .glass-card:hover {
-  background: var(--ts-surface-2);
+  background: var(--ts-surface-hover);
   border-color: var(--border-focus);
-  box-shadow: inset 0 1px 0 0 rgba(140, 130, 220, 0.1), 0 8px 32px 0 rgba(6, 6, 10, 0.4);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+    0 8px 32px 0 rgba(0, 0, 0, 0.2);
   transform: translateY(-2px);
 }
 
 /* Pro Pricing Card Glow */
 .pro-card-glow {
   position: relative;
-  background: rgba(124, 106, 247, 0.04);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(124, 106, 247, 0.35);
-  box-shadow: inset 0 1px 0 0 rgba(140, 130, 220, 0.08), 0 0 60px -15px rgba(124, 106, 247, 0.25);
+  background: var(--ts-surface);
+  border: 1px solid rgba(232, 115, 74, 0.35);
+  box-shadow:
+    inset 0 1px 0 0 rgba(232, 115, 74, 0.08),
+    0 0 40px -15px var(--ts-glow);
 }
 
 .pro-card-glow::before {
@@ -150,17 +188,26 @@
   inset: -1px;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(124,106,247,0.6), rgba(124,106,247,0.08), rgba(124,106,247,0.4));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  background: linear-gradient(
+    135deg,
+    rgba(232, 115, 74, 0.6),
+    rgba(232, 115, 74, 0.08),
+    rgba(232, 115, 74, 0.4)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   mask-composite: exclude;
   pointer-events: none;
 }
 
 /* Floating nav */
 .floating-nav {
-  background: rgba(6, 6, 10, 0.8);
+  background: rgba(12, 12, 14, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border);
@@ -169,9 +216,15 @@
 
 /* Background floating glow animations */
 @keyframes float {
-  0% { transform: translateY(0px) scale(1); }
-  50% { transform: translateY(-20px) scale(1.05); }
-  100% { transform: translateY(0px) scale(1); }
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.05);
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+  }
 }
 
 .bg-glow {
@@ -180,8 +233,13 @@
 
 /* Pulse animation for status dot */
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 .pulse-dot {
   animation: pulse-dot 2s ease-in-out infinite;
@@ -201,8 +259,12 @@
 
 /* Waveform bar animation for loading state */
 @keyframes waveBar {
-  0%   { transform: scaleY(0.4); }
-  100% { transform: scaleY(1); }
+  0% {
+    transform: scaleY(0.4);
+  }
+  100% {
+    transform: scaleY(1);
+  }
 }
 
 /* Suggestion chip — hover overrides inline styles */
@@ -211,17 +273,21 @@
   color: var(--ts-text-2);
   background: var(--ts-surface);
   backdrop-filter: blur(8px);
-  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .suggestion-chip:hover {
   border-color: var(--ts-accent);
   color: var(--foreground);
-  background: var(--ts-surface-2);
-  box-shadow: 0 0 12px 0 rgba(124, 106, 247, 0.15);
+  background: var(--ts-surface-hover);
+  box-shadow: 0 0 12px 0 var(--ts-glow);
 }
 .suggestion-chip:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(124, 106, 247, 0.5);
+  box-shadow: 0 0 0 2px var(--ts-accent-50);
 }
 
 /* TL;DR accent border */
@@ -231,11 +297,17 @@
 
 /* ── Accessibility: Reduced Motion ─────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  .bg-glow { animation: none; }
-  .glass-card:hover { transform: none; }
+  .bg-glow {
+    animation: none;
+  }
+  .glass-card:hover {
+    transform: none;
+  }
 }

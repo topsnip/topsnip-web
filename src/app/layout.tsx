@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, DM_Sans, Geist_Mono } from "next/font/google";
+import { Instrument_Serif, Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
+const instrumentSerif = Instrument_Serif({
   variable: "--font-heading",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: "400",
 });
 
-const dmSans = DM_Sans({
+const inter = Inter({
   variable: "--font-body",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -24,7 +24,14 @@ export const metadata: Metadata = {
   title: "Topsnip — Search any topic. Skip the noise.",
   description:
     "Type a topic. Get one distilled, actionable summary from the best YouTube sources — with all the filler cut out. Just Topsnip it.",
-  keywords: ["AI tools", "automation", "n8n", "Claude", "learning", "YouTube summary"],
+  keywords: [
+    "AI tools",
+    "automation",
+    "n8n",
+    "Claude",
+    "learning",
+    "YouTube summary",
+  ],
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
@@ -48,7 +55,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${spaceGrotesk.variable} ${dmSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${instrumentSerif.variable} ${inter.variable} ${geistMono.variable} antialiased`}
+      >
         {children}
       </body>
     </html>

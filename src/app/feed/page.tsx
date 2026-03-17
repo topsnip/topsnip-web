@@ -42,7 +42,7 @@ function formatFeedDate(date: Date): string {
   target.setHours(0, 0, 0, 0);
 
   const diffDays = Math.round(
-    (today.getTime() - target.getTime()) / (1000 * 60 * 60 * 24)
+    (today.getTime() - target.getTime()) / (1000 * 60 * 60 * 24),
   );
 
   const formatted = date.toLocaleDateString("en-US", {
@@ -55,7 +55,7 @@ function formatFeedDate(date: Date): string {
   return formatted;
 }
 
-const headingFont = "var(--font-heading), 'Space Grotesk', sans-serif";
+const headingFont = "var(--font-heading), 'Instrument Serif', serif";
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
@@ -100,7 +100,9 @@ export default async function FeedPage() {
     const [topicsResult, contentResult] = await Promise.all([
       supabase
         .from("topics")
-        .select("id, slug, title, trending_score, is_breaking, platform_count, published_at")
+        .select(
+          "id, slug, title, trending_score, is_breaking, platform_count, published_at",
+        )
         .in("id", topicIds),
       supabase
         .from("topic_content")
@@ -138,13 +140,15 @@ export default async function FeedPage() {
   const feedDate = new Date();
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "var(--background)" }}>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ background: "var(--background)" }}
+    >
       {/* ── Background glow ─────────────────────────────────────────────── */}
       <div
         className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full bg-glow"
         style={{
-          background:
-            "radial-gradient(ellipse at center, rgba(124,106,247,0.08) 0%, rgba(60,30,180,0.03) 40%, transparent 70%)",
+          background: "var(--ts-glow-radial)",
         }}
       />
 
@@ -171,8 +175,8 @@ export default async function FeedPage() {
             {isQuietDay
               ? "Quiet day in AI. The machines are resting."
               : feedTopics.length > 0
-              ? `${feedTopics.length} topic${feedTopics.length === 1 ? "" : "s"} trending in AI today`
-              : "Your personalized AI feed"}
+                ? `${feedTopics.length} topic${feedTopics.length === 1 ? "" : "s"} trending in AI today`
+                : "Your personalized AI feed"}
           </p>
         </div>
 
@@ -185,26 +189,35 @@ export default async function FeedPage() {
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center"
               style={{
-                background: "rgba(124,106,247,0.08)",
-                border: "1px solid rgba(124,106,247,0.2)",
+                background: "var(--ts-accent-8)",
+                border: "1px solid var(--ts-accent-20)",
               }}
             >
               <span className="text-xl">~</span>
             </div>
             <div className="flex flex-col gap-2">
-              <p className="text-base font-semibold text-white" style={{ fontFamily: headingFont }}>
+              <p
+                className="text-base font-semibold text-white"
+                style={{ fontFamily: headingFont }}
+              >
                 Quiet day in AI
               </p>
-              <p className="text-sm max-w-md" style={{ color: "var(--ts-text-2)" }}>
-                Nothing major happened today. Use the search bar to explore a topic you&apos;ve been
-                meaning to learn about.
+              <p
+                className="text-sm max-w-md"
+                style={{ color: "var(--ts-text-2)" }}
+              >
+                Nothing major happened today. Use the search bar to explore a
+                topic you&apos;ve been meaning to learn about.
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-2 mt-2">
               {["RAG pipelines", "AI agents", "Fine-tuning LLMs"].map((s) => (
                 <Link
                   key={s}
-                  href={`/s/${s.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}?q=${encodeURIComponent(s)}`}
+                  href={`/s/${s
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")
+                    .replace(/[^a-z0-9-]/g, "")}?q=${encodeURIComponent(s)}`}
                   className="suggestion-chip rounded-full border px-3 py-1.5 text-xs font-medium"
                 >
                   {s}
@@ -223,27 +236,36 @@ export default async function FeedPage() {
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center"
               style={{
-                background: "rgba(124,106,247,0.08)",
-                border: "1px solid rgba(124,106,247,0.2)",
+                background: "var(--ts-accent-8)",
+                border: "1px solid var(--ts-accent-20)",
               }}
             >
-              <span className="text-xl" style={{ color: "var(--ts-accent)" }}>?</span>
+              <span className="text-xl" style={{ color: "var(--ts-accent)" }}>
+                ?
+              </span>
             </div>
             <div className="flex flex-col gap-2">
-              <p className="text-base font-semibold text-white" style={{ fontFamily: headingFont }}>
+              <p
+                className="text-base font-semibold text-white"
+                style={{ fontFamily: headingFont }}
+              >
                 No topics yet today
               </p>
-              <p className="text-sm max-w-md" style={{ color: "var(--ts-text-2)" }}>
-                Check back later — we&apos;re scanning sources. In the meantime, search any AI topic
-                and get a structured explainer.
+              <p
+                className="text-sm max-w-md"
+                style={{ color: "var(--ts-text-2)" }}
+              >
+                Check back later — we&apos;re scanning sources. In the meantime,
+                search any AI topic and get a structured explainer.
               </p>
             </div>
             <Link
               href="/feed#search"
               className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90"
               style={{
-                background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                boxShadow: "0 0 20px rgba(124,106,247,0.3)",
+                background:
+                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+                boxShadow: "0 0 20px var(--ts-accent-30)",
               }}
             >
               Search a topic
@@ -271,9 +293,9 @@ export default async function FeedPage() {
                       <span
                         className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
                         style={{
-                          background: "rgba(248,113,113,0.12)",
-                          color: "#F87171",
-                          border: "1px solid rgba(248,113,113,0.25)",
+                          background: "var(--ts-error-12)",
+                          color: "var(--error)",
+                          border: "1px solid var(--ts-error-25)",
                         }}
                       >
                         Breaking
@@ -283,16 +305,20 @@ export default async function FeedPage() {
                       <span
                         className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
                         style={{
-                          background: "rgba(124,106,247,0.08)",
+                          background: "var(--ts-accent-8)",
                           color: "var(--ts-accent)",
-                          border: "1px solid rgba(124,106,247,0.2)",
+                          border: "1px solid var(--ts-accent-20)",
                         }}
                       >
                         Trending
                       </span>
                     )}
-                    <span className="text-xs" style={{ color: "var(--ts-muted)" }}>
-                      {topic.platform_count} source{topic.platform_count === 1 ? "" : "s"}
+                    <span
+                      className="text-xs"
+                      style={{ color: "var(--ts-muted)" }}
+                    >
+                      {topic.platform_count} source
+                      {topic.platform_count === 1 ? "" : "s"}
                     </span>
                   </div>
 

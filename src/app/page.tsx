@@ -37,7 +37,7 @@ function useReveal() {
       ([entry]) => {
         if (entry.isIntersecting) setVisible(true);
       },
-      { threshold: 0.15 }
+      { threshold: 0.15 },
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -80,18 +80,22 @@ export default function Home() {
 
   // Redirect logged-in users to /feed
   useEffect(() => {
-    createClient().auth.getUser().then(({ data }) => {
-      if (data.user) router.replace("/feed");
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    createClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        if (data.user) router.replace("/feed");
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Randomize 4 suggestions on each visit (client-side only to avoid hydration mismatch)
   const [suggestions, setSuggestions] = useState<string[]>(() =>
-    ALL_SUGGESTIONS.slice(0, 4)
+    ALL_SUGGESTIONS.slice(0, 4),
   );
   useEffect(() => {
-    setSuggestions([...ALL_SUGGESTIONS].sort(() => Math.random() - 0.5).slice(0, 4));
+    setSuggestions(
+      [...ALL_SUGGESTIONS].sort(() => Math.random() - 0.5).slice(0, 4),
+    );
   }, []);
 
   function navigateToSearch(q: string) {
@@ -122,7 +126,7 @@ export default function Home() {
         className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full bg-glow"
         style={{
           background:
-            "radial-gradient(ellipse at center, rgba(124,106,247,0.10) 0%, rgba(60,30,180,0.04) 40%, transparent 70%)",
+            "var(--ts-glow-radial)",
         }}
       />
 
@@ -132,7 +136,10 @@ export default function Home() {
           <Link
             href="/"
             className="font-bold tracking-tight text-white"
-            style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif", fontSize: "1.1rem" }}
+            style={{
+              fontFamily: "var(--font-heading), 'Instrument Serif', serif",
+              fontSize: "1.1rem",
+            }}
           >
             top<span style={{ color: "var(--ts-accent)" }}>snip</span>
           </Link>
@@ -155,7 +162,8 @@ export default function Home() {
               href="/auth/login"
               className="rounded-full px-4 py-1.5 text-xs font-semibold text-white transition-all hover:opacity-90"
               style={{
-                background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+                background:
+                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
               }}
             >
               Sign in
@@ -174,9 +182,9 @@ export default function Home() {
             className="rounded-full border px-3.5 py-1 text-xs font-medium"
             style={{
               color: "var(--ts-accent)",
-              borderColor: "rgba(124,106,247,0.3)",
-              background: "rgba(124,106,247,0.06)",
-              fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+              borderColor: "var(--ts-accent-30)",
+              background: "var(--ts-accent-6)",
+              fontFamily: "var(--font-heading), 'Instrument Serif', serif",
             }}
           >
             AI & automation topics — updated daily
@@ -188,7 +196,7 @@ export default function Home() {
               className="font-bold tracking-tight leading-[1.08] text-white"
               style={{
                 fontSize: "clamp(2.2rem, 7vw, 3.6rem)",
-                fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
               }}
             >
               Stop watching.
@@ -206,20 +214,23 @@ export default function Home() {
           </div>
 
           {/* Search form */}
-          <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3 max-w-xl">
+          <form
+            onSubmit={handleSubmit}
+            className="w-full flex flex-col gap-3 max-w-xl"
+          >
             <div
               className={`flex gap-2 items-center rounded-2xl border px-5 py-4 transition-all duration-200 ${
                 focused ? "accent-glow" : ""
               }`}
               style={{
-                background: focused ? "rgba(6,6,10,0.6)" : "rgba(6,6,10,0.3)",
+                background: focused ? "rgba(12,12,14,0.6)" : "rgba(12,12,14,0.3)",
                 backdropFilter: "blur(16px)",
                 borderColor: focused
-                  ? "rgba(124,106,247,0.5)"
+                  ? "var(--ts-accent-50)"
                   : "var(--border)",
                 boxShadow: focused
-                  ? "0 0 0 3px var(--ts-glow), 0 8px 40px -8px rgba(124,106,247,0.15)"
-                  : "inset 0 1px 0 0 rgba(140,130,220,0.05)",
+                  ? "0 0 0 3px var(--ts-glow), 0 8px 40px -8px var(--ts-glow)"
+                  : "inset 0 1px 0 0 rgba(255,255,255,0.03)",
               }}
             >
               <Search
@@ -242,7 +253,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={!query.trim()}
-                className="flex items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-90 active:scale-95 cursor-pointer shadow-[0_0_20px_rgba(124,106,247,0.3)]"
+                className="flex items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-90 active:scale-95 cursor-pointer shadow-[0_0_20px_var(--ts-accent-30)]"
                 style={{
                   background:
                     "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
@@ -260,7 +271,7 @@ export default function Home() {
               className="text-xs font-semibold uppercase tracking-widest"
               style={{
                 color: "var(--ts-muted)",
-                fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
               }}
             >
               Try
@@ -302,7 +313,7 @@ export default function Home() {
                 className="text-xs font-semibold uppercase tracking-widest"
                 style={{
                   color: "var(--ts-accent)",
-                  fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+                  fontFamily: "var(--font-heading), 'Instrument Serif', serif",
                 }}
               >
                 Example result
@@ -310,7 +321,9 @@ export default function Home() {
             </div>
             <p
               className="text-lg font-bold text-white"
-              style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif" }}
+              style={{
+                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
+              }}
             >
               &ldquo;build an AI agent with n8n&rdquo;
             </p>
@@ -325,25 +338,39 @@ export default function Home() {
                 borderBottom: "none",
               }}
             >
-              <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--ts-accent)" }}>
+              <p
+                className="text-xs font-semibold uppercase tracking-widest mb-2"
+                style={{ color: "var(--ts-accent)" }}
+              >
                 TL;DR
               </p>
-              <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-                n8n lets you build AI agents by chaining LLM calls with tool nodes — connect a trigger, add an AI Agent node with tools like
-                HTTP Request or Code, set your system prompt, and deploy. No Python needed.
+              <p
+                className="text-sm leading-relaxed"
+                style={{ color: "var(--foreground)" }}
+              >
+                n8n lets you build AI agents by chaining LLM calls with tool
+                nodes — connect a trigger, add an AI Agent node with tools like
+                HTTP Request or Code, set your system prompt, and deploy. No
+                Python needed.
               </p>
             </div>
 
             {/* Mock key concepts */}
             <div className="flex flex-wrap gap-2">
-              {["AI Agent Node", "Tool Calling", "System Prompt", "Webhooks", "Vector Stores"].map((c) => (
+              {[
+                "AI Agent Node",
+                "Tool Calling",
+                "System Prompt",
+                "Webhooks",
+                "Vector Stores",
+              ].map((c) => (
                 <span
                   key={c}
                   className="rounded-full border px-2.5 py-0.5 text-xs font-medium"
                   style={{
-                    borderColor: "rgba(124,106,247,0.25)",
+                    borderColor: "var(--ts-accent-25)",
                     color: "var(--ts-accent-2)",
-                    background: "rgba(124,106,247,0.06)",
+                    background: "var(--ts-accent-6)",
                   }}
                 >
                   {c}
@@ -372,7 +399,7 @@ export default function Home() {
               className="text-xs font-semibold uppercase tracking-widest"
               style={{
                 color: "var(--ts-accent)",
-                fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
               }}
             >
               How it works
@@ -381,7 +408,7 @@ export default function Home() {
               className="font-bold tracking-tight text-white"
               style={{
                 fontSize: "clamp(1.5rem, 4vw, 2rem)",
-                fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
               }}
             >
               From question to answer in 30 seconds
@@ -415,8 +442,8 @@ export default function Home() {
                     <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                       style={{
-                        background: "rgba(124,106,247,0.08)",
-                        border: "1px solid rgba(124,106,247,0.2)",
+                        background: "var(--ts-accent-8)",
+                        border: "1px solid var(--ts-accent-20)",
                       }}
                     >
                       <Icon size={15} style={{ color: "var(--ts-accent)" }} />
@@ -425,7 +452,8 @@ export default function Home() {
                       className="text-xs font-bold uppercase tracking-widest"
                       style={{
                         color: "var(--ts-muted)",
-                        fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+                        fontFamily:
+                          "var(--font-heading), 'Instrument Serif', serif",
                       }}
                     >
                       Step {step}
@@ -433,11 +461,17 @@ export default function Home() {
                   </div>
                   <p
                     className="text-base font-semibold text-white"
-                    style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif" }}
+                    style={{
+                      fontFamily:
+                        "var(--font-heading), 'Instrument Serif', serif",
+                    }}
                   >
                     {title}
                   </p>
-                  <p className="text-sm leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
+                  <p
+                    className="text-sm leading-relaxed"
+                    style={{ color: "var(--ts-text-2)" }}
+                  >
                     {desc}
                   </p>
                 </div>
@@ -457,7 +491,7 @@ export default function Home() {
               className="text-xs font-semibold uppercase tracking-widest"
               style={{
                 color: "var(--ts-accent)",
-                fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
               }}
             >
               Why Topsnip
@@ -466,7 +500,7 @@ export default function Home() {
               className="font-bold tracking-tight text-white"
               style={{
                 fontSize: "clamp(1.5rem, 4vw, 2rem)",
-                fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
               }}
             >
               3 hours of research → 3 minutes on TopSnip
@@ -479,15 +513,16 @@ export default function Home() {
               <div
                 className="rounded-xl p-6 flex flex-col gap-4 border"
                 style={{
-                  background: "rgba(248, 113, 113, 0.03)",
-                  borderColor: "rgba(248, 113, 113, 0.12)",
+                  background: "var(--ts-error-3)",
+                  borderColor: "var(--ts-error-12)",
                 }}
               >
                 <p
                   className="text-xs font-bold uppercase tracking-widest"
                   style={{
-                    color: "#F87171",
-                    fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+                    color: "var(--error)",
+                    fontFamily:
+                      "var(--font-heading), 'Instrument Serif', serif",
                   }}
                 >
                   Without Topsnip
@@ -499,15 +534,29 @@ export default function Home() {
                     "Piece together scattered announcements",
                     "No clear takeaways or next steps",
                   ].map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-sm" style={{ color: "var(--ts-text-2)" }}>
-                      <span className="text-xs mt-1 flex-shrink-0" style={{ color: "#F87171" }}>✕</span>
+                    <li
+                      key={item}
+                      className="flex items-start gap-2 text-sm"
+                      style={{ color: "var(--ts-text-2)" }}
+                    >
+                      <span
+                        className="text-xs mt-1 flex-shrink-0"
+                        style={{ color: "var(--error)" }}
+                      >
+                        ✕
+                      </span>
                       {item}
                     </li>
                   ))}
                 </ul>
                 <div className="flex items-center gap-2 pt-2">
-                  <Clock size={14} style={{ color: "#F87171" }} />
-                  <span className="text-sm font-semibold" style={{ color: "#F87171" }}>~3 hours</span>
+                  <Clock size={14} style={{ color: "var(--error)" }} />
+                  <span
+                    className="text-sm font-semibold"
+                    style={{ color: "var(--error)" }}
+                  >
+                    ~3 hours
+                  </span>
                 </div>
               </div>
 
@@ -515,15 +564,16 @@ export default function Home() {
               <div
                 className="rounded-xl p-6 flex flex-col gap-4 border"
                 style={{
-                  background: "rgba(52, 211, 153, 0.03)",
-                  borderColor: "rgba(52, 211, 153, 0.15)",
+                  background: "var(--ts-success-3)",
+                  borderColor: "var(--ts-success-15)",
                 }}
               >
                 <p
                   className="text-xs font-bold uppercase tracking-widest"
                   style={{
                     color: "var(--success)",
-                    fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+                    fontFamily:
+                      "var(--font-heading), 'Instrument Serif', serif",
                   }}
                 >
                   With Topsnip
@@ -535,15 +585,28 @@ export default function Home() {
                     "Multiple sources cross-referenced",
                     "Full source attribution + Go Deeper links",
                   ].map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-sm" style={{ color: "var(--ts-text-2)" }}>
-                      <Check size={13} className="mt-0.5 flex-shrink-0" style={{ color: "var(--success)" }} />
+                    <li
+                      key={item}
+                      className="flex items-start gap-2 text-sm"
+                      style={{ color: "var(--ts-text-2)" }}
+                    >
+                      <Check
+                        size={13}
+                        className="mt-0.5 flex-shrink-0"
+                        style={{ color: "var(--success)" }}
+                      />
                       {item}
                     </li>
                   ))}
                 </ul>
                 <div className="flex items-center gap-2 pt-2">
                   <Zap size={14} style={{ color: "var(--success)" }} />
-                  <span className="text-sm font-semibold" style={{ color: "var(--success)" }}>~30 seconds</span>
+                  <span
+                    className="text-sm font-semibold"
+                    style={{ color: "var(--success)" }}
+                  >
+                    ~30 seconds
+                  </span>
                 </div>
               </div>
             </div>
@@ -561,7 +624,7 @@ export default function Home() {
               className="text-xs font-semibold uppercase tracking-widest"
               style={{
                 color: "var(--ts-accent)",
-                fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
               }}
             >
               Pricing
@@ -570,7 +633,7 @@ export default function Home() {
               className="font-bold tracking-tight text-white"
               style={{
                 fontSize: "clamp(1.5rem, 4vw, 2rem)",
-                fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
               }}
             >
               Start free. Upgrade when you need more.
@@ -584,18 +647,29 @@ export default function Home() {
                 <div className="flex flex-col gap-1">
                   <p
                     className="text-sm font-semibold text-white"
-                    style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif" }}
+                    style={{
+                      fontFamily:
+                        "var(--font-heading), 'Instrument Serif', serif",
+                    }}
                   >
                     Free
                   </p>
                   <div className="flex items-baseline gap-1">
                     <span
                       className="text-3xl font-bold tracking-tight text-white"
-                      style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif" }}
+                      style={{
+                        fontFamily:
+                          "var(--font-heading), 'Instrument Serif', serif",
+                      }}
                     >
                       $0
                     </span>
-                    <span className="text-sm" style={{ color: "var(--ts-text-2)" }}>/month</span>
+                    <span
+                      className="text-sm"
+                      style={{ color: "var(--ts-text-2)" }}
+                    >
+                      /month
+                    </span>
                   </div>
                   <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
                     No credit card required
@@ -609,14 +683,24 @@ export default function Home() {
                     "Trending AI topics daily",
                     "YouTube recommendations",
                   ].map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm" style={{ color: "var(--ts-text-2)" }}>
-                      <Check size={13} className="mt-0.5 flex-shrink-0" style={{ color: "var(--ts-muted)" }} />
+                    <li
+                      key={f}
+                      className="flex items-start gap-2 text-sm"
+                      style={{ color: "var(--ts-text-2)" }}
+                    >
+                      <Check
+                        size={13}
+                        className="mt-0.5 flex-shrink-0"
+                        style={{ color: "var(--ts-muted)" }}
+                      />
                       {f}
                     </li>
                   ))}
                 </ul>
                 <button
-                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  onClick={() =>
+                    window.scrollTo({ top: 0, behavior: "smooth" })
+                  }
                   className="w-full rounded-xl py-2.5 text-sm font-semibold transition-all hover:opacity-80 cursor-pointer"
                   style={{
                     color: "var(--ts-text-2)",
@@ -636,10 +720,12 @@ export default function Home() {
                 <div
                   className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-semibold whitespace-nowrap"
                   style={{
-                    background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+                    background:
+                      "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
                     color: "#fff",
-                    boxShadow: "0 0 12px rgba(124,106,247,0.5)",
-                    fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+                    boxShadow: "0 0 12px var(--ts-accent-50)",
+                    fontFamily:
+                      "var(--font-heading), 'Instrument Serif', serif",
                   }}
                 >
                   Recommended
@@ -650,7 +736,8 @@ export default function Home() {
                     className="text-sm font-semibold"
                     style={{
                       color: "var(--ts-accent)",
-                      fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+                      fontFamily:
+                        "var(--font-heading), 'Instrument Serif', serif",
                     }}
                   >
                     Pro
@@ -658,25 +745,43 @@ export default function Home() {
                   <div className="flex items-baseline gap-1">
                     <span
                       className="text-3xl font-bold tracking-tight text-white"
-                      style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif" }}
+                      style={{
+                        fontFamily:
+                          "var(--font-heading), 'Instrument Serif', serif",
+                      }}
                     >
                       $9
                     </span>
-                    <span className="text-sm" style={{ color: "var(--ts-text-2)" }}>/month</span>
+                    <span
+                      className="text-sm"
+                      style={{ color: "var(--ts-text-2)" }}
+                    >
+                      /month
+                    </span>
                   </div>
-                  <p className="text-xs" style={{ color: "var(--ts-muted)" }}>or $79/year (save $29)</p>
+                  <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
+                    or $79/year (save $29)
+                  </p>
                 </div>
                 <ul className="flex flex-col gap-2.5 flex-1">
                   {[
                     "Unlimited searches",
                     "Role-specific depth (dev, PM, CTO)",
-                    "\"So What\" + \"Now What\" sections",
+                    '"So What" + "Now What" sections',
                     "Personalized daily feed",
                     "Knowledge tracking + learning history",
                     "Priority processing",
                   ].map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm" style={{ color: "var(--ts-text-2)" }}>
-                      <Check size={13} className="mt-0.5 flex-shrink-0" style={{ color: "var(--ts-accent)" }} />
+                    <li
+                      key={f}
+                      className="flex items-start gap-2 text-sm"
+                      style={{ color: "var(--ts-text-2)" }}
+                    >
+                      <Check
+                        size={13}
+                        className="mt-0.5 flex-shrink-0"
+                        style={{ color: "var(--ts-accent)" }}
+                      />
                       {f}
                     </li>
                   ))}
@@ -685,8 +790,9 @@ export default function Home() {
                   href="/upgrade"
                   className="w-full rounded-xl py-2.5 text-sm font-semibold text-white text-center transition-all hover:opacity-90 block cursor-pointer"
                   style={{
-                    background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                    boxShadow: "0 0 24px rgba(124,106,247,0.3)",
+                    background:
+                      "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+                    boxShadow: "0 0 24px var(--ts-accent-30)",
                   }}
                 >
                   Get Pro
@@ -706,7 +812,7 @@ export default function Home() {
             className="font-bold tracking-tight text-white"
             style={{
               fontSize: "clamp(1.5rem, 4vw, 2rem)",
-              fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif",
+              fontFamily: "var(--font-heading), 'Instrument Serif', serif",
             }}
           >
             Ready to skip the noise?
@@ -715,9 +821,13 @@ export default function Home() {
             className="text-sm leading-relaxed max-w-md"
             style={{ color: "var(--ts-text-2)" }}
           >
-            Search any AI topic and understand it clearly — sourced, structured, and actionable.
+            Search any AI topic and understand it clearly — sourced, structured,
+            and actionable.
           </p>
-          <form onSubmit={handleBottomSubmit} className="w-full flex gap-2 max-w-md">
+          <form
+            onSubmit={handleBottomSubmit}
+            className="w-full flex gap-2 max-w-md"
+          >
             <div
               className="flex-1 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm"
               style={{
@@ -726,7 +836,10 @@ export default function Home() {
                 backdropFilter: "blur(12px)",
               }}
             >
-              <Search size={15} style={{ color: "var(--ts-muted)", flexShrink: 0 }} />
+              <Search
+                size={15}
+                style={{ color: "var(--ts-muted)", flexShrink: 0 }}
+              />
               <input
                 type="text"
                 value={bottomQuery}
@@ -740,9 +853,10 @@ export default function Home() {
             <button
               type="submit"
               disabled={!bottomQuery.trim()}
-              className="flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 hover:opacity-90 active:scale-95 cursor-pointer shadow-[0_0_20px_rgba(124,106,247,0.3)]"
+              className="flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 hover:opacity-90 active:scale-95 cursor-pointer shadow-[0_0_20px_var(--ts-accent-30)]"
               style={{
-                background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+                background:
+                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
               }}
             >
               Go
@@ -755,12 +869,17 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════════════
           Footer
           ═══════════════════════════════════════════════════════════════════ */}
-      <footer className="px-6 py-8 relative z-10" style={{ borderTop: "1px solid var(--border)" }}>
+      <footer
+        className="px-6 py-8 relative z-10"
+        style={{ borderTop: "1px solid var(--border)" }}
+      >
         <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <Link
             href="/"
             className="text-base font-bold tracking-tight text-white"
-            style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif" }}
+            style={{
+              fontFamily: "var(--font-heading), 'Instrument Serif', serif",
+            }}
           >
             top<span style={{ color: "var(--ts-accent)" }}>snip</span>
           </Link>

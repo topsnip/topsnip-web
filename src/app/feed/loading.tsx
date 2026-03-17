@@ -1,6 +1,9 @@
 export default function FeedLoading() {
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#080808" }}>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ background: "var(--background)" }}
+    >
       {/* Nav placeholder */}
       <div className="h-16" />
 
@@ -39,7 +42,7 @@ export default function FeedLoading() {
               <div className="flex items-center gap-2">
                 <div
                   className="h-4 w-16 rounded-full"
-                  style={{ background: "rgba(124,106,247,0.1)" }}
+                  style={{ background: "var(--ts-accent-10)" }}
                 />
                 <div
                   className="h-3 w-20 rounded"
@@ -68,7 +71,7 @@ export default function FeedLoading() {
               {/* Read more */}
               <div
                 className="h-3 w-24 rounded"
-                style={{ background: "rgba(124,106,247,0.08)" }}
+                style={{ background: "var(--ts-accent-8)" }}
               />
             </div>
           ))}

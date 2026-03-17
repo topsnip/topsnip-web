@@ -2,7 +2,8 @@ import Link from "next/link";
 
 export const metadata = {
   title: "About — Topsnip",
-  description: "Learn about Topsnip, the AI learning intelligence platform that helps you stay ahead of AI trends in 3 minutes.",
+  description:
+    "Learn about Topsnip, the AI learning intelligence platform that helps you stay ahead of AI trends in 3 minutes.",
 };
 
 export default function AboutPage() {
@@ -14,7 +15,10 @@ export default function AboutPage() {
           <Link
             href="/"
             className="font-bold tracking-tight text-white"
-            style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif", fontSize: "1.1rem" }}
+            style={{
+              fontFamily: "var(--font-heading), 'Instrument Serif', serif",
+              fontSize: "1.1rem",
+            }}
           >
             top<span style={{ color: "var(--ts-accent)" }}>snip</span>
           </Link>
@@ -36,7 +40,8 @@ export default function AboutPage() {
               href="/auth/login"
               className="rounded-full px-4 py-1.5 text-xs font-semibold text-white transition-all hover:opacity-90"
               style={{
-                background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+                background:
+                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
               }}
             >
               Sign in
@@ -46,25 +51,36 @@ export default function AboutPage() {
       </nav>
 
       <div className="max-w-2xl mx-auto flex flex-col gap-12 pt-12">
-
         {/* Hero */}
         <div className="flex flex-col gap-4">
           <h1 className="text-3xl font-extrabold tracking-tight text-white">
             What is TopSnip?
           </h1>
-          <p className="text-base leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
-            You know the feeling. Something big happens in AI — a new model drops, an API
-            changes, a framework gets released. You see the headline, but you don&apos;t really
-            understand it. So you open 10 tabs: blog posts, Reddit threads, YouTube videos,
-            Hacker News discussions.
+          <p
+            className="text-base leading-relaxed"
+            style={{ color: "var(--ts-text-2)" }}
+          >
+            You know the feeling. Something big happens in AI — a new model
+            drops, an API changes, a framework gets released. You see the
+            headline, but you don&apos;t really understand it. So you open 10
+            tabs: blog posts, Reddit threads, YouTube videos, Hacker News
+            discussions.
           </p>
-          <p className="text-base leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
-            An hour later, you&apos;ve read a lot of words but still can&apos;t explain it to someone else.
+          <p
+            className="text-base leading-relaxed"
+            style={{ color: "var(--ts-text-2)" }}
+          >
+            An hour later, you&apos;ve read a lot of words but still can&apos;t
+            explain it to someone else.
           </p>
-          <p className="text-base leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
-            <strong className="text-white">TopSnip fixes that.</strong> We monitor AI developments
-            across official blogs, Hacker News, Reddit, arXiv, GitHub, and YouTube — then turn
-            raw source material into clear, structured learning briefs you can actually understand.
+          <p
+            className="text-base leading-relaxed"
+            style={{ color: "var(--ts-text-2)" }}
+          >
+            <strong className="text-white">TopSnip fixes that.</strong> We
+            monitor AI developments across official blogs, Hacker News, Reddit,
+            arXiv, GitHub, and YouTube — then turn raw source material into
+            clear, structured learning briefs you can actually understand.
           </p>
         </div>
 
@@ -94,10 +110,7 @@ export default function AboutPage() {
                 desc: "Read the brief, check the sources, watch the recommended videos if you want to go deeper. 3 minutes, not 3 hours.",
               },
             ].map(({ step, title, desc }) => (
-              <div
-                key={step}
-                className="glass-card flex gap-4 rounded-xl p-4"
-              >
+              <div key={step} className="glass-card flex gap-4 rounded-xl p-4">
                 <span
                   className="text-xs font-bold flex-shrink-0 mt-0.5"
                   style={{ color: "var(--ts-accent)" }}
@@ -106,7 +119,10 @@ export default function AboutPage() {
                 </span>
                 <div className="flex flex-col gap-1">
                   <p className="text-sm font-semibold text-white">{title}</p>
-                  <p className="text-sm leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
+                  <p
+                    className="text-sm leading-relaxed"
+                    style={{ color: "var(--ts-text-2)" }}
+                  >
                     {desc}
                   </p>
                 </div>
@@ -118,16 +134,29 @@ export default function AboutPage() {
         {/* Pro tier */}
         <div
           className="rounded-xl border p-5 flex flex-col gap-3"
-          style={{ background: "var(--ts-surface)", borderColor: "rgba(124,106,247,0.3)", backdropFilter: "blur(12px)", boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.05)" }}
+          style={{
+            background: "var(--ts-surface)",
+            borderColor: "var(--ts-accent-30)",
+            backdropFilter: "blur(12px)",
+            boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.05)",
+          }}
         >
-          <p className="text-sm font-semibold" style={{ color: "var(--ts-accent)" }}>
+          <p
+            className="text-sm font-semibold"
+            style={{ color: "var(--ts-accent)" }}
+          >
             Free vs. Pro
           </p>
-          <p className="text-sm leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
-            Everyone gets plain-language explainers, trending topics, and YouTube recommendations
-            for free. <strong className="text-white">Pro</strong> adds role-specific depth — if you&apos;re a developer,
-            you get code examples and migration paths. If you&apos;re a PM, you get product implications
-            and sprint actions. Plus personalized feeds and knowledge tracking.
+          <p
+            className="text-sm leading-relaxed"
+            style={{ color: "var(--ts-text-2)" }}
+          >
+            Everyone gets plain-language explainers, trending topics, and
+            YouTube recommendations for free.{" "}
+            <strong className="text-white">Pro</strong> adds role-specific depth
+            — if you&apos;re a developer, you get code examples and migration
+            paths. If you&apos;re a PM, you get product implications and sprint
+            actions. Plus personalized feeds and knowledge tracking.
           </p>
         </div>
 
@@ -135,8 +164,11 @@ export default function AboutPage() {
         <div className="flex flex-col items-start gap-3">
           <Link
             href="/"
-            className="flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 shadow-[0_0_20px_rgba(124,106,247,0.3)]"
-            style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
+            className="flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 shadow-[0_0_20px_var(--ts-accent-30)]"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+            }}
           >
             Try it now →
           </Link>
