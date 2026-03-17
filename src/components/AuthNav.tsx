@@ -8,6 +8,7 @@ const headingFont = "var(--font-heading), 'Instrument Serif', serif";
 const NAV_LINKS = [
   { href: "/feed", label: "Feed" },
   { href: "/history", label: "History" },
+  { href: "/knowledge", label: "Knowledge" },
   { href: "/upgrade", label: "Pro" },
   { href: "/settings", label: "Settings" },
 ];

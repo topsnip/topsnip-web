@@ -11,6 +11,18 @@ import { createClient } from "@/lib/supabase/server";
 import { decodeHtml } from "@/lib/utils/decode-html";
 import { FeedSearchBar } from "./feed-search-bar";
 import { AuthNav } from "@/components/AuthNav";
+import { LearningDebt } from "./learning-debt";
+
+// ── "Since you were last here" types ────────────────────────────────────────
+
+interface SinceLastVisitTopic {
+  topic_id: string;
+  topic_title: string;
+  topic_slug: string;
+  tldr: string;
+  published_at: string;
+  trending_score: number;
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -31,6 +43,7 @@ interface TopicContent {
 
 interface FeedTopic extends Topic {
   tldr: string;
+  is_read: boolean;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -82,6 +95,20 @@ export default async function FeedPage() {
     redirect("/onboarding");
   }
 
+  const isPro = profile.plan === "pro";
+
+  // Fetch "since last visit" topics + update last_seen_at in parallel
+  const [sinceLastVisitResult] = await Promise.all([
+    supabase.rpc("get_since_last_visit", { p_user_id: user.id }),
+    supabase
+      .from("profiles")
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq("id", user.id),
+  ]);
+
+  const sinceLastVisitTopics: SinceLastVisitTopic[] =
+    sinceLastVisitResult.data ?? [];
+
   // Fetch today's feed via RPC
   const today = new Date().toISOString().split("T")[0];
   const { data: feedRows } = await supabase.rpc("get_user_feed", {
@@ -92,6 +119,11 @@ export default async function FeedPage() {
   const isQuietDay = feedRows?.[0]?.is_quiet_day ?? false;
   const topicIds: string[] =
     feedRows?.map((row: { topic_id: string }) => row.topic_id) ?? [];
+  const readSet = new Set(
+    feedRows
+      ?.filter((row: { is_read: boolean }) => row.is_read)
+      .map((row: { topic_id: string }) => row.topic_id) ?? [],
+  );
 
   // Fetch topics + content
   let feedTopics: FeedTopic[] = [];
@@ -128,13 +160,18 @@ export default async function FeedPage() {
       });
     }
 
-    // Merge and sort by trending score
-    feedTopics = topics
-      .map((t) => ({
-        ...t,
-        tldr: contentMap.get(t.id) ?? "",
-      }))
-      .sort((a, b) => b.trending_score - a.trending_score);
+    // Merge topics, preserving the personalized order from the RPC
+    const topicMap = new Map(topics.map((t) => [t.id, t]));
+    feedTopics = topicIds
+      .filter((id) => topicMap.has(id))
+      .map((id) => {
+        const t = topicMap.get(id)!;
+        return {
+          ...t,
+          tldr: contentMap.get(t.id) ?? "",
+          is_read: readSet.has(t.id),
+        };
+      });
   }
 
   const feedDate = new Date();
@@ -273,6 +310,80 @@ export default async function FeedPage() {
           </div>
         )}
 
+        {/* ── Since You Were Last Here ─────────────────────────────────── */}
+        {sinceLastVisitTopics.length > 0 && (
+          <details
+            className="mb-6 group"
+            style={{ animation: "fadeInUp 0.35s ease 0.04s both" }}
+            open
+          >
+            <summary
+              className="flex items-center gap-2 cursor-pointer list-none mb-3 select-none"
+              style={{ outline: "none" }}
+            >
+              <span
+                className="text-sm font-semibold"
+                style={{ color: "var(--ts-text-2)", fontFamily: headingFont }}
+              >
+                Since you were last here
+              </span>
+              <span
+                className="rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums"
+                style={{
+                  background: "var(--ts-accent-8)",
+                  color: "var(--ts-accent)",
+                  border: "1px solid var(--ts-accent-20)",
+                }}
+              >
+                {sinceLastVisitTopics.length}
+              </span>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="ml-auto transition-transform group-open:rotate-180"
+                style={{ color: "var(--ts-muted)" }}
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </summary>
+            <div className="flex flex-col gap-2">
+              {sinceLastVisitTopics.map((topic) => (
+                <Link
+                  key={topic.topic_id}
+                  href={`/topic/${topic.topic_slug}`}
+                  className="flex flex-col gap-1 rounded-xl px-4 py-3 transition-colors hover:brightness-110"
+                  style={{
+                    background: "var(--ts-surface)",
+                    border: "1px solid var(--border)",
+                    textDecoration: "none",
+                  }}
+                >
+                  <span
+                    className="text-sm font-medium text-white"
+                    style={{ fontFamily: headingFont }}
+                  >
+                    {decodeHtml(topic.topic_title)}
+                  </span>
+                  {topic.tldr && (
+                    <span
+                      className="text-xs line-clamp-1"
+                      style={{ color: "var(--ts-text-2)" }}
+                    >
+                      {decodeHtml(topic.tldr)}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </details>
+        )}
+
         {/* ── Topic Cards ───────────────────────────────────────────────── */}
         {feedTopics.length > 0 && (
           <div className="flex flex-col gap-4">
@@ -284,11 +395,24 @@ export default async function FeedPage() {
                 style={{
                   animation: `fadeInUp 0.35s ease ${0.06 + i * 0.06}s both`,
                   textDecoration: "none",
+                  opacity: topic.is_read ? 0.55 : 1,
                 }}
               >
                 {/* Header row: badges + title */}
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-2 flex-wrap">
+                    {topic.is_read && (
+                      <span
+                        className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                        style={{
+                          background: "var(--ts-text-2, rgba(255,255,255,0.06))",
+                          color: "var(--ts-muted)",
+                          border: "1px solid var(--border)",
+                        }}
+                      >
+                        Read
+                      </span>
+                    )}
                     {topic.is_breaking && (
                       <span
                         className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
@@ -367,6 +491,9 @@ export default async function FeedPage() {
             ))}
           </div>
         )}
+
+        {/* ── Learning Debt (Pro only) ────────────────────────────────── */}
+        {isPro && <LearningDebt userId={user.id} isPro={isPro} />}
       </main>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
