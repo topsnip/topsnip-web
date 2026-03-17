@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://topsnip.co"),
+  metadataBase: new URL("https://www.topsnip.co"),
   title: "Topsnip — Search any topic. Skip the noise.",
   description:
     "Type a topic. Get one distilled, actionable summary from the best YouTube sources — with all the filler cut out. Just Topsnip it.",

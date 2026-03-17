@@ -6,11 +6,11 @@ import { NextResponse, type NextRequest } from "next/server";
 const PROTECTED_ROUTES = ["/history", "/settings", "/feed", "/onboarding"];
 
 export async function middleware(request: NextRequest) {
-  // Canonical domain: redirect www → non-www to prevent split auth cookies
+  // Canonical domain: redirect non-www → www to match Vercel/DNS config
   const hostname = request.nextUrl.hostname;
-  if (hostname === "www.topsnip.co") {
+  if (hostname === "topsnip.co") {
     const canonicalUrl = request.nextUrl.clone();
-    canonicalUrl.hostname = "topsnip.co";
+    canonicalUrl.hostname = "www.topsnip.co";
     canonicalUrl.port = "";
     return NextResponse.redirect(canonicalUrl, 301);
   }
