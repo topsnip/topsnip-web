@@ -12,6 +12,7 @@ import { decodeHtml } from "@/lib/utils/decode-html";
 import { FeedSearchBar } from "./feed-search-bar";
 import { AuthNav } from "@/components/AuthNav";
 import { LearningDebt } from "./learning-debt";
+import { TrendingSuggestions, QuickSuggestions } from "./trending-suggestions";
 
 // ── "Since you were last here" types ────────────────────────────────────────
 
@@ -194,8 +195,13 @@ export default async function FeedPage() {
 
       {/* ── Main Content ────────────────────────────────────────────────── */}
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 pt-28 pb-16 relative z-10">
-        {/* Search bar (client component) */}
-        <FeedSearchBar />
+        {/* Search bar (client component) with pulse dot */}
+        <div className="feed-search-container relative">
+          <FeedSearchBar />
+        </div>
+
+        {/* Quick suggestion chips below search */}
+        <QuickSuggestions />
 
         {/* Date heading */}
         <div
@@ -267,46 +273,10 @@ export default async function FeedPage() {
         {/* ── Empty State (no digest for today yet) ─────────────────────── */}
         {!isQuietDay && feedTopics.length === 0 && (
           <div
-            className="glass-card rounded-2xl p-8 flex flex-col items-center text-center gap-5"
+            className="empty-state-gradient rounded-2xl p-8 flex flex-col items-center text-center gap-6"
             style={{ animation: "fadeInUp 0.35s ease 0.06s both" }}
           >
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center"
-              style={{
-                background: "var(--ts-accent-8)",
-                border: "1px solid var(--ts-accent-20)",
-              }}
-            >
-              <span className="text-xl" style={{ color: "var(--ts-accent)" }}>
-                ?
-              </span>
-            </div>
-            <div className="flex flex-col gap-2">
-              <p
-                className="text-base font-semibold text-white"
-                style={{ fontFamily: headingFont }}
-              >
-                No topics yet today
-              </p>
-              <p
-                className="text-sm max-w-md"
-                style={{ color: "var(--ts-text-2)" }}
-              >
-                Check back later — we&apos;re scanning sources. In the meantime,
-                search any AI topic and get a structured explainer.
-              </p>
-            </div>
-            <Link
-              href="/feed#search"
-              className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                boxShadow: "0 0 20px var(--ts-accent-30)",
-              }}
-            >
-              Search a topic
-            </Link>
+            <TrendingSuggestions />
           </div>
         )}
 
