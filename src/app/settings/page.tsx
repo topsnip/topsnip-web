@@ -382,7 +382,7 @@ export default function SettingsPage() {
                 <button
                   key={r.value}
                   onClick={() => setSelectedRole(r.value)}
-                  className="rounded-xl p-4 text-left transition-all duration-200 cursor-pointer"
+                  className="card-interactive rounded-xl p-4 text-left"
                   style={{
                     background: active
                       ? "var(--ts-accent-8)"
@@ -427,12 +427,7 @@ export default function SettingsPage() {
             <button
               onClick={saveRole}
               disabled={savingRole}
-              className="self-end rounded-xl px-5 py-2 text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-40 cursor-pointer"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                boxShadow: "0 0 16px var(--ts-accent-25)",
-              }}
+              className="btn-primary self-end rounded-xl px-5 py-2 text-sm"
             >
               {savingRole ? "Saving..." : "Save role"}
             </button>
@@ -478,7 +473,7 @@ export default function SettingsPage() {
                   <button
                     key={tag.slug}
                     onClick={() => toggleInterest(tag.slug)}
-                    className="rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-200 cursor-pointer"
+                    className="pill-interactive rounded-full px-3.5 py-1.5 text-xs font-medium"
                     style={{
                       background: active
                         ? "var(--ts-accent-12)"
@@ -510,12 +505,7 @@ export default function SettingsPage() {
             <button
               onClick={saveInterests}
               disabled={savingInterests}
-              className="self-end rounded-xl px-5 py-2 text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-40 cursor-pointer"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                boxShadow: "0 0 16px var(--ts-accent-25)",
-              }}
+              className="btn-primary self-end rounded-xl px-5 py-2 text-sm"
             >
               {savingInterests ? "Saving..." : "Save interests"}
             </button>
@@ -549,12 +539,7 @@ export default function SettingsPage() {
               </div>
               <Link
                 href="/upgrade"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 whitespace-nowrap"
-                style={{
-                  background:
-                    "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                  boxShadow: "0 0 20px var(--ts-accent-25)",
-                }}
+                className="btn-primary inline-flex items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-sm whitespace-nowrap"
               >
                 <Crown size={14} />
                 Upgrade to Pro
@@ -574,12 +559,8 @@ export default function SettingsPage() {
               </div>
               <button
                 onClick={handleManageSubscription}
-                className="rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:opacity-80 whitespace-nowrap cursor-pointer"
-                style={{
-                  color: "var(--ts-text-2)",
-                  background: "transparent",
-                  border: "1px solid var(--border)",
-                }}
+                className="btn-secondary rounded-xl px-5 py-2.5 text-sm font-semibold whitespace-nowrap"
+                style={{ color: "var(--ts-text-2)" }}
               >
                 Manage subscription
               </button>
@@ -592,12 +573,8 @@ export default function SettingsPage() {
           <button
             onClick={handleSignOut}
             disabled={signingOut}
-            className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all hover:opacity-80 disabled:opacity-40 cursor-pointer"
-            style={{
-              color: "var(--ts-text-2)",
-              background: "transparent",
-              border: "1px solid var(--border)",
-            }}
+            className="btn-secondary flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium"
+            style={{ color: "var(--ts-text-2)" }}
           >
             <LogOut size={14} />
             {signingOut ? "Signing out..." : "Sign out"}

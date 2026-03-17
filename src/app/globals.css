@@ -596,43 +596,154 @@
   animation: headlineFade 8s ease-in-out infinite;
 }
 
-/* ── Login page: button & input styles ───────────────────────────── */
-.login-btn-google {
-  cursor: pointer;
-  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
-}
-.login-btn-google:hover {
-  transform: scale(1.02);
-  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
-  border-color: var(--border-focus) !important;
-}
-.login-btn-google:active {
-  transform: scale(0.98);
-  transition-duration: 100ms;
-}
-.login-btn-google:focus-visible {
+/* ── Unified Interaction System ──────────────────────────────────── */
+
+/* Universal focus-visible ring */
+:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--ts-accent-50);
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ts-accent);
 }
 
-.login-btn-magic {
+/* Primary button (coral CTA) */
+.btn-primary {
+  background: linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2));
+  color: #ffffff;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
   cursor: pointer;
-  transition: opacity 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+  transition: all var(--duration-fast) ease;
   box-shadow: 0 0 20px var(--ts-accent-30);
 }
-.login-btn-magic:hover:not(:disabled) {
-  opacity: 0.9;
+.btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 4px 20px var(--ts-glow);
+  opacity: 0.9;
 }
-.login-btn-magic:active:not(:disabled) {
-  transform: translateY(0);
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
 }
-.login-btn-magic:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--ts-accent-50);
+.btn-primary:focus-visible {
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ts-accent);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
+/* Secondary button (outlined/ghost) */
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  padding: 12px 24px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--ts-accent);
+  color: var(--ts-accent);
+  transform: translateY(-1px);
+}
+.btn-secondary:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+.btn-secondary:focus-visible {
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ts-accent);
+}
+.btn-secondary:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Ghost button (text only) */
+.btn-ghost {
+  background: transparent;
+  border: none;
+  color: var(--ts-text-2);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+.btn-ghost:hover {
+  color: var(--foreground);
+  background: var(--ts-surface);
+}
+.btn-ghost:active {
+  transform: scale(0.98);
+}
+.btn-ghost:focus-visible {
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ts-accent);
+}
+
+/* Social/OAuth button */
+.btn-social {
+  background: #ffffff;
+  color: #1f1f1f;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+.btn-social:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+  border-color: var(--border-focus);
+}
+.btn-social:active {
+  transform: scale(0.98);
+}
+.btn-social:focus-visible {
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ts-accent);
+}
+
+/* Interactive card */
+.card-interactive {
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+.card-interactive:hover {
+  transform: translateY(-2px);
+  border-color: var(--ts-accent-12);
+  box-shadow: 0 4px 20px var(--ts-glow);
+}
+.card-interactive:active {
+  transform: translateY(0);
+}
+.card-interactive:focus-visible {
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ts-accent);
+}
+
+/* Clickable pill/chip */
+.pill-interactive {
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+.pill-interactive:hover {
+  border-color: var(--ts-accent);
+  color: var(--foreground);
+  background: var(--ts-accent-8);
+  box-shadow: 0 0 16px var(--ts-glow);
+}
+.pill-interactive:active {
+  transform: scale(0.95);
+}
+.pill-interactive:focus-visible {
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ts-accent);
+}
+
+/* Interactive link */
+.link-interactive {
+  color: var(--ts-accent);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+.link-interactive:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* ── Login page: input styles ───────────────────────────────────── */
 .login-input {
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
@@ -673,7 +784,8 @@
     transform: none;
   }
   .glass-card:hover,
-  .topic-card:hover {
+  .topic-card:hover,
+  .card-interactive:hover {
     transform: none;
   }
   .breaking-badge {
@@ -683,8 +795,11 @@
     animation: none;
     opacity: 0.08;
   }
-  .login-btn-google:hover,
-  .login-btn-magic:hover:not(:disabled) {
+  .btn-primary:hover,
+  .btn-secondary:hover,
+  .btn-ghost:hover,
+  .btn-social:hover,
+  .pill-interactive:hover {
     transform: none;
   }
   .typewriter-line-1,

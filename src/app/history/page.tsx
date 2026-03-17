@@ -50,8 +50,7 @@ export default async function HistoryPage() {
             </p>
             <Link
               href="/feed"
-              className="text-sm font-medium"
-              style={{ color: "var(--ts-accent)" }}
+              className="link-interactive text-sm font-medium"
             >
               Go to feed →
             </Link>
@@ -62,7 +61,7 @@ export default async function HistoryPage() {
               <Link
                 key={item.id}
                 href={`/s/${item.query_slug}?q=${encodeURIComponent(item.query)}`}
-                className="flex items-center justify-between rounded-xl border px-4 py-3 transition-all hover:border-[var(--ts-accent)] group"
+                className="card-interactive flex items-center justify-between rounded-xl border px-4 py-3 group"
                 style={{
                   background: "var(--ts-surface)",
                   borderColor: "var(--border)",

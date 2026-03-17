@@ -22,10 +22,9 @@ export function ShareButton() {
   return (
     <button
       onClick={handleCopy}
-      className="flex items-center gap-2 w-full rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer"
+      className="btn-secondary flex items-center gap-2 w-full rounded-lg px-4 py-2.5 text-sm font-medium"
       style={{
         background: "var(--ts-surface)",
-        border: "1px solid var(--border)",
         color: copied ? "var(--success)" : "var(--foreground)",
       }}
     >

@@ -445,7 +445,7 @@ export default async function TopicDetailPage({
                       href={`https://www.youtube.com/watch?v=${rec.video_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex gap-3 rounded-xl border p-3 transition-all duration-200 hover:border-[var(--ts-accent-30)] group cursor-pointer"
+                      className="card-interactive flex gap-3 rounded-xl border p-3 group"
                       style={{
                         background: "var(--ts-surface)",
                         borderColor: "var(--border)",
@@ -535,7 +535,7 @@ export default async function TopicDetailPage({
                       href={`https://www.youtube.com/watch?v=${rec.video_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex gap-2.5 rounded-lg p-2 transition-all duration-200 hover:bg-[var(--ts-surface-hover)] group cursor-pointer"
+                      className="card-interactive flex gap-2.5 rounded-lg p-2 group"
                     >
                       <div
                         className="w-16 flex-shrink-0 rounded-md overflow-hidden relative"
@@ -603,7 +603,7 @@ export default async function TopicDetailPage({
                     <Link
                       key={rt.id}
                       href={`/topic/${rt.slug}`}
-                      className="flex flex-col gap-1 rounded-lg p-2 transition-all duration-200 hover:bg-[var(--ts-surface-hover)] group"
+                      className="card-interactive flex flex-col gap-1 rounded-lg p-2 group"
                     >
                       <p className="text-xs font-medium text-white leading-snug line-clamp-2 group-hover:text-[var(--ts-accent-2)] transition-colors">
                         {rt.title}
@@ -637,8 +637,7 @@ export default async function TopicDetailPage({
                 <ShareButton />
                 <Link
                   href={`/auth/login?redirect=/topic/${slug}`}
-                  className="flex items-center justify-center gap-2 w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:opacity-90"
-                  style={{ background: "var(--ts-accent)" }}
+                  className="btn-primary flex items-center justify-center gap-2 w-full rounded-lg px-4 py-2.5 text-sm"
                 >
                   Sign up to learn more
                 </Link>
@@ -702,8 +701,7 @@ export default async function TopicDetailPage({
         >
           <Link
             href="/feed"
-            className="flex items-center gap-1.5 text-xs transition-opacity hover:opacity-80"
-            style={{ color: "var(--ts-text-2)" }}
+            className="btn-ghost flex items-center gap-1.5 text-xs"
           >
             <ArrowLeft size={12} />
             Back to feed
@@ -736,7 +734,7 @@ function RelatedTopicCard({ topic }: { topic: RelatedTopic }) {
   return (
     <Link
       href={`/topic/${topic.slug}`}
-      className="flex flex-col gap-2 rounded-xl p-4 transition-all duration-200 group cursor-pointer hover:-translate-y-0.5"
+      className="card-interactive flex flex-col gap-2 rounded-xl p-4 group"
       style={{
         background: "var(--ts-surface)",
         border: "1px solid var(--border)",

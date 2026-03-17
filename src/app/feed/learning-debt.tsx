@@ -83,7 +83,7 @@ export function LearningDebt({
           <Link
             key={topic.topic_id}
             href={`/topic/${topic.slug}`}
-            className="group flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200"
+            className="pill-interactive group flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium"
             style={{
               background: "var(--ts-accent-6)",
               border: "1px solid var(--ts-accent-10)",

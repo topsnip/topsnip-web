@@ -322,7 +322,7 @@ export default function OnboardingPage() {
                       role="radio"
                       aria-checked={selected}
                       onClick={() => setRole(r.value)}
-                      className="rounded-xl p-4 flex flex-col gap-3 text-left transition-all duration-200 cursor-pointer"
+                      className="card-interactive rounded-xl p-4 flex flex-col gap-3 text-left"
                       style={{
                         background: selected
                           ? "var(--ts-accent-8)"
@@ -372,11 +372,9 @@ export default function OnboardingPage() {
               <button
                 onClick={() => role && setStep(2)}
                 disabled={!role}
-                className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.98] cursor-pointer"
+                className="btn-primary w-full rounded-xl py-3 text-sm disabled:opacity-30 disabled:cursor-not-allowed"
                 style={{
-                  background:
-                    "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                  boxShadow: role ? "0 0 24px var(--ts-accent-30)" : "none",
+                  boxShadow: role ? undefined : "none",
                 }}
               >
                 Continue
@@ -442,7 +440,7 @@ export default function OnboardingPage() {
                         initial="hidden"
                         animate="visible"
                         onClick={() => toggleInterest(tag.slug)}
-                        className="trending-pill rounded-full border px-4 py-2 text-sm font-medium cursor-pointer active:scale-95"
+                        className="trending-pill pill-interactive rounded-full border px-4 py-2 text-sm font-medium"
                         style={{
                           background: selected
                             ? "var(--ts-accent-8)"
@@ -489,24 +487,15 @@ export default function OnboardingPage() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep(1)}
-                  className="rounded-xl py-3 px-6 text-sm font-medium transition-all hover:opacity-80 cursor-pointer"
-                  style={{
-                    color: "var(--ts-text-2)",
-                    background: "transparent",
-                    border: "1px solid var(--border)",
-                  }}
+                  className="btn-secondary rounded-xl py-3 px-6 text-sm font-medium"
+                  style={{ color: "var(--ts-text-2)" }}
                 >
                   Back
                 </button>
                 <button
                   onClick={handleStep2Continue}
                   disabled={saving}
-                  className="flex-1 rounded-xl py-3 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-50 hover:opacity-90 active:scale-[0.98] cursor-pointer"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                    boxShadow: "0 0 24px var(--ts-accent-30)",
-                  }}
+                  className="btn-primary flex-1 rounded-xl py-3 text-sm"
                 >
                   {saving ? "Saving..." : "Continue"}
                 </button>
@@ -516,12 +505,8 @@ export default function OnboardingPage() {
               <button
                 onClick={handleStep2Continue}
                 disabled={saving}
-                className="text-xs text-center transition-colors hover:text-white cursor-pointer"
-                style={{
-                  color: "var(--ts-muted)",
-                  background: "none",
-                  border: "none",
-                }}
+                className="btn-ghost text-xs text-center"
+                style={{ color: "var(--ts-muted)" }}
               >
                 Skip
               </button>
@@ -611,12 +596,7 @@ export default function OnboardingPage() {
               {/* CTA button */}
               <button
                 onClick={() => router.push("/feed")}
-                className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.98] cursor-pointer"
-                style={{
-                  background:
-                    "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                  boxShadow: "0 0 24px var(--ts-accent-30)",
-                }}
+                className="btn-primary w-full rounded-xl py-3 text-sm"
               >
                 Go to my feed &rarr;
               </button>

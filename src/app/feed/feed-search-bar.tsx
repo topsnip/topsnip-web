@@ -53,11 +53,7 @@ export function FeedSearchBar() {
         <button
           type="submit"
           disabled={!query.trim()}
-          className="flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold text-white transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-90 active:scale-95 cursor-pointer shadow-[0_0_12px_var(--ts-accent-30)]"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-          }}
+          className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs disabled:opacity-30 disabled:cursor-not-allowed"
         >
           Search
           <ArrowRight size={12} />

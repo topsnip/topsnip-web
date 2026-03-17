@@ -129,13 +129,7 @@ function LoginForm() {
               {/* Google sign-in */}
               <button
                 onClick={handleGoogleSignIn}
-                className="login-btn-google w-full flex items-center justify-center gap-3 rounded-xl border py-3 px-6 text-sm font-medium"
-                style={{
-                  background: "#FFFFFF",
-                  borderColor: "var(--border)",
-                  color: "#1F1F1F",
-                  cursor: "pointer",
-                }}
+                className="btn-social w-full flex items-center justify-center gap-3 rounded-xl py-3 px-6 text-sm font-medium"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24">
                   <path
@@ -203,11 +197,9 @@ function LoginForm() {
                 <button
                   type="submit"
                   disabled={loading || !email}
-                  className="login-btn-magic w-full rounded-xl py-3 text-sm font-semibold text-white disabled:opacity-40"
+                  className="btn-primary w-full rounded-xl py-3 text-sm font-semibold text-white disabled:opacity-40"
                   style={{
-                    background:
-                      "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                    cursor: loading ? "wait" : "pointer",
+                    cursor: loading ? "wait" : undefined,
                   }}
                 >
                   {loading ? (

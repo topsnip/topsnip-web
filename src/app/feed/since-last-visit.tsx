@@ -95,7 +95,7 @@ export function SinceLastVisit({ topics }: SinceLastVisitProps) {
                 >
                   <Link
                     href={`/topic/${topic.topic_slug}`}
-                    className="flex flex-col gap-1 rounded-lg px-3 py-2.5 transition-colors hover:brightness-110"
+                    className="card-interactive flex flex-col gap-1 rounded-lg px-3 py-2.5"
                     style={{
                       background: "var(--ts-surface)",
                       border: "1px solid var(--border)",

@@ -127,11 +127,7 @@ export default function AboutPage() {
         <div className="flex flex-col items-start gap-3">
           <Link
             href="/"
-            className="flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 shadow-[0_0_20px_var(--ts-accent-30)]"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-            }}
+            className="btn-primary flex items-center gap-2 rounded-xl px-5 py-3 text-sm"
           >
             Try it now →
           </Link>

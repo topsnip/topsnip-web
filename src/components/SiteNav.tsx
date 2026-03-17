@@ -130,11 +130,7 @@ export function SiteNav({ user }: SiteNavProps) {
                 })}
                 <Link
                   href="/auth/login"
-                  className="rounded-full px-4 py-1.5 text-xs font-semibold text-white transition-all hover:opacity-90"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                  }}
+                  className="btn-primary rounded-full px-4 py-1.5 text-xs"
                 >
                   Sign in
                 </Link>

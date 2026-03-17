@@ -230,11 +230,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={!query.trim()}
-                className="flex items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-90 active:scale-95 cursor-pointer shadow-[0_0_20px_var(--ts-accent-30)]"
-                style={{
-                  background:
-                    "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                }}
+                className="btn-primary flex items-center gap-1.5 rounded-xl px-5 py-2 text-sm disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 Learn
                 <ArrowRight size={14} />
@@ -255,7 +251,7 @@ export default function Home() {
                   ease: [0.16, 1, 0.3, 1],
                 }}
                 onClick={() => navigateToSearch(s)}
-                className="suggestion-chip rounded-full border px-3 py-1.5 text-xs font-medium active:scale-95 cursor-pointer"
+                className="suggestion-chip pill-interactive rounded-full border px-3 py-1.5 text-xs font-medium"
               >
                 {s}
               </motion.button>
@@ -465,12 +461,8 @@ export default function Home() {
                   onClick={() =>
                     window.scrollTo({ top: 0, behavior: "smooth" })
                   }
-                  className="w-full rounded-xl py-2.5 text-sm font-semibold transition-all hover:opacity-80 cursor-pointer"
-                  style={{
-                    color: "var(--ts-text-2)",
-                    background: "transparent",
-                    border: "1px solid var(--border)",
-                  }}
+                  className="btn-secondary w-full rounded-xl py-2.5 text-sm font-semibold"
+                  style={{ color: "var(--ts-text-2)" }}
                 >
                   Get Started
                 </button>
@@ -544,12 +536,7 @@ export default function Home() {
                 </ul>
                 <Link
                   href="/upgrade"
-                  className="w-full rounded-xl py-2.5 text-sm font-semibold text-white text-center transition-all hover:opacity-90 block cursor-pointer"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                    boxShadow: "0 0 24px var(--ts-accent-30)",
-                  }}
+                  className="btn-primary w-full rounded-xl py-2.5 text-sm text-center block"
                 >
                   Start Pro
                 </Link>
@@ -610,11 +597,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={!bottomQuery.trim()}
-                className="flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 hover:opacity-90 active:scale-95 cursor-pointer shadow-[0_0_20px_var(--ts-accent-30)]"
-                style={{
-                  background:
-                    "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                }}
+                className="btn-primary flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm disabled:opacity-30"
               >
                 Go
                 <ArrowRight size={14} />

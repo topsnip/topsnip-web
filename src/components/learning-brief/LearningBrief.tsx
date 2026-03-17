@@ -211,15 +211,13 @@ export function LearningBrief({
               </p>
               <Link
                 href={redirectPath ? `/auth/login?redirect=${encodeURIComponent(redirectPath)}` : "/auth/login"}
-                className="rounded-xl px-8 py-3 text-base font-medium text-white transition-opacity hover:opacity-90"
-                style={{ background: "var(--ts-accent)" }}
+                className="btn-primary rounded-xl px-8 py-3 text-base font-medium"
               >
                 Sign up — it&apos;s free
               </Link>
               <Link
                 href={redirectPath ? `/auth/login?redirect=${encodeURIComponent(redirectPath)}` : "/auth/login"}
-                className="text-sm underline transition-opacity hover:opacity-80"
-                style={{ color: "var(--ts-text-2)" }}
+                className="btn-ghost text-sm underline"
               >
                 Sign in
               </Link>
@@ -397,11 +395,12 @@ export function LearningBrief({
               <button
                 onClick={handleMarkUnderstood}
                 disabled={understood}
-                className="w-full rounded-xl px-8 py-3.5 text-base font-medium text-white transition-all duration-200 cursor-pointer disabled:cursor-default"
+                className="btn-primary w-full rounded-xl px-8 py-3.5 text-base font-medium disabled:cursor-default"
                 style={{
                   background: understood
                     ? "var(--success)"
-                    : "var(--ts-accent)",
+                    : undefined,
+                  boxShadow: understood ? "none" : undefined,
                 }}
               >
                 {understood ? "Understood!" : "I understand this \u2713"}

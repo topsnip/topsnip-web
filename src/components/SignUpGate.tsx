@@ -70,18 +70,14 @@ export function SignUpGate({
         <div className="flex flex-col gap-2">
           <button
             onClick={() => router.push(ctaPath)}
-            className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all hover:opacity-90 shadow-[0_0_20px_var(--ts-accent-30)]"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-            }}
+            className="btn-primary w-full rounded-xl py-3 text-sm"
           >
             {cta}
           </button>
           {onDismiss && (
             <button
               onClick={onDismiss}
-              className="w-full rounded-xl py-3 text-sm font-medium transition-all hover:opacity-80"
+              className="btn-ghost w-full rounded-xl py-3 text-sm font-medium"
               style={{ color: "var(--ts-muted)" }}
             >
               Maybe later

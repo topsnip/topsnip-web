@@ -178,12 +178,7 @@ export default async function KnowledgeDashboardPage() {
           </p>
           <Link
             href="/upgrade"
-            className="rounded-xl px-6 py-3 text-sm font-semibold text-white transition-all hover:opacity-90"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-              boxShadow: "0 0 20px var(--ts-accent-30)",
-            }}
+            className="btn-primary rounded-xl px-6 py-3 text-sm"
           >
             Upgrade to Pro
           </Link>
@@ -301,7 +296,7 @@ export default async function KnowledgeDashboardPage() {
                   <Link
                     key={tag.slug}
                     href={`/feed?tag=${tag.slug}`}
-                    className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all group"
+                    className="card-interactive flex items-center gap-3 rounded-xl px-4 py-3 group"
                     style={
                       isCovered
                         ? {
@@ -377,7 +372,7 @@ export default async function KnowledgeDashboardPage() {
                 <Link
                   key={`${item.slug}-${i}`}
                   href={`/topic/${item.slug}`}
-                  className="flex items-center justify-between rounded-xl border px-4 py-3 transition-all hover:border-[var(--ts-accent)] group"
+                  className="card-interactive flex items-center justify-between rounded-xl border px-4 py-3 group"
                   style={{
                     background: "var(--ts-surface)",
                     borderColor: "var(--border)",

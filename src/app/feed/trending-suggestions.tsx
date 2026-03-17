@@ -87,7 +87,7 @@ export function TrendingSuggestions() {
           <Link
             key={item.query}
             href={toSearchHref(item.query)}
-            className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 transition-all duration-200 group"
+            className="card-interactive flex items-center justify-between gap-3 rounded-xl px-4 py-3 group"
             style={{
               background: "var(--ts-surface)",
               border: "1px solid var(--border)",
@@ -129,7 +129,7 @@ export function TrendingSuggestions() {
           <Link
             key={topic}
             href={toSearchHref(topic)}
-            className="trending-pill rounded-full border px-3.5 py-1.5 text-xs font-medium"
+            className="trending-pill pill-interactive rounded-full border px-3.5 py-1.5 text-xs font-medium"
             style={{
               animationDelay: `${i * 0.15}s`,
               animationDuration: `${3 + (i % 4) * 0.7}s`,
@@ -175,7 +175,7 @@ export function QuickSuggestions() {
         <Link
           key={s}
           href={toSearchHref(s)}
-          className="suggestion-chip rounded-full border px-2.5 py-1 text-[11px] font-medium"
+          className="suggestion-chip pill-interactive rounded-full border px-2.5 py-1 text-[11px] font-medium"
         >
           {s}
         </Link>
@@ -236,7 +236,7 @@ export function QuietDayState({ showLearningDebt }: QuietDayProps) {
               <Link
                 key={s}
                 href={toSearchHref(s)}
-                className="suggestion-chip rounded-full border px-3 py-1.5 text-xs font-medium"
+                className="suggestion-chip pill-interactive rounded-full border px-3 py-1.5 text-xs font-medium"
               >
                 {s}
               </Link>

@@ -108,7 +108,7 @@ function TopicCardInner({ topic, index }: { topic: TopicCardData; index: number 
     >
       <Link
         href={`/topic/${topic.slug}`}
-        className="topic-card group block rounded-xl p-5 transition-all duration-200"
+        className="topic-card card-interactive group block rounded-xl p-5"
         style={{
           background: "var(--ts-surface)",
           border: "1px solid var(--border)",

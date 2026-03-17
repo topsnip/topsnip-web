@@ -51,9 +51,10 @@ export function MarkUnderstood({ topicId }: MarkUnderstoodProps) {
         ref={buttonRef}
         onClick={handleClick}
         disabled={understood}
-        className="w-full rounded-xl px-8 py-3.5 text-base font-medium text-white transition-all duration-300 cursor-pointer disabled:cursor-default"
+        className="btn-primary w-full rounded-xl px-8 py-3.5 text-base font-medium disabled:cursor-default"
         style={{
-          background: understood ? "var(--success)" : "var(--ts-accent)",
+          background: understood ? "var(--success)" : undefined,
+          boxShadow: understood ? "none" : undefined,
         }}
       >
         {understood ? "Understood \u2713" : "I understand this"}

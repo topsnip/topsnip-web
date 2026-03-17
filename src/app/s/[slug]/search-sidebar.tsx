@@ -124,7 +124,7 @@ export function SearchSidebar({
               <button
                 key={topic}
                 onClick={() => handleTopicClick(topic)}
-                className="rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 hover:scale-105 cursor-pointer"
+                className="pill-interactive rounded-full px-3 py-1.5 text-xs font-medium"
                 style={{
                   background: "var(--ts-accent-3, rgba(232,115,74,0.04))",
                   border: "1px solid var(--ts-accent-6, rgba(232,115,74,0.08))",
@@ -152,7 +152,7 @@ export function SearchSidebar({
           {/* Share button */}
           <button
             onClick={handleShare}
-            className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2.5 text-xs font-medium transition-all duration-200 hover:opacity-80 cursor-pointer"
+            className="btn-secondary flex items-center gap-2.5 w-full rounded-lg px-3 py-2.5 text-xs font-medium"
             style={{
               background: copied
                 ? "rgba(52,211,153,0.08)"
@@ -160,7 +160,6 @@ export function SearchSidebar({
               color: copied
                 ? "var(--success, #34d399)"
                 : "var(--ts-text-2)",
-              border: "1px solid var(--border)",
             }}
           >
             {copied ? (
@@ -179,11 +178,10 @@ export function SearchSidebar({
           {/* Save to knowledge — logged-in only */}
           {isLoggedIn && (
             <button
-              className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2.5 text-xs font-medium transition-all duration-200 hover:opacity-80 cursor-pointer"
+              className="btn-secondary flex items-center gap-2.5 w-full rounded-lg px-3 py-2.5 text-xs font-medium"
               style={{
                 background: "transparent",
                 color: "var(--ts-text-2)",
-                border: "1px solid var(--border)",
               }}
             >
               <Bookmark size={14} />
@@ -195,11 +193,10 @@ export function SearchSidebar({
           {isLoggedIn && (
             <Link
               href="/history"
-              className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2.5 text-xs font-medium transition-all duration-200 hover:opacity-80"
+              className="btn-secondary flex items-center gap-2.5 w-full rounded-lg px-3 py-2.5 text-xs font-medium"
               style={{
                 background: "transparent",
                 color: "var(--ts-text-2)",
-                border: "1px solid var(--border)",
               }}
             >
               <History size={14} />

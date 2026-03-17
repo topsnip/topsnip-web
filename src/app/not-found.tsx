@@ -38,12 +38,7 @@ export default function NotFound() {
 
         <Link
           href="/"
-          className="rounded-xl px-6 py-3 text-sm font-semibold text-white transition-all hover:opacity-90"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-            boxShadow: "0 0 20px var(--ts-accent-30)",
-          }}
+          className="btn-primary rounded-xl px-6 py-3 text-sm"
         >
           Go Home
         </Link>

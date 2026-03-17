@@ -117,11 +117,7 @@ function UpgradeContent() {
           </div>
           <button
             onClick={() => router.push("/feed")}
-            className="flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 w-full justify-center shadow-[0_0_20px_var(--ts-accent-30)]"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-            }}
+            className="btn-primary flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm w-full justify-center"
           >
             Start searching
             <ArrowRight size={14} />
@@ -162,7 +158,7 @@ function UpgradeContent() {
           </p>
           <button
             onClick={() => router.push("/feed")}
-            className="text-sm font-medium transition-opacity hover:opacity-80"
+            className="btn-ghost text-sm font-medium"
             style={{ color: "var(--ts-accent)" }}
           >
             Back to search
@@ -250,11 +246,7 @@ function UpgradeContent() {
             <button
               onClick={() => handleCheckout("monthly")}
               disabled={loadingPlan !== null}
-              className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-40 hover:opacity-90 mt-auto shadow-[0_0_12px_var(--ts-accent-30)]"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-              }}
+              className="btn-primary w-full rounded-xl py-3 text-sm mt-auto"
             >
               {loadingPlan === "monthly"
                 ? "Redirecting..."
@@ -322,11 +314,7 @@ function UpgradeContent() {
             <button
               onClick={() => handleCheckout("yearly")}
               disabled={loadingPlan !== null}
-              className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-40 hover:opacity-90 mt-auto shadow-[0_0_20px_var(--ts-accent-30)]"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-              }}
+              className="btn-primary w-full rounded-xl py-3 text-sm mt-auto"
             >
               {loadingPlan === "yearly" ? "Redirecting..." : "Get Pro — $79/yr"}
             </button>

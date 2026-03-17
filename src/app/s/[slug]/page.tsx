@@ -241,11 +241,7 @@ function ResultContent() {
           </div>
           <button
             type="submit"
-            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all duration-200 hover:opacity-90 cursor-pointer shadow-[0_0_12px_var(--ts-accent-30)]"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-            }}
+            className="btn-primary rounded-lg px-3 py-1.5 text-xs"
           >
             Search
           </button>
@@ -268,8 +264,7 @@ function ResultContent() {
             </p>
             <button
               onClick={() => fetchResult(query)}
-              className="text-sm underline cursor-pointer"
-              style={{ color: "var(--ts-accent)" }}
+              className="link-interactive text-sm underline"
             >
               Try again
             </button>
@@ -347,8 +342,7 @@ function ResultContent() {
                   <button
                     onClick={() => router.push(isLoggedIn ? "/feed" : "/")}
                     aria-label="Start a new search"
-                    className="flex items-center gap-1.5 text-xs transition-opacity hover:opacity-80 cursor-pointer"
-                    style={{ color: "var(--ts-text-2)" }}
+                    className="btn-ghost flex items-center gap-1.5 text-xs"
                   >
                     <ArrowLeft size={12} />
                     New search
@@ -414,12 +408,8 @@ function ResultContent() {
             <button
               type="submit"
               disabled={!followUp.trim()}
-              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 hover:opacity-90 cursor-pointer shadow-[0_0_12px_var(--ts-accent-30)]"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-                height: "48px",
-              }}
+              className="btn-primary rounded-xl px-4 py-2.5 text-sm disabled:opacity-30"
+              style={{ height: "48px" }}
             >
               Search
             </button>
