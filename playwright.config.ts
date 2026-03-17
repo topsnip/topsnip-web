@@ -8,7 +8,7 @@ export default defineConfig({
   retries: 0,
   reporter: "list",
   use: {
-    baseURL: "https://topsnip.vercel.app",
+    baseURL: "https://www.topsnip.co",
     headless: true,
     screenshot: "only-on-failure",
     trace: "on-first-retry",

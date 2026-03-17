@@ -8,20 +8,44 @@ export const metadata = {
 export default function AboutPage() {
   return (
     <main className="min-h-screen px-4 py-16">
-      <div className="max-w-2xl mx-auto flex flex-col gap-12">
-        {/* Nav */}
-        <div className="flex items-center justify-between">
-          <Link href="/" className="text-xl font-extrabold tracking-tight text-white">
+      {/* ── Floating Nav (matches landing page pattern) ─────────────── */}
+      <nav className="fixed top-4 left-4 right-4 z-50 flex justify-center">
+        <div className="floating-nav rounded-full px-6 py-3 flex items-center justify-between w-full max-w-3xl">
+          <Link
+            href="/"
+            className="font-bold tracking-tight text-white"
+            style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif", fontSize: "1.1rem" }}
+          >
             top<span style={{ color: "var(--ts-accent)" }}>snip</span>
           </Link>
-          <Link
-            href="/feed"
-            className="text-sm font-medium transition-colors hover:text-white"
-            style={{ color: "var(--ts-text-2)" }}
-          >
-            ← Back to Feed
-          </Link>
+          <div className="flex items-center gap-5">
+            <Link
+              href="/about"
+              className="text-sm font-medium transition-colors hover:text-white text-white"
+            >
+              About
+            </Link>
+            <Link
+              href="/upgrade"
+              className="text-sm font-medium transition-colors hover:text-white"
+              style={{ color: "var(--ts-text-2)" }}
+            >
+              Pricing
+            </Link>
+            <Link
+              href="/auth/login"
+              className="rounded-full px-4 py-1.5 text-xs font-semibold text-white transition-all hover:opacity-90"
+              style={{
+                background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+              }}
+            >
+              Sign in
+            </Link>
+          </div>
         </div>
+      </nav>
+
+      <div className="max-w-2xl mx-auto flex flex-col gap-12 pt-12">
 
         {/* Hero */}
         <div className="flex flex-col gap-4">

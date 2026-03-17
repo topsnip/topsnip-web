@@ -285,13 +285,29 @@ function ResultContent() {
           </form>
 
           {isLoggedIn && (
-            <button
-              onClick={() => router.push("/history")}
-              className="text-xs font-medium flex-shrink-0 transition-opacity hover:opacity-80 cursor-pointer"
-              style={{ color: "var(--ts-text-2)" }}
-            >
-              History
-            </button>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <button
+                onClick={() => router.push("/feed")}
+                className="text-xs font-medium transition-opacity hover:opacity-80 cursor-pointer"
+                style={{ color: "var(--ts-text-2)" }}
+              >
+                Feed
+              </button>
+              <button
+                onClick={() => router.push("/history")}
+                className="text-xs font-medium transition-opacity hover:opacity-80 cursor-pointer"
+                style={{ color: "var(--ts-text-2)" }}
+              >
+                History
+              </button>
+              <button
+                onClick={() => router.push("/settings")}
+                className="text-xs font-medium transition-opacity hover:opacity-80 cursor-pointer"
+                style={{ color: "var(--ts-text-2)" }}
+              >
+                Settings
+              </button>
+            </div>
           )}
         </div>
       </header>

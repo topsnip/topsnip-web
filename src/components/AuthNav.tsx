@@ -32,7 +32,10 @@ export function AuthNav() {
         </Link>
         <div className="flex items-center gap-3 sm:gap-5">
           {NAV_LINKS.map(({ href, label }) => {
-            const isActive = pathname === href || pathname.startsWith(href + "/");
+            const isActive =
+              pathname === href ||
+              pathname.startsWith(href + "/") ||
+              (href === "/feed" && pathname.startsWith("/topic/"));
             return (
               <Link
                 key={href}
