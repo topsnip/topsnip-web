@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/auth/", "/settings", "/onboarding", "/history"],
       },
     ],
-    sitemap: "https://topsnip.co/sitemap.xml",
+    sitemap: "https://www.topsnip.co/sitemap.xml",
   };
 }

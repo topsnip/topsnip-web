@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Check, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -157,15 +158,35 @@ function UpgradeContent() {
         }}
       />
 
-      <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-10 relative z-10">
+      {/* ── Nav ────────────────────────────────────────────────────────── */}
+      <nav className="fixed top-4 left-4 right-4 z-50 flex justify-center">
+        <div className="floating-nav rounded-full px-6 py-3 flex items-center justify-between w-full max-w-3xl">
+          <Link
+            href="/"
+            className="font-bold tracking-tight text-white"
+            style={{ fontFamily: "var(--font-heading), 'Space Grotesk', sans-serif", fontSize: "1.1rem" }}
+          >
+            top<span style={{ color: "var(--ts-accent)" }}>snip</span>
+          </Link>
+          <div className="flex items-center gap-5">
+            <Link href="/about" className="text-sm font-medium transition-colors hover:text-white" style={{ color: "var(--ts-text-2)" }}>
+              About
+            </Link>
+            <Link href="/upgrade" className="text-sm font-medium text-white">
+              Pricing
+            </Link>
+            <Link
+              href="/auth/login"
+              className="rounded-full px-4 py-1.5 text-xs font-semibold text-white transition-all hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
+            >
+              Sign in
+            </Link>
+          </div>
+        </div>
+      </nav>
 
-        {/* Wordmark */}
-        <button
-          onClick={() => router.push("/feed")}
-          className="text-xl font-extrabold tracking-tight text-white transition-opacity hover:opacity-70"
-        >
-          top<span style={{ color: "var(--ts-accent)" }}>snip</span>
-        </button>
+      <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-10 relative z-10 pt-20">
 
         {/* Heading */}
         <div className="text-center flex flex-col gap-3">
