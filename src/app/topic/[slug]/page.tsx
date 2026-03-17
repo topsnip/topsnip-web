@@ -1,38 +1,17 @@
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { decodeHtml } from "@/lib/utils/decode-html";
 import { SiteNav } from "@/components/SiteNav";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, Clock, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ReadTracker } from "./read-tracker";
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
-  const { slug } = await params;
-  const supabase = await createClient();
-  const { data: topic } = await supabase
-    .from("topics")
-    .select("title, slug")
-    .eq("slug", slug)
-    .single();
-
-  if (!topic) return { title: "Topic Not Found — Topsnip" };
-
-  return {
-    title: `${topic.title} — Topsnip`,
-    description: `Learn about ${topic.title} — explained simply, with sources.`,
-    openGraph: {
-      title: `${topic.title} — Topsnip`,
-      description: `Learn about ${topic.title} — explained simply, with sources.`,
-    },
-  };
-}
+import { ScrollProgress } from "./scroll-progress";
+import { MarkUnderstood } from "./mark-understood";
+import { ShareButton } from "./share-button";
+import { LearningBrief } from "@/components/learning-brief/LearningBrief";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -53,19 +32,83 @@ interface YouTubeRec {
   position: number;
 }
 
-// ── Markdown-lite renderer (bold only) ──────────────────────────────────────
+interface RelatedTopic {
+  id: string;
+  slug: string;
+  title: string;
+  tldr: string | null;
+  source_count: number;
+}
 
-function renderMarkdown(text: string) {
-  const parts = text.split(/\*\*(.*?)\*\*/g);
-  return parts.map((part, i) =>
-    i % 2 === 1 ? (
-      <strong key={i} className="text-white font-semibold">
-        {part}
-      </strong>
-    ) : (
-      <span key={i}>{part}</span>
-    ),
+// ── Metadata (OG tags for sharing) ─────────────────────────────────────────
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+
+  const { data: topic } = await supabase
+    .from("topics")
+    .select("id, title, slug")
+    .eq("slug", slug)
+    .single();
+
+  if (!topic) return { title: "Topic Not Found — TopSnip" };
+
+  // Fetch TL;DR for description
+  const { data: content } = await supabase
+    .from("topic_content")
+    .select("tldr")
+    .eq("topic_id", topic.id)
+    .eq("role", "general")
+    .single();
+
+  const description = content?.tldr
+    ? decodeHtml(content.tldr).slice(0, 160)
+    : `Learn about ${topic.title} — explained simply, with sources.`;
+
+  return {
+    title: `${topic.title} — TopSnip`,
+    description,
+    openGraph: {
+      title: `${topic.title} — TopSnip`,
+      description,
+      type: "article",
+      siteName: "TopSnip",
+    },
+    twitter: {
+      card: "summary",
+      title: `${topic.title} — TopSnip`,
+      description,
+    },
+  };
+}
+
+// ── Helper: estimate reading time ──────────────────────────────────────────
+
+function estimateReadTime(
+  tldr: string,
+  whatHappened: string,
+  soWhat: string,
+  nowWhat: string,
+): number {
+  const totalWords = [tldr, whatHappened, soWhat, nowWhat]
+    .filter(Boolean)
+    .join(" ")
+    .split(/\s+/).length;
+  return Math.max(1, Math.ceil(totalWords / 200));
+}
+
+// ── Helper: get unique platforms from sources ──────────────────────────────
+
+function getUniquePlatforms(sources: Source[]): string[] {
+  const platforms = new Set(
+    sources.map((s) => s.platform).filter(Boolean),
   );
+  return Array.from(platforms).slice(0, 5);
 }
 
 // ── Page ────────────────────────────────────────────────────────────────────
@@ -91,15 +134,15 @@ export default async function TopicDetailPage({
 
   if (!topic) notFound();
 
-  // ── Determine user role for content lookup ───────────────────────────────
-  // [H5 fix] Require auth — RLS on topic_content requires authenticated role
+  // ── Check auth — NO redirect for anonymous users ─────────────────────────
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect(`/auth/login?redirect=/topic/${slug}`);
-  }
+  const isAuthenticated = !!user;
+
+  // ── Determine content role ───────────────────────────────────────────────
 
   let contentRole = "general";
 
@@ -110,13 +153,12 @@ export default async function TopicDetailPage({
       .eq("id", user.id)
       .single();
 
-    // Pro users get role-specific content; free users always get general
     if (profile?.plan === "pro" && profile.role && profile.role !== "general") {
       contentRole = profile.role;
     }
   }
 
-  // ── Fetch topic content (try user role first, fall back to general) ──────
+  // ── Fetch topic content (role-specific for auth, general for anon) ──────
 
   let { data: content } = await supabase
     .from("topic_content")
@@ -142,7 +184,8 @@ export default async function TopicDetailPage({
 
   if (!content) notFound();
 
-  // ── Decode HTML entities (fixes double-encoded data from ingestion) ─────
+  // ── Decode HTML entities ─────────────────────────────────────────────────
+
   topic.title = decodeHtml(topic.title);
   content.tldr = decodeHtml(content.tldr);
   content.what_happened = decodeHtml(content.what_happened);
@@ -165,7 +208,7 @@ export default async function TopicDetailPage({
     ? (content.sources_json as Source[])
     : [];
 
-  // ── Format published date ────────────────────────────────────────────────
+  // ── Compute metadata ─────────────────────────────────────────────────────
 
   const publishedDate = topic.published_at
     ? new Date(topic.published_at).toLocaleDateString("en-US", {
@@ -174,6 +217,66 @@ export default async function TopicDetailPage({
         year: "numeric",
       })
     : null;
+
+  const readTime = estimateReadTime(
+    content.tldr,
+    content.what_happened,
+    content.so_what,
+    content.now_what,
+  );
+
+  const platforms = getUniquePlatforms(sources);
+  const isTrending = (topic.trending_score ?? 0) > 3;
+
+  // ── Fetch related topics ─────────────────────────────────────────────────
+
+  const { data: relatedTopicsRaw } = await supabase
+    .from("topics")
+    .select("id, slug, title, published_at")
+    .eq("status", "published")
+    .neq("id", topic.id)
+    .order("published_at", { ascending: false })
+    .limit(4);
+
+  // Get TL;DR and source count for related topics
+  const relatedTopics: RelatedTopic[] = [];
+  if (relatedTopicsRaw && relatedTopicsRaw.length > 0) {
+    for (const rt of relatedTopicsRaw) {
+      const { data: rtContent } = await supabase
+        .from("topic_content")
+        .select("tldr, sources_json")
+        .eq("topic_id", rt.id)
+        .eq("role", "general")
+        .single();
+
+      relatedTopics.push({
+        id: rt.id,
+        slug: rt.slug,
+        title: decodeHtml(rt.title),
+        tldr: rtContent?.tldr ? decodeHtml(rtContent.tldr) : null,
+        source_count: Array.isArray(rtContent?.sources_json)
+          ? rtContent.sources_json.length
+          : 0,
+      });
+    }
+  }
+
+  // ── Map YouTube recs to LearningBrief format ─────────────────────────────
+
+  const briefYoutubeRecs = (youtubeRecs ?? []).map((rec: YouTubeRec) => ({
+    title: rec.title,
+    videoId: rec.video_id,
+    channelName: rec.channel_name,
+    thumbnail: rec.thumbnail_url ?? undefined,
+  }));
+
+  // ── Map sources to LearningBrief format ──────────────────────────────────
+
+  const briefSources = sources.map((s) => ({
+    title: s.title,
+    url: s.url,
+    platform: s.platform,
+  }));
 
   const headingFont = "var(--font-heading), 'Instrument Serif', serif";
 
@@ -184,331 +287,486 @@ export default async function TopicDetailPage({
       className="min-h-screen flex flex-col"
       style={{ background: "var(--background)" }}
     >
-      {/* Read tracker (client component — records the read) */}
+      {/* Scroll progress bar */}
+      <ScrollProgress />
+
+      {/* Read tracker (client component — records the read, auth only) */}
       {user && <ReadTracker userId={user.id} topicId={topic.id} />}
 
       {/* Top nav */}
-      <SiteNav user={{ id: user.id, plan: "free" }} />
+      <SiteNav user={user ? { id: user.id, plan: "free" } : null} />
 
-      {/* Main content */}
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
-        <div className="flex flex-col gap-8 pb-24">
-          {/* ── Topic heading ─────────────────────────────────────────────── */}
-          <div
-            className="flex flex-col gap-1"
-            style={{ animation: "fadeInUp 0.35s ease both" }}
-          >
-            <div className="flex items-center gap-2 flex-wrap">
-              <p
-                className="text-xs font-semibold uppercase tracking-widest"
-                style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
-              >
-                Learning brief
-              </p>
-              {topic.is_breaking && (
-                <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                  style={{
-                    background: "var(--ts-error-12)",
-                    color: "var(--error)",
-                    border: "1px solid var(--ts-error-25)",
-                  }}
-                >
-                  Breaking
-                </span>
-              )}
-            </div>
-            <h1
-              className="text-xl font-bold text-white leading-snug"
-              style={{ fontFamily: headingFont }}
+      {/* Main content area */}
+      <main className="flex-1 content-container-wide py-8" style={{ paddingTop: "5rem" }}>
+        {/* ── Topic Header ─────────────────────────────────────────────── */}
+        <div
+          className="flex flex-col gap-3 mb-8"
+          style={{ animation: "fadeInUp 0.35s ease both" }}
+        >
+          {/* Badges row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <p
+              className="text-xs font-semibold uppercase tracking-widest"
+              style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
             >
-              {topic.title}
-            </h1>
-            {publishedDate && (
-              <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
-                Published {publishedDate}
-                {sources.length > 0 &&
-                  ` \u00B7 Sourced from ${sources.length} sources`}
-              </p>
+              Learning brief
+            </p>
+            {topic.is_breaking && (
+              <span
+                className="rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider"
+                style={{
+                  background: "var(--ts-error-12)",
+                  color: "var(--error)",
+                  border: "1px solid var(--ts-error-25)",
+                  animation: "badgePulse 2s ease-in-out infinite",
+                }}
+              >
+                Breaking
+              </span>
+            )}
+            {isTrending && !topic.is_breaking && (
+              <span
+                className="rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider"
+                style={{
+                  background: "var(--ts-accent-10)",
+                  color: "var(--ts-accent)",
+                  border: "1px solid var(--ts-accent-20)",
+                  animation: "badgePulse 2s ease-in-out infinite",
+                }}
+              >
+                Trending
+              </span>
             )}
           </div>
 
-          {/* ── TL;DR ─────────────────────────────────────────────────────── */}
-          <section
-            className="rounded-xl border p-5 tldr-card"
+          {/* Title */}
+          <h1
+            className="text-white leading-snug"
             style={{
-              background: "var(--ts-surface)",
-              borderColor: "var(--border)",
-              backdropFilter: "blur(12px)",
-              boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.03)",
-              animation: "fadeInUp 0.35s ease 0.06s both",
+              fontFamily: headingFont,
+              fontSize: "var(--text-3xl)",
             }}
           >
-            <p
-              className="text-xs font-semibold uppercase tracking-widest mb-3"
-              style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
-            >
-              TL;DR
-            </p>
-            <p className="text-base leading-relaxed text-white font-medium">
-              {content.tldr}
-            </p>
-          </section>
+            {topic.title}
+          </h1>
 
-          {/* ── What Happened ─────────────────────────────────────────────── */}
-          {content.what_happened && (
-            <section
-              className="flex flex-col gap-3"
-              style={{ animation: "fadeInUp 0.35s ease 0.12s both" }}
-            >
-              <h2
-                className="text-sm font-semibold uppercase tracking-widest"
-                style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
-              >
-                What happened
-              </h2>
-              <div
-                className="rounded-lg border p-5 text-sm leading-relaxed prose-content"
-                style={{
-                  background: "var(--ts-surface)",
-                  borderColor: "var(--border)",
-                  color: "var(--foreground)",
-                }}
-              >
-                {content.what_happened
-                  .split("\n\n")
-                  .map((para: string, i: number) => (
-                    <p key={i} className={i > 0 ? "mt-3" : ""}>
-                      {renderMarkdown(para)}
-                    </p>
-                  ))}
-              </div>
-            </section>
-          )}
+          {/* Metadata row */}
+          <div
+            className="flex items-center gap-3 flex-wrap text-xs"
+            style={{ color: "var(--ts-text-2)" }}
+          >
+            {publishedDate && <span>{publishedDate}</span>}
 
-          {/* ── So What? ──────────────────────────────────────────────────── */}
-          {content.so_what && (
-            <section
-              className="flex flex-col gap-3"
-              style={{ animation: "fadeInUp 0.35s ease 0.18s both" }}
-            >
-              <h2
-                className="text-sm font-semibold uppercase tracking-widest"
-                style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
-              >
-                So what?
-              </h2>
-              <div
-                className="rounded-lg border p-5 text-sm leading-relaxed"
-                style={{
-                  background: "var(--ts-accent-3)",
-                  borderColor: "var(--ts-glow)",
-                  color: "var(--foreground)",
-                }}
-              >
-                {content.so_what
-                  .split("\n\n")
-                  .map((para: string, i: number) => (
-                    <p key={i} className={i > 0 ? "mt-3" : ""}>
-                      {renderMarkdown(para)}
-                    </p>
-                  ))}
-              </div>
-            </section>
-          )}
+            {sources.length > 0 && (
+              <>
+                <span style={{ color: "var(--ts-muted)" }}>&middot;</span>
+                <span
+                  className="rounded-full px-2 py-0.5 font-medium"
+                  style={{
+                    background: "var(--ts-accent-8)",
+                    color: "var(--ts-accent)",
+                    border: "1px solid var(--ts-accent-12)",
+                  }}
+                >
+                  {sources.length} source{sources.length !== 1 ? "s" : ""}
+                </span>
+              </>
+            )}
 
-          {/* ── Now What? ─────────────────────────────────────────────────── */}
-          {content.now_what && (
-            <section
-              className="flex flex-col gap-3"
-              style={{ animation: "fadeInUp 0.35s ease 0.24s both" }}
-            >
-              <h2
-                className="text-sm font-semibold uppercase tracking-widest"
-                style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
-              >
-                Now what?
-              </h2>
-              <div
-                className="rounded-lg border p-5 text-sm leading-relaxed"
-                style={{
-                  background: "var(--ts-success-3)",
-                  borderColor: "var(--ts-success-12)",
-                  color: "var(--foreground)",
-                }}
-              >
-                {content.now_what.split("\n").map((line: string, i: number) => {
-                  const trimmed = line.trim();
-                  if (!trimmed) return null;
-                  const isBullet =
-                    trimmed.startsWith("-") || trimmed.startsWith("\u2022");
-                  const text = isBullet ? trimmed.slice(1).trim() : trimmed;
-                  return (
-                    <div
-                      key={i}
-                      className={`flex gap-2 ${i > 0 ? "mt-2" : ""}`}
+            {platforms.length > 0 && (
+              <>
+                <span style={{ color: "var(--ts-muted)" }}>&middot;</span>
+                <div className="flex items-center gap-1.5">
+                  {platforms.map((p) => (
+                    <span
+                      key={p}
+                      className="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                      style={{
+                        background: "var(--ts-surface)",
+                        color: "var(--ts-text-2)",
+                        border: "1px solid var(--border)",
+                      }}
                     >
-                      {isBullet && (
-                        <span
-                          className="text-xs mt-1 flex-shrink-0"
-                          style={{ color: "var(--success, #34d399)" }}
-                        >
-                          →
-                        </span>
-                      )}
-                      <span>{renderMarkdown(text)}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          )}
+                      {p}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
 
-          {/* ── Sources ───────────────────────────────────────────────────── */}
-          {sources.length > 0 && (
-            <section
-              className="flex flex-col gap-3"
-              style={{ animation: "fadeInUp 0.35s ease 0.30s both" }}
-            >
-              <h2
-                className="text-sm font-semibold uppercase tracking-widest"
-                style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
+            <span style={{ color: "var(--ts-muted)" }}>&middot;</span>
+            <span className="flex items-center gap-1">
+              <Clock size={12} />
+              {readTime} min read
+            </span>
+          </div>
+        </div>
+
+        {/* ── Two-column layout ───────────────────────────────────────── */}
+        <div className="two-column">
+          {/* ── Main column (brief content) ──────────────────────────── */}
+          <div
+            className="flex flex-col gap-0"
+            style={{ animation: "fadeInUp 0.35s ease 0.06s both" }}
+          >
+            <LearningBrief
+              tldr={content.tldr}
+              whatHappened={content.what_happened}
+              soWhat={content.so_what}
+              nowWhat={content.now_what}
+              sources={briefSources}
+              youtubeRecs={[]} /* YouTube recs moved to sidebar on desktop */
+              animated={true}
+              isBlurred={!isAuthenticated}
+              redirectPath={`/topic/${slug}`}
+              onMarkUnderstood={undefined} /* Mark understood is in sidebar */
+            />
+
+            {/* Mobile-only: YouTube recs inline (hidden on desktop) */}
+            {briefYoutubeRecs.length > 0 && (
+              <div
+                className="lg:hidden mt-6"
+                style={{ animation: "fadeInUp 0.35s ease 0.36s both" }}
               >
-                Sources
-              </h2>
-              <div className="flex flex-col gap-2">
-                {sources
-                  .filter((s) => s.url)
-                  .map((src, i) => (
+                <h3
+                  className="text-xs font-semibold uppercase tracking-widest mb-3"
+                  style={{
+                    color: "var(--ts-muted)",
+                    fontFamily: headingFont,
+                    fontVariant: "small-caps",
+                  }}
+                >
+                  Go Deeper
+                </h3>
+                <div className="flex flex-col gap-2">
+                  {(youtubeRecs ?? []).map((rec: YouTubeRec) => (
                     <a
-                      key={i}
-                      href={src.url}
+                      key={rec.video_id}
+                      href={`https://www.youtube.com/watch?v=${rec.video_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 rounded-lg border p-3 transition-all duration-200 hover:border-[var(--ts-accent-30)] group cursor-pointer"
+                      className="flex gap-3 rounded-xl border p-3 transition-all duration-200 hover:border-[var(--ts-accent-30)] group cursor-pointer"
                       style={{
                         background: "var(--ts-surface)",
                         borderColor: "var(--border)",
                       }}
                     >
-                      <span
-                        className="rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider flex-shrink-0"
+                      <div
+                        className="w-20 flex-shrink-0 rounded-lg overflow-hidden relative"
                         style={{
-                          background: "var(--ts-accent-8)",
-                          color: "var(--ts-accent)",
-                          border: "1px solid var(--ts-glow)",
+                          aspectRatio: "16/9",
+                          background: "var(--ts-surface-2)",
                         }}
                       >
-                        {src.platform}
-                      </span>
-                      <span className="text-sm text-white truncate flex-1 group-hover:text-[var(--ts-accent-2)] transition-colors">
-                        {src.title}
-                      </span>
+                        {rec.thumbnail_url && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={rec.thumbnail_url}
+                            alt={rec.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                        <p className="text-xs font-medium leading-snug text-white line-clamp-2">
+                          {rec.title}
+                        </p>
+                        <p
+                          className="text-xs"
+                          style={{ color: "var(--ts-muted)" }}
+                        >
+                          {rec.channel_name}
+                        </p>
+                      </div>
                       <ExternalLink
                         size={12}
-                        className="flex-shrink-0 opacity-0 group-hover:opacity-50 transition-opacity"
+                        className="flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity"
                         style={{ color: "var(--ts-text-2)" }}
                       />
                     </a>
                   ))}
+                </div>
               </div>
-            </section>
-          )}
+            )}
 
-          {/* ── Go Deeper (YouTube) ───────────────────────────────────────── */}
-          {youtubeRecs && youtubeRecs.length > 0 && (
-            <section
-              className="flex flex-col gap-3"
-              style={{ animation: "fadeInUp 0.35s ease 0.36s both" }}
-            >
-              <h2
-                className="text-sm font-semibold uppercase tracking-widest"
-                style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
+            {/* Mobile-only: Mark as understood (hidden on desktop) */}
+            {isAuthenticated && (
+              <div className="lg:hidden mt-6">
+                <MarkUnderstood topicId={topic.id} />
+              </div>
+            )}
+          </div>
+
+          {/* ── Sidebar (desktop only) ───────────────────────────────── */}
+          <aside
+            className="hidden lg:flex flex-col gap-5"
+            style={{
+              position: "sticky",
+              top: "80px",
+              maxHeight: "calc(100vh - 96px)",
+              overflowY: "auto",
+              animation: "fadeInUp 0.35s ease 0.18s both",
+            }}
+          >
+            {/* YouTube Recs */}
+            {(youtubeRecs ?? []).length > 0 && (
+              <div
+                className="rounded-xl p-4"
+                style={{
+                  background: "var(--ts-surface)",
+                  border: "1px solid var(--border)",
+                }}
               >
-                Go deeper
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {youtubeRecs.map((rec: YouTubeRec) => (
-                  <a
-                    key={rec.video_id}
-                    href={`https://www.youtube.com/watch?v=${rec.video_id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex gap-3 rounded-xl border p-3 transition-all duration-200 hover:border-[var(--ts-accent-30)] group cursor-pointer"
-                    style={{
-                      background: "var(--ts-surface)",
-                      borderColor: "var(--border)",
-                    }}
-                  >
-                    <div
-                      className="w-24 flex-shrink-0 rounded-lg overflow-hidden relative"
-                      style={{
-                        aspectRatio: "16/9",
-                        background: "var(--ts-surface-2)",
-                      }}
+                <p
+                  className="text-xs font-semibold uppercase tracking-widest mb-3"
+                  style={{
+                    color: "var(--ts-muted)",
+                    fontFamily: headingFont,
+                    fontVariant: "small-caps",
+                  }}
+                >
+                  Go Deeper
+                </p>
+                <div className="flex flex-col gap-2">
+                  {(youtubeRecs ?? []).map((rec: YouTubeRec) => (
+                    <a
+                      key={rec.video_id}
+                      href={`https://www.youtube.com/watch?v=${rec.video_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex gap-2.5 rounded-lg p-2 transition-all duration-200 hover:bg-[var(--ts-surface-hover)] group cursor-pointer"
                     >
-                      {rec.thumbnail_url && (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={rec.thumbnail_url}
-                          alt={rec.title}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      )}
-                      {rec.duration && (
-                        <span
-                          className="absolute bottom-1 right-1 rounded px-1 py-0.5 text-[10px] font-medium text-white"
-                          style={{ background: "rgba(0,0,0,0.75)" }}
-                        >
-                          {rec.duration}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-1 min-w-0 flex-1">
-                      <p className="text-xs font-medium leading-snug text-white line-clamp-2 group-hover:text-[var(--ts-accent-2)] transition-colors">
-                        {rec.title}
-                      </p>
-                      <p
-                        className="text-xs"
-                        style={{ color: "var(--ts-muted)" }}
+                      <div
+                        className="w-16 flex-shrink-0 rounded-md overflow-hidden relative"
+                        style={{
+                          aspectRatio: "16/9",
+                          background: "var(--ts-surface-2)",
+                        }}
                       >
-                        {rec.channel_name}
-                      </p>
-                      {rec.reason && (
+                        {rec.thumbnail_url && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={rec.thumbnail_url}
+                            alt={rec.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        )}
+                        {rec.duration && (
+                          <span
+                            className="absolute bottom-0.5 right-0.5 rounded px-1 py-0.5 text-[9px] font-medium text-white"
+                            style={{ background: "rgba(0,0,0,0.75)" }}
+                          >
+                            {rec.duration}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                        <p className="text-[11px] font-medium leading-snug text-white line-clamp-2 group-hover:text-[var(--ts-accent-2)] transition-colors">
+                          {rec.title}
+                        </p>
                         <p
-                          className="text-xs mt-1 line-clamp-2"
-                          style={{ color: "var(--ts-text-2)" }}
+                          className="text-[10px]"
+                          style={{ color: "var(--ts-muted)" }}
                         >
-                          {rec.reason}
+                          {rec.channel_name}
+                        </p>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Related topics */}
+            {relatedTopics.length > 0 && (
+              <div
+                className="rounded-xl p-4"
+                style={{
+                  background: "var(--ts-surface)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                <p
+                  className="text-xs font-semibold uppercase tracking-widest mb-3"
+                  style={{
+                    color: "var(--ts-muted)",
+                    fontFamily: headingFont,
+                    fontVariant: "small-caps",
+                  }}
+                >
+                  Related
+                </p>
+                <div className="flex flex-col gap-2">
+                  {relatedTopics.slice(0, 3).map((rt) => (
+                    <Link
+                      key={rt.id}
+                      href={`/topic/${rt.slug}`}
+                      className="flex flex-col gap-1 rounded-lg p-2 transition-all duration-200 hover:bg-[var(--ts-surface-hover)] group"
+                    >
+                      <p className="text-xs font-medium text-white leading-snug line-clamp-2 group-hover:text-[var(--ts-accent-2)] transition-colors">
+                        {rt.title}
+                      </p>
+                      {rt.source_count > 0 && (
+                        <p
+                          className="text-[10px]"
+                          style={{ color: "var(--ts-muted)" }}
+                        >
+                          {rt.source_count} source
+                          {rt.source_count !== 1 ? "s" : ""}
                         </p>
                       )}
-                    </div>
-                    <ExternalLink
-                      size={12}
-                      className="flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity"
-                      style={{ color: "var(--ts-text-2)" }}
-                    />
-                  </a>
-                ))}
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </section>
-          )}
+            )}
 
-          {/* ── Back link ─────────────────────────────────────────────────── */}
+            {/* Actions: Mark as Understood + Share */}
+            {isAuthenticated && (
+              <div className="flex flex-col gap-2">
+                <MarkUnderstood topicId={topic.id} />
+                <ShareButton />
+              </div>
+            )}
+
+            {/* Anonymous: share + sign up CTA */}
+            {!isAuthenticated && (
+              <div className="flex flex-col gap-2">
+                <ShareButton />
+                <Link
+                  href={`/auth/login?redirect=/topic/${slug}`}
+                  className="flex items-center justify-center gap-2 w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:opacity-90"
+                  style={{ background: "var(--ts-accent)" }}
+                >
+                  Sign up to learn more
+                </Link>
+              </div>
+            )}
+          </aside>
+        </div>
+
+        {/* ── Keep Learning (Related Topics — full width) ─────────────── */}
+        {relatedTopics.length > 0 && (
+          <section
+            className="mt-12 mb-8"
+            style={{ animation: "fadeInUp 0.35s ease 0.42s both" }}
+          >
+            <h2
+              className="text-white mb-5"
+              style={{
+                fontFamily: headingFont,
+                fontSize: "var(--text-xl)",
+              }}
+            >
+              Keep learning
+            </h2>
+
+            {/* Desktop: grid, Mobile: horizontal scroll */}
+            <div
+              className="hidden sm:grid gap-3"
+              style={{
+                gridTemplateColumns: `repeat(${Math.min(relatedTopics.length, 4)}, 1fr)`,
+              }}
+            >
+              {relatedTopics.map((rt) => (
+                <RelatedTopicCard key={rt.id} topic={rt} />
+              ))}
+            </div>
+
+            <div
+              className="sm:hidden flex gap-3 overflow-x-auto pb-2"
+              style={{
+                scrollSnapType: "x mandatory",
+                WebkitOverflowScrolling: "touch",
+                scrollbarWidth: "none",
+              }}
+            >
+              {relatedTopics.map((rt) => (
+                <div
+                  key={rt.id}
+                  style={{ minWidth: "260px", scrollSnapAlign: "start" }}
+                >
+                  <RelatedTopicCard topic={rt} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── Back to feed link ───────────────────────────────────────── */}
+        <div
+          className="pb-12"
+          style={{ animation: "fadeInUp 0.35s ease 0.48s both" }}
+        >
           <Link
             href="/feed"
-            className="flex items-center gap-1.5 text-xs self-start transition-opacity hover:opacity-80"
-            style={{
-              color: "var(--ts-text-2)",
-              animation: "fadeInUp 0.35s ease 0.42s both",
-            }}
+            className="flex items-center gap-1.5 text-xs transition-opacity hover:opacity-80"
+            style={{ color: "var(--ts-text-2)" }}
           >
             <ArrowLeft size={12} />
             Back to feed
           </Link>
         </div>
       </main>
+
+      {/* Badge pulse animation */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes badgePulse {
+              0%, 100% { transform: scale(1); }
+              50% { transform: scale(1.03); }
+            }
+          `,
+        }}
+      />
     </div>
+  );
+}
+
+// ── Related Topic Card ─────────────────────────────────────────────────────
+
+function RelatedTopicCard({ topic }: { topic: RelatedTopic }) {
+  const tldrPreview = topic.tldr
+    ? topic.tldr.split(".").slice(0, 1).join(".") + "."
+    : null;
+
+  return (
+    <Link
+      href={`/topic/${topic.slug}`}
+      className="flex flex-col gap-2 rounded-xl p-4 transition-all duration-200 group cursor-pointer hover:-translate-y-0.5"
+      style={{
+        background: "var(--ts-surface)",
+        border: "1px solid var(--border)",
+      }}
+    >
+      <p
+        className="text-sm font-medium text-white leading-snug line-clamp-2 group-hover:text-[var(--ts-accent-2)] transition-colors"
+        style={{ fontFamily: "var(--font-heading), 'Instrument Serif', serif" }}
+      >
+        {topic.title}
+      </p>
+      {tldrPreview && (
+        <p
+          className="text-xs leading-relaxed line-clamp-2"
+          style={{ color: "var(--ts-text-2)" }}
+        >
+          {tldrPreview}
+        </p>
+      )}
+      {topic.source_count > 0 && (
+        <span
+          className="self-start rounded-full px-2 py-0.5 text-[10px] font-medium"
+          style={{
+            background: "var(--ts-accent-8)",
+            color: "var(--ts-accent)",
+          }}
+        >
+          {topic.source_count} source{topic.source_count !== 1 ? "s" : ""}
+        </span>
+      )}
+    </Link>
   );
 }

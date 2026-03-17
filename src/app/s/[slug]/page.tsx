@@ -2,15 +2,20 @@
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Search, ArrowLeft, ExternalLink, ChevronDown } from "lucide-react";
+import { Search, ArrowLeft } from "lucide-react";
+import { motion } from "framer-motion";
 import { SiteNav } from "@/components/SiteNav";
 import { SignUpGate } from "@/components/SignUpGate";
+import { LearningBrief } from "@/components/learning-brief";
+import type { LearningBriefYouTubeRec } from "@/components/learning-brief";
 import {
   guestLimitReached,
   incrementGuestSearchCount,
 } from "@/lib/search-limits";
 import { decodeHtml } from "@/lib/utils/decode-html";
 import { createClient } from "@/lib/supabase/client";
+import { SearchLoading } from "./search-loading";
+import { SearchSidebar, getRelatedTopics } from "./search-sidebar";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -41,72 +46,19 @@ interface SearchResult {
   source_type: "pre_generated" | "on_demand";
 }
 
-// ── Loading stages ─────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────
 
-const LOADING_STAGES = [
-  "Searching sources...",
-  "Gathering official announcements...",
-  "Cross-referencing platforms...",
-  "Generating your learning brief...",
-];
-
-// ── Skeleton component ────────────────────────────────────────────────────
-
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div
-      className={`animate-pulse rounded-md ${className}`}
-      style={{ background: "var(--ts-surface-2)" }}
-    />
-  );
+function mapYouTubeRecs(recs: YouTubeRec[]): LearningBriefYouTubeRec[] {
+  return recs.map((rec) => ({
+    title: rec.title,
+    videoId: rec.video_id,
+    channelName: rec.channel,
+    thumbnail: rec.thumbnail,
+  }));
 }
 
-function ResultSkeleton() {
-  return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-6 w-3/4" />
-        <Skeleton className="h-3 w-40" />
-      </div>
-      <div
-        className="rounded-xl border p-5 tldr-card"
-        style={{
-          borderColor: "var(--border)",
-          background: "var(--ts-surface)",
-        }}
-      >
-        <Skeleton className="h-3 w-12 mb-3" />
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-2/3" />
-        </div>
-      </div>
-      <div className="flex flex-col gap-3">
-        <Skeleton className="h-3 w-36" />
-        <Skeleton className="h-24 w-full rounded-lg" />
-        <Skeleton className="h-24 w-full rounded-lg" />
-      </div>
-    </div>
-  );
-}
-
-// ── Markdown-lite renderer (bold only) ──────────────────────────────────────
-
-function renderMarkdown(text: string) {
-  // Split on **bold** markers and render
-  const parts = text.split(/\*\*(.*?)\*\*/g);
-  return parts.map((part, i) =>
-    i % 2 === 1 ? (
-      <strong key={i} className="text-white font-semibold">
-        {part}
-      </strong>
-    ) : (
-      <span key={i}>{part}</span>
-    ),
-  );
-}
+const customEase = [0.16, 1, 0.3, 1] as const;
+const headingFont = "var(--font-heading), 'Instrument Serif', serif";
 
 // ── Component ──────────────────────────────────────────────────────────────
 
@@ -127,7 +79,6 @@ function ResultContent() {
 
   const [result, setResult] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadingStage, setLoadingStage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [gate, setGate] = useState<"guest" | "free" | null>(null);
   const [followUp, setFollowUp] = useState("");
@@ -150,10 +101,6 @@ function ResultContent() {
 
     fetchResult(query);
 
-    stageInterval.current = setInterval(() => {
-      setLoadingStage((s) => Math.min(s + 1, LOADING_STAGES.length - 1));
-    }, 2500);
-
     return () => {
       if (stageInterval.current) clearInterval(stageInterval.current);
     };
@@ -173,7 +120,6 @@ function ResultContent() {
     setError(null);
     setResult(null);
     setGate(null);
-    setLoadingStage(0);
 
     try {
       const res = await fetch("/api/search", {
@@ -184,7 +130,6 @@ function ResultContent() {
 
       if (res.status === 429) {
         const data = await res.json().catch(() => ({}));
-        // [1.1/1.2 fix] Surface all limit codes as gates, not just "free_limit"
         if (data.code === "free_limit") {
           setGate("free");
           return;
@@ -243,8 +188,6 @@ function ResultContent() {
     router.push(`/s/${slug}?q=${encodeURIComponent(q)}`);
   }
 
-  const headingFont = "var(--font-heading), 'Instrument Serif', serif";
-
   return (
     <div
       className="min-h-screen flex flex-col"
@@ -273,7 +216,7 @@ function ResultContent() {
       >
         <form
           onSubmit={handleNewSearch}
-          className="max-w-3xl mx-auto flex items-center gap-2"
+          className="max-w-5xl mx-auto flex items-center gap-2"
         >
           <div
             className="flex-1 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm"
@@ -310,46 +253,9 @@ function ResultContent() {
       </div>
 
       {/* Main content */}
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
-        {/* Loading state */}
-        {loading && (
-          <div className="flex flex-col gap-10">
-            <div className="flex flex-col items-center justify-center gap-5 pt-8">
-              <div className="flex items-end gap-[5px] h-8">
-                {[0.55, 0.85, 1, 0.75, 0.45].map((scale, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      width: "4px",
-                      height: `${Math.round(scale * 28)}px`,
-                      background: "var(--ts-accent)",
-                      borderRadius: "2px",
-                      transformOrigin: "bottom",
-                      animation: `waveBar 0.9s ease-in-out ${i * 0.12}s infinite alternate`,
-                    }}
-                  />
-                ))}
-              </div>
-              <p
-                className="text-sm font-medium"
-                style={{ color: "var(--ts-text-2)" }}
-              >
-                {LOADING_STAGES[loadingStage]}
-              </p>
-              <p
-                className="text-xs text-center max-w-xs"
-                style={{ color: "var(--ts-muted)" }}
-              >
-                Analyzing sources on{" "}
-                <span style={{ color: "var(--ts-accent)" }}>
-                  &ldquo;{query}&rdquo;
-                </span>{" "}
-                so you don&apos;t have to.
-              </p>
-            </div>
-            <ResultSkeleton />
-          </div>
-        )}
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
+        {/* Loading state — progressive loader */}
+        {loading && <SearchLoading query={query} />}
 
         {/* Error state */}
         {!loading && !gate && error && (
@@ -370,304 +276,101 @@ function ResultContent() {
           </div>
         )}
 
-        {/* Result */}
+        {/* Result — two-column layout */}
         {!loading && result && (
-          <div key={result.query} className="flex flex-col gap-8 pb-24">
+          <motion.div
+            key={result.query}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, ease: [...customEase] }}
+            className="flex flex-col gap-8 pb-24"
+          >
             {/* Query heading */}
-            <div
-              className="flex flex-col gap-1"
-              style={{ animation: "fadeInUp 0.35s ease both" }}
+            <motion.div
+              className="flex flex-col gap-2"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [...customEase] }}
             >
               <p
                 className="text-xs font-semibold uppercase tracking-widest"
-                style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
+                style={{
+                  color: "var(--ts-muted)",
+                  fontFamily: headingFont,
+                  fontVariant: "small-caps",
+                }}
               >
                 Learning brief
               </p>
               <h1
-                className="text-xl font-bold text-white leading-snug"
-                style={{ fontFamily: headingFont }}
+                className="text-white leading-snug"
+                style={{
+                  fontFamily: headingFont,
+                  fontSize: "clamp(1.5rem, 1.2rem + 1.5vw, 2rem)",
+                }}
               >
                 {result.query}
               </h1>
               <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
-                {result.sources.length > 0
-                  ? `Sourced from ${result.sources.length} sources`
-                  : "Generated from available knowledge"}
+                {result.source_type === "on_demand"
+                  ? "Generated from AI knowledge"
+                  : result.sources.length > 0
+                    ? `Sourced from ${result.sources.length} sources`
+                    : "Generated from available knowledge"}
               </p>
+            </motion.div>
+
+            {/* Two-column grid */}
+            <div className="two-column">
+              {/* Left column — Learning Brief */}
+              <div className="min-w-0">
+                <LearningBrief
+                  tldr={result.tldr}
+                  whatHappened={result.what_happened}
+                  soWhat={result.so_what}
+                  nowWhat={result.now_what}
+                  sources={result.sources.map((s) => ({
+                    title: s.title,
+                    url: s.url,
+                    platform: s.platform,
+                  }))}
+                  animated={true}
+                />
+
+                {/* Back link */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.6, ease: [...customEase] }}
+                  className="mt-8"
+                >
+                  <button
+                    onClick={() => router.push(isLoggedIn ? "/feed" : "/")}
+                    aria-label="Start a new search"
+                    className="flex items-center gap-1.5 text-xs transition-opacity hover:opacity-80 cursor-pointer"
+                    style={{ color: "var(--ts-text-2)" }}
+                  >
+                    <ArrowLeft size={12} />
+                    New search
+                  </button>
+                </motion.div>
+              </div>
+
+              {/* Right column — Sidebar */}
+              <motion.div
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.3, ease: [...customEase] }}
+                className="min-w-0"
+              >
+                <SearchSidebar
+                  youtubeRecs={mapYouTubeRecs(result.youtube_recs ?? [])}
+                  relatedTopics={getRelatedTopics(result.query)}
+                  isLoggedIn={isLoggedIn}
+                />
+              </motion.div>
             </div>
-
-            {/* TL;DR */}
-            <section
-              className="rounded-xl border p-5 tldr-card"
-              style={{
-                background: "var(--ts-surface)",
-                borderColor: "var(--border)",
-                backdropFilter: "blur(12px)",
-                boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.03)",
-                animation: "fadeInUp 0.35s ease 0.06s both",
-              }}
-            >
-              <p
-                className="text-xs font-semibold uppercase tracking-widest mb-3"
-                style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
-              >
-                TL;DR
-              </p>
-              <p className="text-base leading-relaxed text-white font-medium">
-                {result.tldr}
-              </p>
-            </section>
-
-            {/* What Happened */}
-            {result.what_happened && (
-              <section
-                className="flex flex-col gap-3"
-                style={{ animation: "fadeInUp 0.35s ease 0.12s both" }}
-              >
-                <h2
-                  className="text-sm font-semibold uppercase tracking-widest"
-                  style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
-                >
-                  What happened
-                </h2>
-                <div
-                  className="rounded-lg border p-5 text-sm leading-relaxed prose-content"
-                  style={{
-                    background: "var(--ts-surface)",
-                    borderColor: "var(--border)",
-                    color: "var(--foreground)",
-                  }}
-                >
-                  {result.what_happened.split("\n\n").map((para, i) => (
-                    <p key={i} className={i > 0 ? "mt-3" : ""}>
-                      {renderMarkdown(para)}
-                    </p>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* So What */}
-            {result.so_what && (
-              <section
-                className="flex flex-col gap-3"
-                style={{ animation: "fadeInUp 0.35s ease 0.18s both" }}
-              >
-                <h2
-                  className="text-sm font-semibold uppercase tracking-widest"
-                  style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
-                >
-                  So what?
-                </h2>
-                <div
-                  className="rounded-lg border p-5 text-sm leading-relaxed"
-                  style={{
-                    background: "var(--ts-accent-3)",
-                    borderColor: "var(--ts-glow)",
-                    color: "var(--foreground)",
-                  }}
-                >
-                  {result.so_what.split("\n\n").map((para, i) => (
-                    <p key={i} className={i > 0 ? "mt-3" : ""}>
-                      {renderMarkdown(para)}
-                    </p>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Now What */}
-            {result.now_what && (
-              <section
-                className="flex flex-col gap-3"
-                style={{ animation: "fadeInUp 0.35s ease 0.24s both" }}
-              >
-                <h2
-                  className="text-sm font-semibold uppercase tracking-widest"
-                  style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
-                >
-                  Now what?
-                </h2>
-                <div
-                  className="rounded-lg border p-5 text-sm leading-relaxed"
-                  style={{
-                    background: "var(--ts-success-3)",
-                    borderColor: "var(--ts-success-12)",
-                    color: "var(--foreground)",
-                  }}
-                >
-                  {result.now_what.split("\n").map((line, i) => {
-                    const trimmed = line.trim();
-                    if (!trimmed) return null;
-                    // Render bullet points
-                    const isBullet =
-                      trimmed.startsWith("-") || trimmed.startsWith("•");
-                    const text = isBullet ? trimmed.slice(1).trim() : trimmed;
-                    return (
-                      <div
-                        key={i}
-                        className={`flex gap-2 ${i > 0 ? "mt-2" : ""}`}
-                      >
-                        {isBullet && (
-                          <span
-                            className="text-xs mt-1 flex-shrink-0"
-                            style={{ color: "var(--success, #34d399)" }}
-                          >
-                            →
-                          </span>
-                        )}
-                        <span>{renderMarkdown(text)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {/* Source Attribution */}
-            {result.sources.length > 0 && (
-              <section
-                className="flex flex-col gap-3"
-                style={{ animation: "fadeInUp 0.35s ease 0.30s both" }}
-              >
-                <h2
-                  className="text-sm font-semibold uppercase tracking-widest"
-                  style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
-                >
-                  Sources
-                </h2>
-                <div className="flex flex-col gap-2">
-                  {result.sources
-                    .filter((s) => s.url)
-                    .map((src, i) => (
-                      <a
-                        key={i}
-                        href={src.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 rounded-lg border p-3 transition-all duration-200 hover:border-[var(--ts-accent-30)] group cursor-pointer"
-                        style={{
-                          background: "var(--ts-surface)",
-                          borderColor: "var(--border)",
-                        }}
-                      >
-                        <span
-                          className="rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider flex-shrink-0"
-                          style={{
-                            background: "var(--ts-accent-8)",
-                            color: "var(--ts-accent)",
-                            border: "1px solid var(--ts-glow)",
-                          }}
-                        >
-                          {src.platform}
-                        </span>
-                        <span className="text-sm text-white truncate flex-1 group-hover:text-[var(--ts-accent-2)] transition-colors">
-                          {src.title}
-                        </span>
-                        <ExternalLink
-                          size={12}
-                          className="flex-shrink-0 opacity-0 group-hover:opacity-50 transition-opacity"
-                          style={{ color: "var(--ts-text-2)" }}
-                        />
-                      </a>
-                    ))}
-                </div>
-              </section>
-            )}
-
-            {/* YouTube Recommendations — Go Deeper */}
-            {result.youtube_recs && result.youtube_recs.length > 0 && (
-              <section
-                className="flex flex-col gap-3"
-                style={{ animation: "fadeInUp 0.35s ease 0.36s both" }}
-              >
-                <h2
-                  className="text-sm font-semibold uppercase tracking-widest"
-                  style={{ color: "var(--ts-muted)", fontFamily: headingFont }}
-                >
-                  Go deeper
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {result.youtube_recs.map((rec) => (
-                    <a
-                      key={rec.video_id}
-                      href={rec.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex gap-3 rounded-xl border p-3 transition-all duration-200 hover:border-[var(--ts-accent-30)] group cursor-pointer"
-                      style={{
-                        background: "var(--ts-surface)",
-                        borderColor: "var(--border)",
-                      }}
-                    >
-                      <div
-                        className="w-24 flex-shrink-0 rounded-lg overflow-hidden relative"
-                        style={{
-                          aspectRatio: "16/9",
-                          background: "var(--ts-surface-2)",
-                        }}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={rec.thumbnail}
-                          alt={rec.title}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                        {rec.duration && (
-                          <span
-                            className="absolute bottom-1 right-1 rounded px-1 py-0.5 text-[10px] font-medium text-white"
-                            style={{ background: "rgba(0,0,0,0.75)" }}
-                          >
-                            {rec.duration}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-col gap-1 min-w-0 flex-1">
-                        <p className="text-xs font-medium leading-snug text-white line-clamp-2 group-hover:text-[var(--ts-accent-2)] transition-colors">
-                          {rec.title}
-                        </p>
-                        <p
-                          className="text-xs"
-                          style={{ color: "var(--ts-muted)" }}
-                        >
-                          {rec.channel}
-                        </p>
-                        {rec.reason && (
-                          <p
-                            className="text-xs mt-1 line-clamp-2"
-                            style={{ color: "var(--ts-text-2)" }}
-                          >
-                            {rec.reason}
-                          </p>
-                        )}
-                      </div>
-                      <ExternalLink
-                        size={12}
-                        className="flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity"
-                        style={{ color: "var(--ts-text-2)" }}
-                      />
-                    </a>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Back link */}
-            <button
-              onClick={() => router.push(isLoggedIn ? "/feed" : "/")}
-              aria-label="Start a new search"
-              className="flex items-center gap-1.5 text-xs self-start transition-opacity hover:opacity-80 cursor-pointer"
-              style={{
-                color: "var(--ts-text-2)",
-                animation: "fadeInUp 0.35s ease 0.42s both",
-              }}
-            >
-              <ArrowLeft size={12} />
-              New search
-            </button>
-          </div>
+          </motion.div>
         )}
       </main>
 
@@ -684,28 +387,38 @@ function ResultContent() {
         >
           <form
             onSubmit={handleFollowUp}
-            className="max-w-3xl mx-auto flex gap-2"
+            className="max-w-5xl mx-auto flex gap-2"
           >
-            <input
-              type="text"
-              value={followUp}
-              onChange={(e) => setFollowUp(e.target.value)}
-              placeholder="Search another topic..."
-              className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none transition-colors"
+            <div
+              className="flex-1 flex items-center gap-2 rounded-xl border px-4 py-2.5"
               style={{
                 background: "var(--ts-surface)",
                 borderColor: "var(--border)",
-                color: "var(--foreground)",
+                height: "48px",
               }}
-              aria-label="Search another topic"
-            />
+            >
+              <Search
+                size={14}
+                style={{ color: "var(--ts-muted)", flexShrink: 0 }}
+              />
+              <input
+                type="text"
+                value={followUp}
+                onChange={(e) => setFollowUp(e.target.value)}
+                placeholder="Ask a follow-up question..."
+                className="flex-1 bg-transparent outline-none text-sm"
+                style={{ color: "var(--foreground)" }}
+                aria-label="Ask a follow-up question"
+              />
+            </div>
             <button
               type="submit"
               disabled={!followUp.trim()}
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 hover:opacity-90 cursor-pointer shadow-[0_0_12px_var(--ts-accent-30)]"
+              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 hover:opacity-90 cursor-pointer shadow-[0_0_12px_var(--ts-accent-30)]"
               style={{
                 background:
                   "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+                height: "48px",
               }}
             >
               Search

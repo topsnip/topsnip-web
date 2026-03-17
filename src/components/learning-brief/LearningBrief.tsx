@@ -32,6 +32,8 @@ export interface LearningBriefProps {
   isBlurred?: boolean;
   onMarkUnderstood?: () => void;
   animated?: boolean;
+  /** Redirect path for sign-up CTA when isBlurred (e.g. /topic/my-slug) */
+  redirectPath?: string;
 }
 
 // ── Markdown-lite renderer (bold only) ─────────────────────────────────────
@@ -87,6 +89,7 @@ export function LearningBrief({
   isBlurred = false,
   onMarkUnderstood,
   animated = false,
+  redirectPath,
 }: LearningBriefProps) {
   const [understood, setUnderstood] = useState(false);
 
@@ -207,14 +210,14 @@ export function LearningBrief({
                 Free account. No credit card.
               </p>
               <Link
-                href="/auth/login"
+                href={redirectPath ? `/auth/login?redirect=${encodeURIComponent(redirectPath)}` : "/auth/login"}
                 className="rounded-xl px-8 py-3 text-base font-medium text-white transition-opacity hover:opacity-90"
                 style={{ background: "var(--ts-accent)" }}
               >
                 Sign up — it&apos;s free
               </Link>
               <Link
-                href="/auth/login"
+                href={redirectPath ? `/auth/login?redirect=${encodeURIComponent(redirectPath)}` : "/auth/login"}
                 className="text-sm underline transition-opacity hover:opacity-80"
                 style={{ color: "var(--ts-text-2)" }}
               >
