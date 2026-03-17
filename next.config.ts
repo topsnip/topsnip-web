@@ -10,10 +10,17 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    const appOrigin = new URL(appUrl).origin;
+    const isProduction = process.env.NODE_ENV === "production";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL
+      ?? (isProduction ? undefined : "http://localhost:3000");
 
-    return [
+    if (isProduction && !process.env.NEXT_PUBLIC_APP_URL) {
+      console.warn("[next.config] NEXT_PUBLIC_APP_URL is not set in production — CORS headers will be omitted");
+    }
+
+    const appOrigin = appUrl ? new URL(appUrl).origin : null;
+
+    const globalHeaders = [
       {
         source: "/(.*)",
         headers: [
@@ -35,8 +42,11 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // CORS: restrict API access to our own origin
-      {
+    ];
+
+    // CORS: restrict API access to our own origin (skip if no origin available in production)
+    if (appOrigin) {
+      globalHeaders.push({
         source: "/api/(.*)",
         headers: [
           { key: "Access-Control-Allow-Origin", value: appOrigin },
@@ -44,8 +54,10 @@ const nextConfig: NextConfig = {
           { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization" },
           { key: "Access-Control-Max-Age", value: "86400" },
         ],
-      },
-    ];
+      });
+    }
+
+    return globalHeaders;
   },
 };
 

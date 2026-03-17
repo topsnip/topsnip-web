@@ -131,20 +131,30 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
 
   // 5. Insert new topics (skip if slug already exists)
   for (const candidate of candidates.slice(0, 10)) {
-    // Check if topic already exists
+    // Check if topic already exists — append date suffix on collision instead of dropping
+    let slug = candidate.slug;
     const { data: existing } = await supabase
       .from("topics")
       .select("id")
-      .eq("slug", candidate.slug)
+      .eq("slug", slug)
       .maybeSingle();
 
-    if (existing) continue;
+    if (existing) {
+      slug = `${slug}-${new Date().toISOString().split("T")[0]}`;
+      // If even the date-suffixed slug exists, skip this topic
+      const { data: existingWithDate } = await supabase
+        .from("topics")
+        .select("id")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (existingWithDate) continue;
+    }
 
     // Insert new topic
     const { data: topic, error: topicErr } = await supabase
       .from("topics")
       .insert({
-        slug: candidate.slug,
+        slug: slug,
         title: sanitizeText(candidate.title),
         status: "detected",
         trending_score: candidate.trendingScore,

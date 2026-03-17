@@ -18,7 +18,7 @@ export function SignUpGate({ reason, currentPath, onDismiss }: SignUpGateProps) 
       : "You've hit your 10 daily searches. Upgrade to Pro for unlimited access.";
 
   const cta =
-    reason === "guest" ? "Sign up free" : "Upgrade to Pro — $9/month";
+    reason === "guest" ? "Sign up free" : "Upgrade to Pro — $9.99/month";
 
   const ctaPath =
     reason === "guest"
@@ -29,6 +29,14 @@ export function SignUpGate({ reason, currentPath, onDismiss }: SignUpGateProps) 
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
+      role="dialog"
+      aria-modal="true"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          if (onDismiss) onDismiss();
+          else router.push("/");
+        }
+      }}
     >
       <div
         className="w-full max-w-sm rounded-2xl border p-6 flex flex-col gap-5"
@@ -67,7 +75,7 @@ export function SignUpGate({ reason, currentPath, onDismiss }: SignUpGateProps) 
 
         {reason === "free" && (
           <p className="text-xs text-center" style={{ color: "var(--ts-muted)" }}>
-            $9/month · cancel any time · no commitment
+            $9.99/month · cancel any time · no commitment
           </p>
         )}
       </div>

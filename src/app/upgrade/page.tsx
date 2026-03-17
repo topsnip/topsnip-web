@@ -192,7 +192,7 @@ function UpgradeContent() {
                 Pro — Monthly
               </p>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-extrabold tracking-tight text-white">$9</span>
+                <span className="text-3xl font-extrabold tracking-tight text-white">$9.99</span>
                 <span className="text-sm" style={{ color: "var(--ts-text-2)" }}>/month</span>
               </div>
             </div>
@@ -217,7 +217,7 @@ function UpgradeContent() {
               className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-40 hover:opacity-90 mt-auto shadow-[0_0_12px_rgba(124,106,247,0.3)]"
               style={{ background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))" }}
             >
-              {loadingPlan === "monthly" ? "Redirecting..." : "Get Pro — $9/mo"}
+              {loadingPlan === "monthly" ? "Redirecting..." : "Get Pro — $9.99/mo"}
             </button>
           </div>
 
@@ -235,7 +235,7 @@ function UpgradeContent() {
                 boxShadow: "0 0 10px rgba(124,106,247,0.5)",
               }}
             >
-              Save $29/year
+              Save $40/year
             </div>
 
             <div className="flex flex-col gap-1">
@@ -280,12 +280,12 @@ function UpgradeContent() {
           style={{ borderColor: "var(--border)" }}
         >
           <div
-            className="grid grid-cols-4 px-4 py-2 text-xs font-semibold uppercase tracking-widest"
+            className="grid grid-cols-2 md:grid-cols-4 px-4 py-2 text-xs font-semibold uppercase tracking-widest"
             style={{ color: "var(--ts-muted)", background: "var(--ts-surface)" }}
           >
-            <span className="col-span-2">Tier</span>
+            <span className="col-span-1 md:col-span-2">Tier</span>
             <span>Searches/day</span>
-            <span>Price</span>
+            <span className="hidden md:block">Price</span>
           </div>
           {[
             { tier: "Guest", searches: "3", price: "Free", muted: true },
@@ -294,17 +294,17 @@ function UpgradeContent() {
           ].map((row) => (
             <div
               key={row.tier}
-              className="grid grid-cols-4 px-4 py-3 text-sm border-t"
+              className="grid grid-cols-2 md:grid-cols-4 px-4 py-3 text-sm border-t"
               style={{
                 borderColor: "var(--border)",
                 background: row.accent ? "rgba(124,106,247,0.04)" : "transparent",
               }}
             >
-              <span className="col-span-2 font-medium" style={{ color: row.accent ? "var(--foreground)" : "var(--ts-text-2)" }}>
+              <span className="col-span-1 md:col-span-2 font-medium" style={{ color: row.accent ? "var(--foreground)" : "var(--ts-text-2)" }}>
                 {row.tier}
               </span>
               <span style={{ color: row.accent ? "var(--ts-accent)" : "var(--ts-text-2)" }}>{row.searches}</span>
-              <span style={{ color: row.muted ? "var(--ts-muted)" : "var(--ts-text-2)" }}>{row.price}</span>
+              <span className="hidden md:block" style={{ color: row.muted ? "var(--ts-muted)" : "var(--ts-text-2)" }}>{row.price}</span>
             </div>
           ))}
         </div>

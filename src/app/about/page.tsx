@@ -1,13 +1,27 @@
 import Link from "next/link";
 
+export const metadata = {
+  title: "About — Topsnip",
+  description: "Learn about Topsnip, the AI learning intelligence platform that helps you stay ahead of AI trends in 3 minutes.",
+};
+
 export default function AboutPage() {
   return (
     <main className="min-h-screen px-4 py-16">
       <div className="max-w-2xl mx-auto flex flex-col gap-12">
-        {/* Wordmark */}
-        <Link href="/" className="text-xl font-extrabold tracking-tight text-white">
-          top<span style={{ color: "var(--ts-accent)" }}>snip</span>
-        </Link>
+        {/* Nav */}
+        <div className="flex items-center justify-between">
+          <Link href="/" className="text-xl font-extrabold tracking-tight text-white">
+            top<span style={{ color: "var(--ts-accent)" }}>snip</span>
+          </Link>
+          <Link
+            href="/feed"
+            className="text-sm font-medium transition-colors hover:text-white"
+            style={{ color: "var(--ts-text-2)" }}
+          >
+            ← Back to Feed
+          </Link>
+        </div>
 
         {/* Hero */}
         <div className="flex flex-col gap-4">

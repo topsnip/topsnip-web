@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { decodeHtml } from "@/lib/utils/decode-html";
 import { AuthNav } from "@/components/AuthNav";
@@ -7,6 +8,27 @@ import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ReadTracker } from "./read-tracker";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: topic } = await supabase
+    .from("topics")
+    .select("title, slug")
+    .eq("slug", slug)
+    .single();
+
+  if (!topic) return { title: "Topic Not Found — Topsnip" };
+
+  return {
+    title: `${topic.title} — Topsnip`,
+    description: `Learn about ${topic.title} — explained simply, with sources.`,
+    openGraph: {
+      title: `${topic.title} — Topsnip`,
+      description: `Learn about ${topic.title} — explained simply, with sources.`,
+    },
+  };
+}
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

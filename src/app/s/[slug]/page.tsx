@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Search, ArrowLeft, ExternalLink, ChevronDown } from "lucide-react";
 import { SignUpGate } from "@/components/SignUpGate";
 import {
@@ -114,9 +114,9 @@ export default function ResultPage() {
 function ResultContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const query = searchParams.get("q") ?? "";
-  const currentPath =
-    typeof window !== "undefined" ? window.location.pathname + window.location.search : "";
+  const currentPath = pathname + "?" + searchParams.toString();
 
   const [result, setResult] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -130,7 +130,10 @@ function ResultContent() {
   const stageInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (!query) return;
+    if (!query) {
+      setLoading(false);
+      return;
+    }
 
     if (guestLimitReached()) {
       setGate("guest");

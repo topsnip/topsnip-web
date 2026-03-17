@@ -30,19 +30,20 @@ export function AuthNav() {
         >
           top<span style={{ color: "var(--ts-accent)" }}>snip</span>
         </Link>
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-3 sm:gap-5">
           {NAV_LINKS.map(({ href, label }) => {
             const isActive = pathname === href || pathname.startsWith(href + "/");
             return (
               <Link
                 key={href}
                 href={href}
-                className={`text-sm font-medium transition-colors hover:text-white ${
+                className={`text-xs sm:text-sm font-medium transition-colors hover:text-white ${
                   isActive ? "text-white" : ""
                 }`}
                 style={isActive ? undefined : { color: "var(--ts-text-2)" }}
               >
-                {label}
+                <span className="hidden sm:inline">{label}</span>
+                <span className="sm:hidden">{label.length > 4 ? label.slice(0, 4) : label}</span>
               </Link>
             );
           })}

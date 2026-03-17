@@ -109,6 +109,7 @@ function LoginForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 required
+                aria-label="Email address"
                 className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition-colors"
                 style={{
                   background: "var(--ts-surface-2)",

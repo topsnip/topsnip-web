@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+import { checkOrigin } from "@/lib/csrf";
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -16,6 +17,11 @@ function createServiceClient() {
 
 export async function POST(req: NextRequest) {
   try {
+    // [M19 fix] CSRF Origin header check
+    if (!checkOrigin(req)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const supabase = await createServerClient();
     const {
       data: { user },

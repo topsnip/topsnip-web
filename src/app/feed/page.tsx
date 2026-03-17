@@ -1,5 +1,10 @@
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: "Your Feed — Topsnip",
+  description: "Today's trending AI topics, curated and explained for you.",
+};
+
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -234,8 +239,7 @@ export default async function FeedPage() {
               </p>
             </div>
             <Link
-              href="#"
-              onClick={(e: React.MouseEvent) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              href="/feed#search"
               className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90"
               style={{
                 background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",

@@ -18,7 +18,7 @@ create table public.profiles (
   onboarding_complete    boolean not null default false,
   stripe_customer_id     text,
   stripe_subscription_id text,
-  subscription_status    text check (subscription_status in ('active', 'canceled', 'past_due', null)),
+  subscription_status    text check (subscription_status in ('active', 'canceled', 'past_due', 'trialing', 'incomplete', 'unpaid', null)),
   searches_today         integer not null default 0,
   searches_date          date not null default current_date,
   created_at             timestamptz not null default now(),
@@ -151,7 +151,6 @@ create table public.topics (
 create index idx_topics_status on public.topics (status);
 create index idx_topics_published on public.topics (published_at desc) where status = 'published';
 create index idx_topics_trending on public.topics (trending_score desc) where status = 'published';
-create index idx_topics_slug on public.topics (slug);
 
 alter table public.topics enable row level security;
 
@@ -208,7 +207,6 @@ create table public.topic_content (
   unique (topic_id, role)
 );
 
-create index idx_topic_content_topic on public.topic_content (topic_id);
 create index idx_topic_content_role on public.topic_content (topic_id, role);
 
 alter table public.topic_content enable row level security;
@@ -355,6 +353,18 @@ alter table public.anonymous_searches enable row level security;
 -- No public access — server-side only via service role
 
 
+-- ── Stripe Events (webhook idempotency) ─────────────────────────────────────
+
+create table if not exists public.stripe_events (
+  id         text primary key,
+  type       text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.stripe_events enable row level security;
+-- No policies — only service role can access
+
+
 -- ============================================================================
 -- FUNCTIONS
 -- ============================================================================
@@ -485,6 +495,16 @@ begin
 
   return v_result;
 end;
+$$;
+
+
+-- Purge old anonymous search records (privacy)
+create or replace function purge_old_anonymous_searches()
+returns void
+language sql
+security definer
+as $$
+  delete from anonymous_searches where created_at < now() - interval '30 days';
 $$;
 
 

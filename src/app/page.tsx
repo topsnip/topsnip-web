@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, FormEvent } from "react";
+import { useState, useEffect, useRef, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -86,11 +86,13 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Randomize 4 suggestions on each visit
-  const suggestions = useMemo(
-    () => [...ALL_SUGGESTIONS].sort(() => Math.random() - 0.5).slice(0, 4),
-    []
+  // Randomize 4 suggestions on each visit (client-side only to avoid hydration mismatch)
+  const [suggestions, setSuggestions] = useState<string[]>(() =>
+    ALL_SUGGESTIONS.slice(0, 4)
   );
+  useEffect(() => {
+    setSuggestions([...ALL_SUGGESTIONS].sort(() => Math.random() - 0.5).slice(0, 4));
+  }, []);
 
   function navigateToSearch(q: string) {
     const trimmed = q.trim();
@@ -99,6 +101,7 @@ export default function Home() {
       .toLowerCase()
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9-]/g, "");
+    if (!slug) return;
     router.push(`/s/${slug}?q=${encodeURIComponent(trimmed)}`);
   }
 

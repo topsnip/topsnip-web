@@ -44,6 +44,10 @@ function titleSimilarity(a: string, b: string): number {
   }
 
   const minSize = Math.min(wordsA.size, wordsB.size);
+  // Short titles (< 2 meaningful words) require exact overlap to avoid false matches
+  if (minSize < 2) {
+    return overlap === minSize ? 1 : 0;
+  }
   return overlap / minSize;
 }
 
@@ -91,7 +95,8 @@ export async function scoreAndDedup(
     .from("source_items")
     .select("id, title, engagement_score, published_at, ingested_at, source_id, sources!inner(platform)")
     .gte("ingested_at", cutoff)
-    .order("ingested_at", { ascending: false });
+    .order("ingested_at", { ascending: false })
+    .limit(500);
 
   if (error || !items || items.length === 0) {
     return [];
@@ -102,6 +107,7 @@ export async function scoreAndDedup(
     items: typeof items;
     platforms: Set<Platform>;
     totalEngagement: number;
+    bestEngagement: number;
     earliestDate: Date;
     bestTitle: string;
   }> = [];
@@ -120,7 +126,8 @@ export async function scoreAndDedup(
           group.earliestDate = itemDate;
         }
         // Keep the highest-engagement title as the best
-        if ((item.engagement_score || 0) > group.totalEngagement / 2) {
+        if ((item.engagement_score || 0) > group.bestEngagement) {
+          group.bestEngagement = item.engagement_score || 0;
           group.bestTitle = item.title;
         }
         matched = true;
@@ -134,6 +141,7 @@ export async function scoreAndDedup(
         items: [item],
         platforms: new Set(platform ? [platform] : []),
         totalEngagement: item.engagement_score || 0,
+        bestEngagement: item.engagement_score || 0,
         earliestDate: new Date(item.published_at || item.ingested_at),
         bestTitle: item.title,
       });

@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/ingest/service-client"; // [M1 fix] use shared client with env validation
 import { anonymousSearchLimiter, proSearchLimiter, freeSearchLimiter } from "@/lib/ratelimit";
+import { checkOrigin } from "@/lib/csrf";
 import {
   buildOnDemandSystemPrompt,
   buildOnDemandUserPrompt,
@@ -170,6 +171,11 @@ async function generateOnDemandBrief(
 
 export async function POST(req: NextRequest) {
   try {
+    // [M19 fix] CSRF Origin header check
+    if (!checkOrigin(req)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     // C3: Limit request body size
     const body = await req.text();
     if (body.length > 1024) {
@@ -219,6 +225,17 @@ export async function POST(req: NextRequest) {
       if (profile) {
         userPlan = profile.plan;
         userRole = (profile.role as Role) ?? "general";
+
+        // [C1 fix] Enforce daily search limit for free users BEFORE content generation
+        if (userPlan !== "pro") {
+          const today = new Date().toISOString().slice(0, 10);
+          if (profile.searches_date === today && (profile.searches_today ?? 0) >= 10) {
+            return NextResponse.json(
+              { error: "Daily search limit reached. Upgrade to Pro for unlimited searches.", code: "daily_limit" },
+              { status: 429 }
+            );
+          }
+        }
       }
     }
 
@@ -276,6 +293,11 @@ export async function POST(req: NextRequest) {
           { status: 429 }
         );
       }
+    }
+
+    // [C1 fix] Claim search slot BEFORE content retrieval/generation
+    if (userId && userPlan !== "pro") {
+      await serviceClient.rpc("claim_search_slot", { p_user_id: userId, p_limit: 10 });
     }
 
     // 4. Check if we already have a published topic matching this query
@@ -344,11 +366,6 @@ export async function POST(req: NextRequest) {
           { onConflict: "query_slug" }
         );
 
-        // [2.1 fix] Claim search slot AFTER successful content retrieval (not before)
-        if (userId && userPlan !== "pro") {
-          await serviceClient.rpc("claim_search_slot", { p_user_id: userId, p_limit: 10 });
-        }
-
         await trackSearch(serviceClient, userId, ip, q, slug, existingTopic.id);
         return NextResponse.json(result);
       }
@@ -385,11 +402,6 @@ export async function POST(req: NextRequest) {
       },
       { onConflict: "query_slug" }
     );
-
-    // [2.1 fix] Claim search slot AFTER successful generation
-    if (userId && userPlan !== "pro") {
-      await serviceClient.rpc("claim_search_slot", { p_user_id: userId, p_limit: 10 });
-    }
 
     // 8. Track search
     await trackSearch(serviceClient, userId, ip, q, slug, null);

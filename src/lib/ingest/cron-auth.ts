@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
+import { timingSafeEqual, createHash } from "crypto";
 
 /**
  * Verify that a request to an ingestion endpoint carries the correct CRON_SECRET.
@@ -27,6 +27,7 @@ export function verifyCronAuth(req: NextRequest): NextResponse | null {
 
 /** Constant-time string comparison to prevent timing attacks. */
 function safeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(Buffer.from(a, "utf-8"), Buffer.from(b, "utf-8"));
+  const hashA = createHash("sha256").update(a).digest();
+  const hashB = createHash("sha256").update(b).digest();
+  return timingSafeEqual(hashA, hashB);
 }

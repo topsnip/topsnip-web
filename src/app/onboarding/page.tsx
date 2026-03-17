@@ -80,6 +80,18 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
   const [loadingTags, setLoadingTags] = useState(true);
 
+  /* Auth gate on mount */
+  useEffect(() => {
+    async function checkAuth() {
+      const { data: { user } } = await getSupabase().auth.getUser();
+      if (!user) {
+        router.push("/auth/login?redirect=/onboarding");
+      }
+    }
+    checkAuth();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /* Fetch tags on mount */
   useEffect(() => {
     async function fetchTags() {
@@ -209,12 +221,14 @@ export default function OnboardingPage() {
         {/* ── Step 1: Role Selection ──────────────────────────────────────── */}
         {step === 1 && (
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup" aria-label="Select your role">
               {ROLES.map((r) => {
                 const selected = role === r.value;
                 return (
                   <button
                     key={r.value}
+                    role="radio"
+                    aria-checked={selected}
                     onClick={() => setRole(r.value)}
                     className="rounded-xl p-4 flex flex-col gap-3 text-left transition-all duration-200 cursor-pointer"
                     style={{

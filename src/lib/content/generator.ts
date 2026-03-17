@@ -182,17 +182,17 @@ async function checkQuality(
     }, { signal: AbortSignal.timeout(30_000) });
 
     const text = message.content[0];
-    if (text.type !== "text") return 50; // default score on error
+    if (text.type !== "text") return 0; // default score on error
 
     const jsonMatch = text.text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return 50;
+    if (!jsonMatch) return 0;
 
     const parsed = JSON.parse(jsonMatch[0]);
     return typeof parsed.score === "number" ? parsed.score : 50;
   } catch {
     // Quality check is non-critical — don't block generation
-    console.warn(`Quality check failed for topic ${material.topicId}, defaulting to 50`);
-    return 50;
+    console.warn(`Quality check failed for topic ${material.topicId}, defaulting to 0`);
+    return 0;
   }
 }
 
@@ -205,11 +205,18 @@ export async function generateForTopic(
   const errors: string[] = [];
   const contentByRole: Partial<Record<Role, GeneratedContent>> = {};
 
-  // Mark topic as generating
-  await supabase
+  // Atomically claim topic — only proceeds if status is still "detected"
+  const { data: claimed, error: claimErr } = await supabase
     .from("topics")
     .update({ status: "generating" })
-    .eq("id", topicId);
+    .eq("id", topicId)
+    .eq("status", "detected")
+    .select("id");
+
+  if (claimErr || !claimed || claimed.length === 0) {
+    // Another instance already claimed this topic, skip it
+    return { topicId, contentByRole: {} as Record<Role, GeneratedContent>, youtubeRecs: [], errors: [`Topic ${topicId} already claimed by another instance`] };
+  }
 
   const material = await gatherSourceMaterial(supabase, topicId);
   if (!material) {
