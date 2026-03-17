@@ -582,6 +582,72 @@
   animation: breakingPulse 2s ease-in-out infinite;
 }
 
+/* ── Login page: floating headlines ───────────────────────────────── */
+@keyframes headlineFade {
+  0% { opacity: 0; }
+  15% { opacity: 0.12; }
+  50% { opacity: 0.12; }
+  65% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+.headline-float {
+  opacity: 0;
+  animation: headlineFade 8s ease-in-out infinite;
+}
+
+/* ── Login page: button & input styles ───────────────────────────── */
+.login-btn-google {
+  cursor: pointer;
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+.login-btn-google:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+  border-color: var(--border-focus) !important;
+}
+.login-btn-google:active {
+  transform: scale(0.98);
+  transition-duration: 100ms;
+}
+.login-btn-google:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ts-accent-50);
+}
+
+.login-btn-magic {
+  cursor: pointer;
+  transition: opacity 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+  box-shadow: 0 0 20px var(--ts-accent-30);
+}
+.login-btn-magic:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px var(--ts-glow);
+}
+.login-btn-magic:active:not(:disabled) {
+  transform: translateY(0);
+}
+.login-btn-magic:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ts-accent-50);
+}
+
+.login-input {
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.login-input:focus {
+  border-color: var(--ts-accent) !important;
+  box-shadow: 0 0 0 2px var(--ts-accent-30);
+}
+
+.login-back-link {
+  transition: color 200ms ease;
+}
+.login-back-link:hover {
+  color: var(--foreground) !important;
+}
+
 /* ── Accessibility: Reduced Motion ─────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   * {
@@ -612,6 +678,14 @@
   }
   .breaking-badge {
     animation: none;
+  }
+  .headline-float {
+    animation: none;
+    opacity: 0.08;
+  }
+  .login-btn-google:hover,
+  .login-btn-magic:hover:not(:disabled) {
+    transform: none;
   }
   .typewriter-line-1,
   .typewriter-line-2 {
