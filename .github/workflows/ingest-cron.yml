@@ -1,0 +1,46 @@
+name: TopSnip Ingestion Cron
+
+on:
+  schedule:
+    # Run every 4 hours
+    - cron: '0 */4 * * *'
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  ingest-and-generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger ingestion
+        run: |
+          echo "Triggering ingestion..."
+          INGEST_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${{ secrets.TOPSNIP_URL }}/api/ingest/run" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 120)
+
+          HTTP_CODE=$(echo "$INGEST_RESPONSE" | tail -1)
+          BODY=$(echo "$INGEST_RESPONSE" | head -n -1)
+
+          echo "Ingestion response ($HTTP_CODE): $BODY"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::warning::Ingestion returned $HTTP_CODE"
+          fi
+
+      - name: Trigger content generation
+        run: |
+          echo "Triggering content generation..."
+          GEN_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${{ secrets.TOPSNIP_URL }}/api/content/generate" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 300)
+
+          HTTP_CODE=$(echo "$GEN_RESPONSE" | tail -1)
+          BODY=$(echo "$GEN_RESPONSE" | head -n -1)
+
+          echo "Generation response ($HTTP_CODE): $BODY"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::warning::Content generation returned $HTTP_CODE"
+          fi

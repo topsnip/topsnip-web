@@ -116,14 +116,11 @@ function decodeHtmlEntities(text: string): string {
  * re-encodes to prevent stored XSS. This prevents double-encoding.
  */
 export function sanitizeText(text: string): string {
-  // Decode first to normalize — source APIs often return pre-encoded text
+  // Decode HTML entities — source APIs often return pre-encoded text.
+  // Store as clean text; React handles escaping on render.
   const decoded = decodeHtmlEntities(text);
-  return decoded
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;");
+  // Strip control characters and null bytes (security), keep normal text
+  return decoded.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
 }
 
 /**
