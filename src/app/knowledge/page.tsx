@@ -10,8 +10,35 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { SiteNav } from "@/components/SiteNav";
+import StatsBar from "./stats-bar";
+import LevelBar from "./level-bar";
+import ActivityTimeline from "./activity-timeline";
+import LevelUpDetector from "./level-up-detector";
 
 // ── Types ────────────────────────────────────────────────────────────────────
+
+interface GamificationStats {
+  xp: number;
+  level: string;
+  streak_count: number;
+  longest_streak: number;
+  xp_to_next_level: number;
+  topics_read_today: number;
+  total_topics_read: number;
+  total_time_sec: number;
+  recent_xp_events: {
+    event_type: string;
+    xp_amount: number;
+    metadata: Record<string, unknown>;
+    created_at: string;
+  }[];
+  daily_three_eligible: boolean;
+}
+
+interface Tag {
+  slug: string;
+  label: string;
+}
 
 interface KnowledgeSummary {
   topics_read: number;
@@ -29,38 +56,59 @@ interface KnowledgeSummary {
   }[];
 }
 
-interface Tag {
-  slug: string;
-  label: string;
-}
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const headingFont = "var(--font-heading), 'Instrument Serif', serif";
 
-function computeTimeSaved(topicsRead: number, totalTimeSec: number): string {
-  // Each topic would take ~15 min to research; user spent totalTimeSec on topsnip.
-  const wouldHaveTakenSec = topicsRead * 15 * 60;
-  const savedSec = Math.max(0, wouldHaveTakenSec - totalTimeSec);
-  const savedHours = savedSec / 3600;
+// ── Progress Ring SVG ────────────────────────────────────────────────────────
 
-  if (savedHours < 1) {
-    const savedMin = Math.round(savedSec / 60);
-    return `${savedMin} min`;
-  }
-  return `${savedHours.toFixed(1)} hrs`;
-}
+function ProgressRing({
+  progress,
+  size = 24,
+}: {
+  progress: number; // 0-100
+  size?: number;
+}) {
+  const strokeWidth = 2.5;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (progress / 100) * circumference;
 
-function formatReadDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      style={{ flexShrink: 0 }}
+    >
+      {/* Track */}
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="var(--border)"
+        strokeWidth={strokeWidth}
+      />
+      {/* Progress */}
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="var(--ts-accent, #E8734A)"
+        strokeWidth={strokeWidth}
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        style={{
+          transform: "rotate(-90deg)",
+          transformOrigin: "center",
+          transition: "stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      />
+    </svg>
+  );
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
@@ -145,11 +193,24 @@ export default async function KnowledgeDashboardPage() {
   }
 
   // ── Fetch data ──────────────────────────────────────────────────────────────
-  const [summaryResult, streakResult, tagsResult] = await Promise.all([
+  const [statsResult, summaryResult, tagsResult] = await Promise.all([
+    supabase.rpc("get_gamification_stats", { p_user_id: user.id }),
     supabase.rpc("get_knowledge_summary", { p_user_id: user.id }),
-    supabase.rpc("get_reading_streak", { p_user_id: user.id }),
     supabase.from("tags").select("slug, label").order("label"),
   ]);
+
+  const stats: GamificationStats = statsResult.data ?? {
+    xp: 0,
+    level: "curious",
+    streak_count: 0,
+    longest_streak: 0,
+    xp_to_next_level: 200,
+    topics_read_today: 0,
+    total_topics_read: 0,
+    total_time_sec: 0,
+    recent_xp_events: [],
+    daily_three_eligible: false,
+  };
 
   const summary: KnowledgeSummary = summaryResult.data ?? {
     topics_read: 0,
@@ -159,18 +220,8 @@ export default async function KnowledgeDashboardPage() {
     unread_important: [],
   };
 
-  const streak: number = streakResult.data ?? 0;
   const allTags: Tag[] = tagsResult.data ?? [];
-
   const coveredSet = new Set(summary.tags_covered ?? []);
-  const timeSaved = computeTimeSaved(
-    summary.topics_read,
-    summary.total_time_sec,
-  );
-
-  // Count topics per tag — we don't have per-tag counts from the RPC,
-  // so we show covered vs uncovered. If you add per-tag counts to the RPC later,
-  // you can enhance this.
   const unreadTopics = (summary.unread_important ?? []).slice(0, 5);
 
   return (
@@ -186,17 +237,20 @@ export default async function KnowledgeDashboardPage() {
 
       <SiteNav user={{ id: user.id, plan: profile.plan ?? "free" }} />
 
+      {/* Level-up detector (client component) */}
+      <LevelUpDetector level={stats.level} />
+
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 pt-28 pb-16 relative z-10">
         {/* ── Header ───────────────────────────────────────────────────────── */}
         <div
-          className="flex flex-col gap-1 mb-10"
+          className="flex flex-col gap-1 mb-8"
           style={{ animation: "fadeInUp 0.35s ease both" }}
         >
           <h1
             className="text-2xl font-bold tracking-tight text-white"
             style={{ fontFamily: headingFont }}
           >
-            Knowledge Dashboard
+            Your Knowledge
           </h1>
           <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>
             What you&apos;ve learned, what you&apos;ve missed, and where to go
@@ -204,25 +258,26 @@ export default async function KnowledgeDashboardPage() {
           </p>
         </div>
 
-        {/* ── Stats ────────────────────────────────────────────────────────── */}
-        <div
-          className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10"
-          style={{ animation: "fadeInUp 0.35s ease 0.06s both" }}
-        >
-          <StatCard label="Topics read" value={String(summary.topics_read)} />
-          <StatCard label="Time saved" value={timeSaved} />
-          <StatCard label="Tags covered" value={String(coveredSet.size)} />
-          <StatCard
-            label="Day streak"
-            value={String(streak)}
-            accent={streak >= 3}
+        {/* ── 1. Gamification Stats Bar ────────────────────────────────────── */}
+        <div className="mb-4">
+          <StatsBar
+            streak={stats.streak_count}
+            xp={stats.xp}
+            level={stats.level}
+            topicsRead={stats.total_topics_read}
+            totalTimeSec={stats.total_time_sec}
           />
         </div>
 
-        {/* ── Knowledge Map ────────────────────────────────────────────────── */}
+        {/* ── 2. Level Progress Bar ───────────────────────────────────────── */}
+        <div className="mb-10">
+          <LevelBar level={stats.level} xp={stats.xp} />
+        </div>
+
+        {/* ── 3. Knowledge Map ────────────────────────────────────────────── */}
         <section
           className="mb-10"
-          style={{ animation: "fadeInUp 0.35s ease 0.12s both" }}
+          style={{ animation: "fadeInUp 0.35s ease 0.15s both" }}
         >
           <h2
             className="text-lg font-bold text-white mb-4"
@@ -236,29 +291,44 @@ export default async function KnowledgeDashboardPage() {
               No tags available yet.
             </p>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {allTags.map((tag) => {
                 const isCovered = coveredSet.has(tag.slug);
+                // Placeholder progress — in future, replace with per-tag read/total counts
+                const progress = isCovered ? 40 : 0;
+
                 return (
-                  <span
+                  <Link
                     key={tag.slug}
-                    className="rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+                    href={`/feed?tag=${tag.slug}`}
+                    className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all group"
                     style={
                       isCovered
                         ? {
-                            background: "var(--ts-accent-12)",
+                            background: "var(--ts-accent-8)",
                             color: "var(--ts-accent)",
                             border: "1px solid var(--ts-accent-25)",
                           }
                         : {
-                            background: "var(--ts-surface)",
+                            background: "transparent",
                             color: "var(--ts-muted)",
                             border: "1px solid var(--border)",
                           }
                     }
                   >
-                    {tag.label}
-                  </span>
+                    <ProgressRing progress={progress} />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-medium truncate group-hover:opacity-80 transition-opacity">
+                        {tag.label}
+                      </span>
+                      <span
+                        className="text-xs"
+                        style={{ color: "var(--ts-muted)" }}
+                      >
+                        {isCovered ? "Covered" : "Not started"}
+                      </span>
+                    </div>
+                  </Link>
                 );
               })}
             </div>
@@ -272,75 +342,34 @@ export default async function KnowledgeDashboardPage() {
           </p>
         </section>
 
-        {/* ── Recent Reads ─────────────────────────────────────────────────── */}
+        {/* ── 4. Recent Activity Timeline ─────────────────────────────────── */}
         <section
           className="mb-10"
-          style={{ animation: "fadeInUp 0.35s ease 0.18s both" }}
+          style={{ animation: "fadeInUp 0.35s ease 0.2s both" }}
         >
           <h2
             className="text-lg font-bold text-white mb-4"
             style={{ fontFamily: headingFont }}
           >
-            Recent Reads
+            Recent Activity
           </h2>
-
-          {summary.recent_reads.length === 0 ? (
-            <div
-              className="glass-card rounded-xl p-6 text-center"
-            >
-              <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>
-                Nothing read yet. Head to your{" "}
-                <Link
-                  href="/feed"
-                  className="font-medium"
-                  style={{ color: "var(--ts-accent)" }}
-                >
-                  feed
-                </Link>{" "}
-                to start.
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {summary.recent_reads.map((item, i) => (
-                <Link
-                  key={`${item.slug}-${i}`}
-                  href={`/topic/${item.slug}`}
-                  className="flex items-center justify-between rounded-xl border px-4 py-3 transition-all hover:border-[var(--ts-accent)] group"
-                  style={{
-                    background: "var(--ts-surface)",
-                    borderColor: "var(--border)",
-                  }}
-                >
-                  <span className="text-sm font-medium text-white group-hover:text-[var(--ts-accent-2)] transition-colors line-clamp-1">
-                    {item.title}
-                  </span>
-                  <span
-                    className="text-xs flex-shrink-0 ml-4"
-                    style={{ color: "var(--ts-muted)" }}
-                  >
-                    {formatReadDate(item.read_at)}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
+          <ActivityTimeline events={stats.recent_xp_events ?? []} />
         </section>
 
-        {/* ── Knowledge Gaps ───────────────────────────────────────────────── */}
+        {/* ── 5. Knowledge Gaps / Recommended Next ────────────────────────── */}
         {unreadTopics.length > 0 && (
-          <section style={{ animation: "fadeInUp 0.35s ease 0.24s both" }}>
+          <section style={{ animation: "fadeInUp 0.35s ease 0.25s both" }}>
             <h2
               className="text-lg font-bold text-white mb-2"
               style={{ fontFamily: headingFont }}
             >
-              Knowledge Gaps
+              Recommended Next
             </h2>
             <p
               className="text-sm mb-4"
               style={{ color: "var(--ts-text-2)" }}
             >
-              You might want to catch up on these.
+              These are trending topics you haven&apos;t read yet.
             </p>
 
             <div className="flex flex-col gap-2">
@@ -382,42 +411,6 @@ export default async function KnowledgeDashboardPage() {
           </section>
         )}
       </main>
-    </div>
-  );
-}
-
-// ── Stat Card Component ──────────────────────────────────────────────────────
-
-function StatCard({
-  label,
-  value,
-  accent = false,
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-}) {
-  return (
-    <div
-      className="rounded-xl border p-5 flex flex-col gap-1"
-      style={{
-        background: "var(--ts-surface)",
-        borderColor: accent ? "var(--ts-accent-25)" : "var(--border)",
-        boxShadow: accent ? "0 0 12px var(--ts-accent-8)" : undefined,
-      }}
-    >
-      <span
-        className="text-2xl font-bold tracking-tight text-white"
-        style={{
-          fontFamily: "var(--font-heading), 'Instrument Serif', serif",
-          color: accent ? "var(--ts-accent)" : undefined,
-        }}
-      >
-        {value}
-      </span>
-      <span className="text-xs" style={{ color: "var(--ts-muted)" }}>
-        {label}
-      </span>
     </div>
   );
 }

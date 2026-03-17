@@ -62,60 +62,47 @@ export function LearningDebt({
       style={{ animation: "fadeInUp 0.35s ease 0.3s both" }}
     >
       {/* Section header */}
-      <div className="flex items-center gap-3 mb-4">
-        <div
-          className="w-6 h-6 rounded-full flex items-center justify-center text-xs"
-          style={{
-            background: "var(--ts-accent-8)",
-            border: "1px solid var(--ts-accent-20)",
-            color: "var(--ts-accent)",
-          }}
+      <div className="flex items-center gap-2 mb-3">
+        <span
+          className="text-sm font-medium"
+          style={{ color: "var(--ts-text-2)" }}
         >
-          !
-        </div>
-        <h2
-          className="text-base font-semibold text-white"
-          style={{ fontFamily: headingFont }}
+          You might want to catch up on:
+        </span>
+        <span
+          className="text-xs"
+          style={{ color: "var(--ts-muted)" }}
         >
-          You might have missed
-        </h2>
+          Just 3 minutes each
+        </span>
       </div>
 
-      {/* Topic list */}
-      <div className="flex flex-col gap-2">
+      {/* Topic pills */}
+      <div className="flex flex-wrap gap-2">
         {topics.map((topic) => (
           <Link
             key={topic.topic_id}
             href={`/topic/${topic.slug}`}
-            className="group flex items-center justify-between gap-4 rounded-xl px-4 py-3 transition-colors"
+            className="group flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200"
             style={{
-              background: "var(--ts-surface)",
-              border: "1px solid var(--border)",
+              background: "var(--ts-accent-6)",
+              border: "1px solid var(--ts-accent-10)",
+              color: "var(--foreground)",
               textDecoration: "none",
             }}
           >
-            <span
-              className="text-sm font-medium text-white truncate group-hover:underline"
-              style={{ fontFamily: headingFont }}
-            >
-              {topic.title}
-            </span>
-            <span
-              className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums"
-              style={{
-                background:
-                  topic.trending_score >= 70
-                    ? "var(--ts-accent-8)"
-                    : "var(--ts-surface)",
-                color:
-                  topic.trending_score >= 70
-                    ? "var(--ts-accent)"
-                    : "var(--ts-muted)",
-                border: `1px solid ${topic.trending_score >= 70 ? "var(--ts-accent-20)" : "var(--border)"}`,
-              }}
-            >
-              {Math.round(topic.trending_score)}
-            </span>
+            <span className="group-hover:underline">{topic.title}</span>
+            {topic.trending_score >= 70 && (
+              <span
+                className="rounded-full px-1.5 py-0.5 text-[9px] font-bold"
+                style={{
+                  background: "var(--ts-accent-8)",
+                  color: "var(--ts-accent)",
+                }}
+              >
+                HOT
+              </span>
+            )}
           </Link>
         ))}
       </div>

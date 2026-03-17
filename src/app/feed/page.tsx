@@ -8,11 +8,14 @@ export const metadata = {
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { decodeHtml } from "@/lib/utils/decode-html";
 import { FeedSearchBar } from "./feed-search-bar";
 import { SiteNav } from "@/components/SiteNav";
 import { LearningDebt } from "./learning-debt";
-import { TrendingSuggestions, QuickSuggestions } from "./trending-suggestions";
+import { TrendingSuggestions, QuickSuggestions, QuietDayState } from "./trending-suggestions";
+import { FeedGreeting } from "./feed-greeting";
+import { TopicCardList } from "./topic-card";
+import type { TopicCardData } from "./topic-card";
+import { SinceLastVisit } from "./since-last-visit";
 
 // ── "Since you were last here" types ────────────────────────────────────────
 
@@ -48,26 +51,6 @@ interface FeedTopic extends Topic {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatFeedDate(date: Date): string {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(date);
-  target.setHours(0, 0, 0, 0);
-
-  const diffDays = Math.round(
-    (today.getTime() - target.getTime()) / (1000 * 60 * 60 * 24),
-  );
-
-  const formatted = date.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-  });
-
-  if (diffDays === 0) return `Today, ${formatted}`;
-  if (diffDays === 1) return `Yesterday, ${formatted}`;
-  return formatted;
-}
 
 const headingFont = "var(--font-heading), 'Instrument Serif', serif";
 
@@ -175,7 +158,18 @@ export default async function FeedPage() {
       });
   }
 
-  const feedDate = new Date();
+  // Map feed topics to TopicCardData shape
+  const topicCardData: TopicCardData[] = feedTopics.map((t) => ({
+    id: t.id,
+    slug: t.slug,
+    title: t.title,
+    tldr: t.tldr,
+    trending_score: t.trending_score,
+    is_breaking: t.is_breaking,
+    platform_count: t.platform_count,
+    published_at: t.published_at,
+    is_read: t.is_read,
+  }));
 
   return (
     <div
@@ -194,7 +188,7 @@ export default async function FeedPage() {
       <SiteNav user={{ id: user.id, plan: profile.plan ?? "free" }} />
 
       {/* ── Main Content ────────────────────────────────────────────────── */}
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 pt-28 pb-16 relative z-10">
+      <main className="flex-1 content-container pt-28 pb-16 relative z-10">
         {/* Search bar (client component) with pulse dot */}
         <div className="feed-search-container relative">
           <FeedSearchBar />
@@ -203,71 +197,16 @@ export default async function FeedPage() {
         {/* Quick suggestion chips below search */}
         <QuickSuggestions />
 
-        {/* Date heading */}
-        <div
-          className="flex flex-col gap-1 mb-8"
-          style={{ animation: "fadeInUp 0.35s ease both" }}
-        >
-          <h1
-            className="text-2xl font-bold tracking-tight text-white"
-            style={{ fontFamily: headingFont }}
-          >
-            {isQuietDay ? "Nothing major today" : formatFeedDate(feedDate)}
-          </h1>
-          <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>
-            {isQuietDay
-              ? "Quiet day in AI. The machines are resting."
-              : feedTopics.length > 0
-                ? `${feedTopics.length} topic${feedTopics.length === 1 ? "" : "s"} trending in AI today`
-                : "Your personalized AI feed"}
-          </p>
-        </div>
+        {/* Time-of-day greeting */}
+        <FeedGreeting
+          email={user.email}
+          isQuietDay={isQuietDay}
+          topicCount={feedTopics.length}
+        />
 
         {/* ── Quiet Day State ───────────────────────────────────────────── */}
         {isQuietDay && (
-          <div
-            className="glass-card rounded-2xl p-8 flex flex-col items-center text-center gap-5"
-            style={{ animation: "fadeInUp 0.35s ease 0.06s both" }}
-          >
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center"
-              style={{
-                background: "var(--ts-accent-8)",
-                border: "1px solid var(--ts-accent-20)",
-              }}
-            >
-              <span className="text-xl">~</span>
-            </div>
-            <div className="flex flex-col gap-2">
-              <p
-                className="text-base font-semibold text-white"
-                style={{ fontFamily: headingFont }}
-              >
-                Quiet day in AI
-              </p>
-              <p
-                className="text-sm max-w-md"
-                style={{ color: "var(--ts-text-2)" }}
-              >
-                Nothing major happened today. Use the search bar to explore a
-                topic you&apos;ve been meaning to learn about.
-              </p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2 mt-2">
-              {["RAG pipelines", "AI agents", "Fine-tuning LLMs"].map((s) => (
-                <Link
-                  key={s}
-                  href={`/s/${s
-                    .toLowerCase()
-                    .replace(/\s+/g, "-")
-                    .replace(/[^a-z0-9-]/g, "")}?q=${encodeURIComponent(s)}`}
-                  className="suggestion-chip rounded-full border px-3 py-1.5 text-xs font-medium"
-                >
-                  {s}
-                </Link>
-              ))}
-            </div>
-          </div>
+          <QuietDayState showLearningDebt={isPro} />
         )}
 
         {/* ── Empty State (no digest for today yet) ─────────────────────── */}
@@ -281,185 +220,11 @@ export default async function FeedPage() {
         )}
 
         {/* ── Since You Were Last Here ─────────────────────────────────── */}
-        {sinceLastVisitTopics.length > 0 && (
-          <details
-            className="mb-6 group"
-            style={{ animation: "fadeInUp 0.35s ease 0.04s both" }}
-            open
-          >
-            <summary
-              className="flex items-center gap-2 cursor-pointer list-none mb-3 select-none"
-              style={{ outline: "none" }}
-            >
-              <span
-                className="text-sm font-semibold"
-                style={{ color: "var(--ts-text-2)", fontFamily: headingFont }}
-              >
-                Since you were last here
-              </span>
-              <span
-                className="rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums"
-                style={{
-                  background: "var(--ts-accent-8)",
-                  color: "var(--ts-accent)",
-                  border: "1px solid var(--ts-accent-20)",
-                }}
-              >
-                {sinceLastVisitTopics.length}
-              </span>
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="ml-auto transition-transform group-open:rotate-180"
-                style={{ color: "var(--ts-muted)" }}
-              >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </summary>
-            <div className="flex flex-col gap-2">
-              {sinceLastVisitTopics.map((topic) => (
-                <Link
-                  key={topic.topic_id}
-                  href={`/topic/${topic.topic_slug}`}
-                  className="flex flex-col gap-1 rounded-xl px-4 py-3 transition-colors hover:brightness-110"
-                  style={{
-                    background: "var(--ts-surface)",
-                    border: "1px solid var(--border)",
-                    textDecoration: "none",
-                  }}
-                >
-                  <span
-                    className="text-sm font-medium text-white"
-                    style={{ fontFamily: headingFont }}
-                  >
-                    {decodeHtml(topic.topic_title)}
-                  </span>
-                  {topic.tldr && (
-                    <span
-                      className="text-xs line-clamp-1"
-                      style={{ color: "var(--ts-text-2)" }}
-                    >
-                      {decodeHtml(topic.tldr)}
-                    </span>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </details>
-        )}
+        <SinceLastVisit topics={sinceLastVisitTopics} />
 
         {/* ── Topic Cards ───────────────────────────────────────────────── */}
         {feedTopics.length > 0 && (
-          <div className="flex flex-col gap-4">
-            {feedTopics.map((topic, i) => (
-              <Link
-                key={topic.id}
-                href={`/topic/${topic.slug}`}
-                className="glass-card rounded-2xl p-6 flex flex-col gap-4 cursor-pointer"
-                style={{
-                  animation: `fadeInUp 0.35s ease ${0.06 + i * 0.06}s both`,
-                  textDecoration: "none",
-                  opacity: topic.is_read ? 0.55 : 1,
-                }}
-              >
-                {/* Header row: badges + title */}
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {topic.is_read && (
-                      <span
-                        className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                        style={{
-                          background: "var(--ts-text-2, rgba(255,255,255,0.06))",
-                          color: "var(--ts-muted)",
-                          border: "1px solid var(--border)",
-                        }}
-                      >
-                        Read
-                      </span>
-                    )}
-                    {topic.is_breaking && (
-                      <span
-                        className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                        style={{
-                          background: "var(--ts-error-12)",
-                          color: "var(--error)",
-                          border: "1px solid var(--ts-error-25)",
-                        }}
-                      >
-                        Breaking
-                      </span>
-                    )}
-                    {topic.trending_score >= 70 && !topic.is_breaking && (
-                      <span
-                        className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                        style={{
-                          background: "var(--ts-accent-8)",
-                          color: "var(--ts-accent)",
-                          border: "1px solid var(--ts-accent-20)",
-                        }}
-                      >
-                        Trending
-                      </span>
-                    )}
-                    <span
-                      className="text-xs"
-                      style={{ color: "var(--ts-muted)" }}
-                    >
-                      {topic.platform_count} source
-                      {topic.platform_count === 1 ? "" : "s"}
-                    </span>
-                  </div>
-
-                  <h2
-                    className="text-lg font-bold text-white leading-snug"
-                    style={{ fontFamily: headingFont }}
-                  >
-                    {decodeHtml(topic.title)}
-                  </h2>
-                </div>
-
-                {/* TL;DR */}
-                {topic.tldr && (
-                  <p
-                    className="text-sm leading-relaxed line-clamp-3"
-                    style={{ color: "var(--ts-text-2)" }}
-                  >
-                    {decodeHtml(topic.tldr)}
-                  </p>
-                )}
-
-                {/* Read more indicator */}
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className="text-xs font-medium"
-                    style={{ color: "var(--ts-accent)" }}
-                  >
-                    Read full brief
-                  </span>
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{ color: "var(--ts-accent)" }}
-                  >
-                    <path d="M5 12h14" />
-                    <path d="m12 5 7 7-7 7" />
-                  </svg>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <TopicCardList topics={topicCardData} />
         )}
 
         {/* ── Learning Debt (Pro only) ────────────────────────────────── */}
@@ -471,7 +236,7 @@ export default async function FeedPage() {
         className="px-6 py-8 relative z-10"
         style={{ borderTop: "1px solid var(--border)" }}
       >
-        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="content-container flex flex-col sm:flex-row items-center justify-between gap-4">
           <Link
             href="/feed"
             className="text-base font-bold tracking-tight text-white"
