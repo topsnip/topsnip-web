@@ -3,12 +3,21 @@ import type { FetchResult, RawSourceItem } from "../types";
 const YOUTUBE_API_URL = "https://www.googleapis.com/youtube/v3";
 
 // Rotate search queries to cover the AI landscape
+// Mix of generic news + channel-specific quality content
 const SEARCH_QUERIES = [
   "AI news today",
   "new AI model release",
   "LLM breakthrough",
   "AI agent tutorial",
   "machine learning update",
+  "Two Minute Papers AI",
+  "AI Explained new",
+  "Matt Wolfe AI news",
+  "Yannic Kilcher paper",
+  "Fireship AI",
+  "AI coding tools 2026",
+  "RAG tutorial LLM",
+  "Claude Anthropic update",
 ];
 
 interface YouTubeSearchItem {

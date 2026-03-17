@@ -38,7 +38,7 @@ export async function fetchHN(
 ): Promise<FetchResult> {
   try {
     // Search for recent AI-related stories sorted by date
-    const queries = ["artificial intelligence", "LLM", "AI agent", "machine learning"];
+    const queries = ["artificial intelligence", "LLM", "AI agent", "machine learning", "GPT", "Claude AI"];
     const allItems: RawSourceItem[] = [];
     const seen = new Set<string>();
 

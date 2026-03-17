@@ -6,6 +6,9 @@ const SUBREDDITS = [
   "artificial",
   "ChatGPT",
   "singularity",
+  "ClaudeAI",
+  "OpenAI",
+  "StableDiffusion",
 ];
 
 interface RedditPost {

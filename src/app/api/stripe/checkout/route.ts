@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+import { checkOrigin } from "@/lib/csrf";
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -18,6 +19,11 @@ function createServiceClient() {
 import { checkoutLimiter } from "@/lib/ratelimit";
 
 export async function POST(req: NextRequest) {
+  // [M19 fix] CSRF Origin header check
+  if (!checkOrigin(req)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { interval } = await req.json();
 
   if (!interval || !["monthly", "yearly"].includes(interval)) {
@@ -86,6 +92,7 @@ export async function POST(req: NextRequest) {
 
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
+    client_reference_id: user.id,
     payment_method_types: ["card"],
     mode: "subscription",
     line_items: [{ price: priceId, quantity: 1 }],

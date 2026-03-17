@@ -2,21 +2,35 @@ import type { FetchResult, RawSourceItem } from "../types";
 
 // AI-related GitHub repos to track releases
 const TRACKED_REPOS = [
+  // SDKs & frameworks
   "openai/openai-python",
   "anthropics/anthropic-sdk-python",
+  "google-gemini/generative-ai-python",
   "langchain-ai/langchain",
+  "run-llama/llama_index",
+  "microsoft/semantic-kernel",
+  // Inference & models
   "huggingface/transformers",
   "ggerganov/llama.cpp",
   "ollama/ollama",
+  "vllm-project/vllm",
+  "meta-llama/llama",
+  "mistralai/mistral-inference",
+  "google/gemma.cpp",
+  // Agent frameworks
   "microsoft/autogen",
   "crewAIInc/crewAI",
-  "vllm-project/vllm",
-  "lm-sys/FastChat",
-  "meta-llama/llama",
-  "google/gemma.cpp",
+  "modelcontextprotocol/servers",
+  // Image gen
   "AUTOMATIC1111/stable-diffusion-webui",
   "comfyanonymous/ComfyUI",
-  "modelcontextprotocol/servers",
+  // AI apps & tools
+  "open-webui/open-webui",
+  "lobehub/lobe-chat",
+  "dify-ai/dify",
+  // Coding AI
+  "continuedev/continue",
+  "sourcegraph/cody",
 ];
 
 interface GitHubRelease {

@@ -6,6 +6,15 @@ import { NextResponse, type NextRequest } from "next/server";
 const PROTECTED_ROUTES = ["/history", "/settings", "/feed", "/onboarding"];
 
 export async function middleware(request: NextRequest) {
+  // Canonical domain: redirect www → non-www to prevent split auth cookies
+  const hostname = request.nextUrl.hostname;
+  if (hostname === "www.topsnip.co") {
+    const canonicalUrl = request.nextUrl.clone();
+    canonicalUrl.hostname = "topsnip.co";
+    canonicalUrl.port = "";
+    return NextResponse.redirect(canonicalUrl, 301);
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

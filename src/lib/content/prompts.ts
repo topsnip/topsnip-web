@@ -63,25 +63,26 @@ export function buildExplainerSystemPrompt(role: Role): string {
 // ── On-demand prompts (for search — no ingested source material) ──────────
 // These use Claude's own knowledge rather than requiring source material.
 
-const ON_DEMAND_BASE = `You are TopSnip's learning engine. You explain AI and automation topics clearly and accurately.
+const ON_DEMAND_BASE = `You are TopSnip's AI learning engine. A user searched for a topic and you need to write a structured learning brief using your training knowledge.
 
 Rules:
 - Use your knowledge to explain the topic thoroughly and accurately.
-- Be specific — name real tools, versions, companies, and concrete examples.
-- If something is uncertain or rapidly changing, say so briefly and move on.
+- Be factual and specific — name real tools, versions, companies, dates, and concrete examples.
+- If you don't know enough about a topic, say so briefly rather than padding with generalities.
+- If something is uncertain or rapidly changing, acknowledge it and move on.
 - Write like a knowledgeable friend, not a corporate AI.
 - Be direct. No filler, no "in today's rapidly evolving landscape" nonsense.
-- If the source material is thin, say less — don't pad.
-- Never refuse to answer. Always provide the best explanation you can.`;
+- Never refuse to answer. You always have useful knowledge to share — provide the best explanation you can.
+- This is a learning brief, not a chatbot response. Structure and substance matter.`;
 
 export function buildOnDemandSystemPrompt(role: Role): string {
   return `${ON_DEMAND_BASE}\n\n${ROLE_INSTRUCTIONS[role]}`;
 }
 
 export function buildOnDemandUserPrompt(query: string): string {
-  return `<topic>${sanitizeForPrompt(query)}</topic>
+  return `A user searched for: <topic>${sanitizeForPrompt(query)}</topic>
 
-Generate a learning brief about this topic. Your response must be valid JSON matching this exact schema:
+Write a structured learning brief about this topic using your knowledge. Your response must be valid JSON matching this exact schema:
 
 {
   "tldr": "2-3 sentence plain-language summary. Under 80 words.",
@@ -91,7 +92,7 @@ Generate a learning brief about this topic. Your response must be valid JSON mat
   "sources": []
 }
 
-Important: the "sources" array should be empty since this is generated from knowledge, not specific articles.`;
+Important: the "sources" array should be empty since this is generated from knowledge, not specific articles. Do not include placeholder or made-up URLs.`;
 }
 
 export function buildExplainerUserPrompt(
