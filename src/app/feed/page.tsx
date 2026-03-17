@@ -10,7 +10,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { decodeHtml } from "@/lib/utils/decode-html";
 import { FeedSearchBar } from "./feed-search-bar";
-import { AuthNav } from "@/components/AuthNav";
+import { SiteNav } from "@/components/SiteNav";
 import { LearningDebt } from "./learning-debt";
 import { TrendingSuggestions, QuickSuggestions } from "./trending-suggestions";
 
@@ -191,7 +191,7 @@ export default async function FeedPage() {
       />
 
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
-      <AuthNav />
+      <SiteNav user={{ id: user.id, plan: profile.plan ?? "free" }} />
 
       {/* ── Main Content ────────────────────────────────────────────────── */}
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 pt-28 pb-16 relative z-10">

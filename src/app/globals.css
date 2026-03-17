@@ -112,6 +112,36 @@
   --success: #34d399;
   --warning: #fbbf24;
   --error: #f87171;
+
+  /* Fluid typography scale using clamp() */
+  --text-xs: clamp(0.7rem, 0.65rem + 0.25vw, 0.75rem);
+  --text-sm: clamp(0.8rem, 0.75rem + 0.25vw, 0.875rem);
+  --text-base: clamp(0.9rem, 0.85rem + 0.25vw, 1rem);
+  --text-lg: clamp(1.05rem, 0.95rem + 0.5vw, 1.125rem);
+  --text-xl: clamp(1.2rem, 1rem + 1vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 1.2rem + 1.5vw, 2rem);
+  --text-3xl: clamp(1.8rem, 1.4rem + 2vw, 2.5rem);
+  --text-4xl: clamp(2.2rem, 1.6rem + 3vw, 3.5rem);
+
+  /* Content width constraints */
+  --content-sm: 640px;
+  --content-md: 768px;
+  --content-lg: 1024px;
+  --content-xl: 1280px;
+  --content-reading: 720px; /* Optimal reading width */
+
+  /* Spacing scale */
+  --space-page-x: clamp(1rem, 0.5rem + 2vw, 2rem);
+  --space-section: clamp(2rem, 1rem + 4vw, 5rem);
+
+  /* Animation duration scale */
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --duration-slower: 600ms;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 @layer base {
@@ -133,14 +163,118 @@
     font-family: var(--font-heading), "Instrument Serif", serif;
   }
   h1 {
-    @apply text-3xl font-normal tracking-tight;
+    font-size: var(--text-3xl);
+    @apply font-normal tracking-tight;
   }
   h2 {
-    @apply text-xl font-normal tracking-tight;
+    font-size: var(--text-2xl);
+    @apply font-normal tracking-tight;
   }
   h3 {
-    @apply text-lg font-normal;
+    font-size: var(--text-xl);
+    @apply font-normal;
   }
+}
+
+/* ── Responsive content containers ────────────────────────────────── */
+.content-container {
+  width: 100%;
+  max-width: var(--content-reading);
+  margin: 0 auto;
+  padding: 0 var(--space-page-x);
+}
+
+.content-container-wide {
+  width: 100%;
+  max-width: var(--content-lg);
+  margin: 0 auto;
+  padding: 0 var(--space-page-x);
+}
+
+/* Reading width for long-form content */
+.reading-width {
+  max-width: var(--content-reading);
+}
+
+/* Two-column layout (desktop) → single column (mobile) */
+.two-column {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .two-column {
+    grid-template-columns: 1fr 320px;
+  }
+}
+
+/* Touch target minimum */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* ── Mobile body padding for tab bar ─────────────────────────────── */
+@media (max-width: 639px) {
+  body {
+    padding-bottom: 80px; /* Space for mobile tab bar */
+  }
+}
+
+/* ── Safe area handling for notch devices ─────────────────────────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ── Mobile Tab Bar ──────────────────────────────────────────────── */
+.mobile-tab-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  height: 64px;
+  background: var(--background);
+  border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  align-items: center;
+  justify-content: space-around;
+}
+
+@media (max-width: 639px) {
+  .mobile-tab-bar {
+    display: flex;
+  }
+  /* Pad body so content isn't hidden behind tab bar (auth pages) */
+  body.has-tab-bar {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.mobile-tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex: 1;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-tab-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.mobile-tab-label {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
 }
 
 /* Accent glow utility */
@@ -406,6 +540,12 @@
 
 /* ── Accessibility: Reduced Motion ─────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
+  * {
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+    --duration-slow: 0ms;
+    --duration-slower: 0ms;
+  }
   *,
   *::before,
   *::after {

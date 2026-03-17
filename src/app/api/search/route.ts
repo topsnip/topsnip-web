@@ -40,8 +40,10 @@ function sanitizeQuery(raw: string): string {
 // ── IP hashing (privacy-preserving anonymous tracking) ──────────────────────
 
 async function hashIP(ip: string): Promise<string> {
+  const salt = process.env.IP_HASH_SALT ?? process.env.CRON_SECRET;
+  if (!salt) throw new Error("Missing IP_HASH_SALT (or CRON_SECRET fallback)");
   const encoder = new TextEncoder();
-  const data = encoder.encode(ip + (process.env.CRON_SECRET ?? "topsnip-salt"));
+  const data = encoder.encode(ip + salt);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -442,6 +444,29 @@ async function trackSearch(
       query_slug: querySlug,
       topic_id: topicId,
     });
+
+    // Award XP for search_completed (fire-and-forget, don't block response)
+    Promise.resolve(
+      serviceClient.rpc("award_xp", {
+        p_user_id: userId,
+        p_event_type: "search_completed",
+        p_metadata: { query: query.slice(0, 100) },
+      })
+    )
+      .then(() => {
+        // Also try to award first_search (no-op if already awarded)
+        return serviceClient.rpc("award_xp", {
+          p_user_id: userId,
+          p_event_type: "first_search",
+          p_metadata: {},
+        });
+      })
+      .catch((err: unknown) => {
+        console.warn(
+          "[trackSearch] XP award failed:",
+          err instanceof Error ? err.message : "unknown"
+        );
+      });
   } else {
     const ipHash = await hashIP(ip);
     await serviceClient.from("anonymous_searches").insert({

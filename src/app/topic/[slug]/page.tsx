@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { decodeHtml } from "@/lib/utils/decode-html";
-import { AuthNav } from "@/components/AuthNav";
+import { SiteNav } from "@/components/SiteNav";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -188,7 +188,7 @@ export default async function TopicDetailPage({
       {user && <ReadTracker userId={user.id} topicId={topic.id} />}
 
       {/* Top nav */}
-      <AuthNav />
+      <SiteNav user={{ id: user.id, plan: "free" }} />
 
       {/* Main content */}
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">

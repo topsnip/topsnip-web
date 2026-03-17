@@ -1,24 +1,34 @@
 -- ============================================================================
--- Step 6b: "Since you were last here" + Learning Debt support
--- Adds last_seen_at to profiles + get_since_last_visit RPC
+-- IDOR FIX PATCH FOR KNOWLEDGE DASHBOARD & READ TRACKING
+-- Run this script in your Supabase SQL Editor to secure the recently added RPCs
 -- ============================================================================
 
--- ── Add last_seen_at column to profiles ─────────────────────────────────────
+-- Fix 1: upsert_read_progress
+CREATE OR REPLACE FUNCTION upsert_read_progress(
+  p_user_id uuid,
+  p_topic_id uuid,
+  p_time_spent_sec integer,
+  p_scroll_pct integer
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  IF auth.uid() IS NULL OR p_user_id != auth.uid() THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+  INSERT INTO user_reads (user_id, topic_id, read_at, time_spent_sec, scroll_pct)
+  VALUES (p_user_id, p_topic_id, now(), p_time_spent_sec, p_scroll_pct)
+  ON CONFLICT (user_id, topic_id)
+  DO UPDATE SET
+    time_spent_sec = GREATEST(COALESCE(user_reads.time_spent_sec, 0), EXCLUDED.time_spent_sec),
+    scroll_pct     = GREATEST(COALESCE(user_reads.scroll_pct, 0), EXCLUDED.scroll_pct),
+    read_at        = now();
+END;
+$$;
 
-ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS last_seen_at timestamptz DEFAULT now();
-
--- ── Update RLS policy to allow users to update last_seen_at ─────────────────
--- We need to re-create the update policy to include last_seen_at as a safe field.
--- The existing policy already allows role, interests, onboarding_complete.
--- last_seen_at is safe — it's just a timestamp of when they last viewed the feed.
-
--- Note: The existing RLS policy ("Users can update their own safe fields") blocks
--- changes to billing fields. last_seen_at is not in the blocked list, so it's
--- already allowed through the existing policy. No RLS change needed.
-
--- ── Function: get_since_last_visit ──────────────────────────────────────────
-
+-- Fix 2: get_since_last_visit
 CREATE OR REPLACE FUNCTION public.get_since_last_visit(p_user_id uuid)
 RETURNS TABLE (
   topic_id uuid,
@@ -74,9 +84,7 @@ BEGIN
 END;
 $$;
 
--- ── Update get_knowledge_summary to include slug in unread_important ─────────
--- The existing function doesn't return slug, which we need for linking.
-
+-- Fix 3: get_knowledge_summary
 CREATE OR REPLACE FUNCTION public.get_knowledge_summary(p_user_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -131,4 +139,34 @@ BEGIN
 
   RETURN v_result;
 END;
+$$;
+
+-- Fix 4: get_reading_streak
+create or replace function get_reading_streak(p_user_id uuid)
+returns int
+language sql
+stable
+security definer
+as $$
+  with daily_reads as (
+    -- distinct days the user read something (in UTC)
+    select distinct (read_at at time zone 'UTC')::date as d
+    from user_reads
+    where user_id = p_user_id AND auth.uid() = p_user_id
+  ),
+  ordered as (
+    select d, row_number() over (order by d desc) as rn
+    from daily_reads
+  ),
+  groups as (
+    select d, rn, (d + rn * interval '1 day')::date as grp
+    from ordered
+  ),
+  streaks as (
+    select count(*) as streak_len
+    from groups
+    group by grp
+  )
+  select coalesce(max(streak_len), 0)::int
+  from streaks;
 $$;

@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Clock } from "lucide-react";
-import { AuthNav } from "@/components/AuthNav";
+import { SiteNav } from "@/components/SiteNav";
 
 export default async function HistoryPage() {
   const supabase = await createClient();
@@ -30,7 +30,7 @@ export default async function HistoryPage() {
 
   return (
     <main className="min-h-screen px-4 relative">
-      <AuthNav />
+      <SiteNav user={{ id: user.id, plan: "free" }} />
 
       <div className="max-w-2xl mx-auto flex flex-col gap-8 pt-24 pb-10">
         <h1

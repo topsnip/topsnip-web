@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Search, ArrowLeft, ExternalLink, ChevronDown } from "lucide-react";
+import { SiteNav } from "@/components/SiteNav";
 import { SignUpGate } from "@/components/SignUpGate";
 import {
   guestLimitReached,
@@ -258,8 +259,11 @@ function ResultContent() {
       )}
 
       {/* Top nav */}
-      <header
-        className="sticky top-0 z-20 border-b px-4 py-3"
+      <SiteNav user={isLoggedIn ? { id: "search-user", plan: "free" } : null} />
+
+      {/* Search bar below nav */}
+      <div
+        className="sticky top-0 z-20 border-b px-4 py-3 mt-16"
         style={{
           background: "rgba(12,12,14,0.85)",
           backdropFilter: "blur(16px)",
@@ -267,80 +271,43 @@ function ResultContent() {
           borderColor: "var(--border)",
         }}
       >
-        <div className="max-w-3xl mx-auto flex items-center gap-3">
+        <form
+          onSubmit={handleNewSearch}
+          className="max-w-3xl mx-auto flex items-center gap-2"
+        >
+          <div
+            className="flex-1 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm"
+            style={{
+              background: "var(--ts-surface)",
+              borderColor: "var(--border)",
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            <Search
+              size={14}
+              style={{ color: "var(--ts-muted)", flexShrink: 0 }}
+            />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="flex-1 bg-transparent outline-none text-sm"
+              style={{ color: "var(--foreground)" }}
+              aria-label="Search query"
+            />
+          </div>
           <button
-            onClick={() => router.push(isLoggedIn ? "/feed" : "/")}
-            aria-label="Go to homepage"
-            className="text-sm font-bold tracking-tight text-white flex-shrink-0 transition-opacity hover:opacity-70 cursor-pointer"
-            style={{ fontFamily: headingFont }}
+            type="submit"
+            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all duration-200 hover:opacity-90 cursor-pointer shadow-[0_0_12px_var(--ts-accent-30)]"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+            }}
           >
-            top<span style={{ color: "var(--ts-accent)" }}>snip</span>
+            Search
           </button>
-
-          <form
-            onSubmit={handleNewSearch}
-            className="flex-1 flex items-center gap-2"
-          >
-            <div
-              className="flex-1 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm"
-              style={{
-                background: "var(--ts-surface)",
-                borderColor: "var(--border)",
-                backdropFilter: "blur(8px)",
-              }}
-            >
-              <Search
-                size={14}
-                style={{ color: "var(--ts-muted)", flexShrink: 0 }}
-              />
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="flex-1 bg-transparent outline-none text-sm"
-                style={{ color: "var(--foreground)" }}
-                aria-label="Search query"
-              />
-            </div>
-            <button
-              type="submit"
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all duration-200 hover:opacity-90 cursor-pointer shadow-[0_0_12px_var(--ts-accent-30)]"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-              }}
-            >
-              Search
-            </button>
-          </form>
-
-          {isLoggedIn && (
-            <div className="flex items-center gap-3 flex-shrink-0">
-              <button
-                onClick={() => router.push("/feed")}
-                className="text-xs font-medium transition-opacity hover:opacity-80 cursor-pointer"
-                style={{ color: "var(--ts-text-2)" }}
-              >
-                Feed
-              </button>
-              <button
-                onClick={() => router.push("/history")}
-                className="text-xs font-medium transition-opacity hover:opacity-80 cursor-pointer"
-                style={{ color: "var(--ts-text-2)" }}
-              >
-                History
-              </button>
-              <button
-                onClick={() => router.push("/settings")}
-                className="text-xs font-medium transition-opacity hover:opacity-80 cursor-pointer"
-                style={{ color: "var(--ts-text-2)" }}
-              >
-                Settings
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
+        </form>
+      </div>
 
       {/* Main content */}
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">

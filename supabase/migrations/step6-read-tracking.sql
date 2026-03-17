@@ -17,6 +17,9 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
+  IF auth.uid() IS NULL OR p_user_id != auth.uid() THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
   INSERT INTO user_reads (user_id, topic_id, read_at, time_spent_sec, scroll_pct)
   VALUES (p_user_id, p_topic_id, now(), p_time_spent_sec, p_scroll_pct)
   ON CONFLICT (user_id, topic_id)

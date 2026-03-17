@@ -11,7 +11,7 @@ as $$
     -- distinct days the user read something (in UTC)
     select distinct (read_at at time zone 'UTC')::date as d
     from user_reads
-    where user_id = p_user_id
+    where user_id = p_user_id AND auth.uid() = p_user_id
   ),
   ordered as (
     select d, row_number() over (order by d desc) as rn

@@ -25,12 +25,18 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Verify webhook signature ───────────────────────────────────────────────
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error("STRIPE_WEBHOOK_SECRET is not set");
+    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+  }
+
   let event: Stripe.Event;
   try {
     event = getStripe().webhooks.constructEvent(
       body,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      webhookSecret
     );
   } catch (err) {
     console.error("Stripe webhook signature verification failed:", err instanceof Error ? err.message : "unknown error");

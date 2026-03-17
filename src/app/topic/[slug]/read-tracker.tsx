@@ -4,6 +4,20 @@ import { useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 /**
+ * Fire-and-forget XP award. Does not block the UI.
+ */
+function awardXP(eventType: string, metadata?: Record<string, unknown>) {
+  fetch("/api/user/xp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ event_type: eventType, metadata }),
+    keepalive: true,
+  }).catch(() => {
+    // silent — best effort, never block reading experience
+  });
+}
+
+/**
  * Client component that:
  * 1. Records an initial read in user_reads on mount (upsert)
  * 2. Tracks time spent on the page (pauses when tab is hidden)
@@ -22,6 +36,7 @@ export function ReadTracker({
   const maxScrollPctRef = useRef<number>(0);
   const lastSentRef = useRef<number>(0);
   const isVisibleRef = useRef<boolean>(true);
+  const xpAwardedRef = useRef<boolean>(false);
 
   // ── Build the current progress snapshot ──────────────────────────────────
   const getProgress = useCallback(() => {
@@ -83,6 +98,11 @@ export function ReadTracker({
       .then(({ error }) => {
         if (error) {
           console.warn("[ReadTracker] Failed to record read:", error.message);
+        } else if (!xpAwardedRef.current) {
+          // Fire-and-forget XP award — only once per mount
+          xpAwardedRef.current = true;
+          awardXP("topic_read", { topic_id: topicId });
+          awardXP("first_topic"); // no-op server-side if already awarded
         }
       });
 

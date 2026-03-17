@@ -1,4 +1,4 @@
-import { AuthNav } from "@/components/AuthNav";
+import { SiteNav } from "@/components/SiteNav";
 
 const headingFont = "var(--font-heading), 'Instrument Serif', serif";
 
@@ -14,7 +14,7 @@ function SkeletonBar({ w, h = "h-4" }: { w: string; h?: string }) {
 export default function KnowledgeLoading() {
   return (
     <main className="min-h-screen px-4 relative">
-      <AuthNav />
+      <SiteNav user={null} />
       <div className="max-w-3xl mx-auto flex flex-col gap-10 pt-28 pb-16">
         {/* Title skeleton */}
         <div className="flex flex-col gap-2">

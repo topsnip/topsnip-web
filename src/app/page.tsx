@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import { SiteNav } from "@/components/SiteNav";
 
 const ALL_SUGGESTIONS = [
   "build an AI agent with n8n",
@@ -131,46 +132,7 @@ export default function Home() {
       />
 
       {/* ── Floating Nav ──────────────────────────────────────────────── */}
-      <nav className="fixed top-4 left-4 right-4 z-50 flex justify-center">
-        <div className="floating-nav rounded-full px-6 py-3 flex items-center justify-between w-full max-w-3xl">
-          <Link
-            href="/"
-            className="font-bold tracking-tight text-white"
-            style={{
-              fontFamily: "var(--font-heading), 'Instrument Serif', serif",
-              fontSize: "1.1rem",
-            }}
-          >
-            top<span style={{ color: "var(--ts-accent)" }}>snip</span>
-          </Link>
-          <div className="flex items-center gap-5">
-            <Link
-              href="/about"
-              className="text-sm font-medium transition-colors hover:text-white"
-              style={{ color: "var(--ts-text-2)" }}
-            >
-              About
-            </Link>
-            <Link
-              href="/upgrade"
-              className="text-sm font-medium transition-colors hover:text-white"
-              style={{ color: "var(--ts-text-2)" }}
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/auth/login"
-              className="rounded-full px-4 py-1.5 text-xs font-semibold text-white transition-all hover:opacity-90"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-              }}
-            >
-              Sign in
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <SiteNav user={null} />
 
       {/* ═══════════════════════════════════════════════════════════════════
           SECTION 1 — Hero

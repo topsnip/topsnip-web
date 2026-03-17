@@ -15,7 +15,8 @@ const nextConfig: NextConfig = {
       ?? (isProduction ? undefined : "http://localhost:3000");
 
     if (isProduction && !process.env.NEXT_PUBLIC_APP_URL) {
-      console.warn("[next.config] NEXT_PUBLIC_APP_URL is not set in production — CORS headers will be omitted");
+      // Build-time: warn loudly. Runtime enforcement happens in csrf.ts checkOrigin()
+      console.error("‼️  [next.config] NEXT_PUBLIC_APP_URL is not set in production — CORS headers will be missing and CSRF checks weakened. Set this variable!");
     }
 
     const appOrigin = appUrl ? new URL(appUrl).origin : null;

@@ -9,7 +9,7 @@ export const metadata = {
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { AuthNav } from "@/components/AuthNav";
+import { SiteNav } from "@/components/SiteNav";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -92,7 +92,7 @@ export default async function KnowledgeDashboardPage() {
   if (profile.plan !== "pro") {
     return (
       <main className="min-h-screen px-4 relative">
-        <AuthNav />
+        <SiteNav user={{ id: user.id, plan: profile.plan ?? "free" }} />
         <div className="max-w-xl mx-auto flex flex-col items-center gap-6 pt-28 pb-16 text-center">
           <div
             className="w-14 h-14 rounded-full flex items-center justify-center"
@@ -184,7 +184,7 @@ export default async function KnowledgeDashboardPage() {
         style={{ background: "var(--ts-glow-radial)" }}
       />
 
-      <AuthNav />
+      <SiteNav user={{ id: user.id, plan: profile.plan ?? "free" }} />
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 pt-28 pb-16 relative z-10">
         {/* ── Header ───────────────────────────────────────────────────────── */}

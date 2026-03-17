@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, LogOut, Crown, User } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { AuthNav } from "@/components/AuthNav";
+import { SiteNav } from "@/components/SiteNav";
 
 /* ─── Types ────────────────────────────────────────────────────────────────── */
 
@@ -66,6 +66,9 @@ export default function SettingsPage() {
   const [interestsSaved, setInterestsSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // User ID for SiteNav
+  const [userId, setUserId] = useState<string | null>(null);
+
   // Sign out
   const [signingOut, setSigningOut] = useState(false);
 
@@ -99,6 +102,7 @@ export default function SettingsPage() {
       }
 
       const p = profileRes.data as Profile;
+      setUserId(user.id);
       setProfile(p);
       setSelectedRole(p.role);
       setSelectedInterests(p.interests ?? []);
@@ -255,7 +259,7 @@ export default function SettingsPage() {
       />
 
       {/* ── Nav ────────────────────────────────────────────────────────────── */}
-      <AuthNav />
+      <SiteNav user={userId && profile ? { id: userId, plan: profile.plan } : null} />
 
       {/* ── Content ────────────────────────────────────────────────────────── */}
       <div className="w-full max-w-2xl mx-auto px-4 pt-28 pb-16 sm:pt-32 flex flex-col gap-8 relative z-10">
