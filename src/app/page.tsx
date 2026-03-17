@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -9,66 +9,83 @@ import {
   Check,
   Zap,
   Layers,
-  Clock,
-  Sparkles,
+  BookOpen,
 } from "lucide-react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { SiteNav } from "@/components/SiteNav";
+import { SectionReveal } from "@/components/SectionReveal";
+import { InlinePreview } from "@/app/inline-preview";
+import { AnimatedCounter } from "@/app/animated-counter";
+
+const headingFont = "var(--font-heading), 'Instrument Serif', serif";
 
 const ALL_SUGGESTIONS = [
-  "build an AI agent with n8n",
-  "Claude Code skills and workflows",
-  "Make vs Zapier — which one to use",
-  "LangChain basics for beginners",
-  "n8n vs Make for automation",
-  "Cursor AI coding tips",
-  "RAG pipeline explained simply",
-  "best AI tools for productivity",
+  "What is MCP?",
+  "AI agents",
+  "RAG",
+  "Claude Code",
+  "LangChain basics",
+  "Cursor AI tips",
+  "n8n automation",
+  "best AI tools 2026",
 ];
 
-/* ─── Fade-in-on-scroll hook ────────────────────────────────────────────── */
-function useReveal() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+const HERO_LINE_1 = "Stop scrolling.";
+const HERO_LINE_2 = "Start understanding.";
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setVisible(true);
-      },
-      { threshold: 0.15 },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
+/* ─── Hero word stagger ──────────────────────────────────────────────── */
 
-  return { ref, visible };
-}
+function HeroHeadline() {
+  const words1 = HERO_LINE_1.split(" ");
+  const words2 = HERO_LINE_2.split(" ");
+  const totalWords1 = words1.length;
 
-function RevealSection({
-  children,
-  className = "",
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  const { ref, visible } = useReveal();
   return (
-    <div
-      ref={ref}
-      className={className}
+    <h1
+      className="font-bold tracking-tight leading-[1.08] text-white text-center"
       style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(20px)",
-        transition: `opacity 0.5s ease ${delay}ms, transform 0.5s ease ${delay}ms`,
+        fontSize: "var(--text-4xl)",
+        fontFamily: headingFont,
       }}
     >
-      {children}
-    </div>
+      {/* Line 1 */}
+      <span className="block">
+        {words1.map((word, i) => (
+          <motion.span
+            key={`l1-${i}`}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.4,
+              delay: i * 0.1,
+              ease: [0.16, 1, 0.3, 1],
+            }}
+            className="inline-block mr-[0.3em]"
+          >
+            {word}
+          </motion.span>
+        ))}
+      </span>
+      {/* Line 2 */}
+      <span className="block">
+        {words2.map((word, i) => (
+          <motion.span
+            key={`l2-${i}`}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.4,
+              delay: (totalWords1 + i) * 0.1,
+              ease: [0.16, 1, 0.3, 1],
+            }}
+            className="inline-block mr-[0.3em]"
+          >
+            {word}
+          </motion.span>
+        ))}
+      </span>
+    </h1>
   );
 }
 
@@ -78,6 +95,7 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
   const [bottomQuery, setBottomQuery] = useState("");
+  const [bottomFocused, setBottomFocused] = useState(false);
 
   // Redirect logged-in users to /feed
   useEffect(() => {
@@ -89,7 +107,7 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Randomize 4 suggestions on each visit (client-side only to avoid hydration mismatch)
+  // Randomize 4 suggestions on mount (client-side only to avoid hydration mismatch)
   const [suggestions, setSuggestions] = useState<string[]>(() =>
     ALL_SUGGESTIONS.slice(0, 4),
   );
@@ -120,15 +138,18 @@ export default function Home() {
     navigateToSearch(bottomQuery);
   }
 
+  // Timing constants for hero stagger
+  const headlineComplete = (HERO_LINE_1.split(" ").length + HERO_LINE_2.split(" ").length) * 0.1 + 0.4;
+  const subtitleDelay = headlineComplete + 0.2;
+  const searchBarDelay = subtitleDelay + 0.5;
+  const chipsDelay = searchBarDelay + 0.3;
+
   return (
     <main className="min-h-screen flex flex-col relative overflow-hidden">
       {/* ── Background glow ─────────────────────────────────────────────── */}
       <div
         className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full bg-glow"
-        style={{
-          background:
-            "var(--ts-glow-radial)",
-        }}
+        style={{ background: "var(--ts-glow-radial)" }}
       />
 
       {/* ── Floating Nav ──────────────────────────────────────────────── */}
@@ -139,45 +160,38 @@ export default function Home() {
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="flex flex-col items-center px-4 pt-28 pb-16 sm:pt-36 sm:pb-24 relative z-10">
         <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-8">
-          {/* Badge */}
-          <div
-            className="rounded-full border px-3.5 py-1 text-xs font-medium"
+          {/* Headline — word stagger */}
+          <HeroHeadline />
+
+          {/* Subtitle — fades in after headline */}
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.5,
+              delay: subtitleDelay,
+              ease: [0.16, 1, 0.3, 1],
+            }}
+            className="text-base sm:text-lg leading-relaxed max-w-lg mx-auto text-center"
             style={{
-              color: "var(--ts-accent)",
-              borderColor: "var(--ts-accent-30)",
-              background: "var(--ts-accent-6)",
-              fontFamily: "var(--font-heading), 'Instrument Serif', serif",
+              color: "var(--ts-text-2)",
+              fontSize: "var(--text-lg)",
             }}
           >
-            AI & automation topics — updated daily
-          </div>
+            AI moves fast. TopSnip helps you keep up — in 3 minutes, not 3
+            hours.
+          </motion.p>
 
-          {/* Headline */}
-          <div className="text-center flex flex-col gap-5">
-            <h1
-              className="font-bold tracking-tight leading-[1.08] text-white"
-              style={{
-                fontSize: "clamp(2.2rem, 7vw, 3.6rem)",
-                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
-              }}
-            >
-              Stop watching.
-              <br />
-              Start <span style={{ color: "var(--ts-accent)" }}>knowing</span>.
-            </h1>
-            <p
-              className="text-base sm:text-lg leading-relaxed max-w-lg mx-auto"
-              style={{ color: "var(--ts-text-2)" }}
-            >
-              Search any AI topic. Get a clear, structured explainer — sourced
-              from official announcements, developer discussions, and research.
-              In 3 minutes, not 3 hours.
-            </p>
-          </div>
-
-          {/* Search form */}
-          <form
+          {/* Search bar — slides up */}
+          <motion.form
             onSubmit={handleSubmit}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.4,
+              delay: searchBarDelay,
+              ease: [0.16, 1, 0.3, 1],
+            }}
             className="w-full flex flex-col gap-3 max-w-xl"
           >
             <div
@@ -185,7 +199,9 @@ export default function Home() {
                 focused ? "accent-glow" : ""
               }`}
               style={{
-                background: focused ? "rgba(12,12,14,0.6)" : "rgba(12,12,14,0.3)",
+                background: focused
+                  ? "rgba(12,12,14,0.6)"
+                  : "rgba(12,12,14,0.3)",
                 backdropFilter: "blur(16px)",
                 borderColor: focused
                   ? "var(--ts-accent-50)"
@@ -210,7 +226,6 @@ export default function Home() {
                 style={{ color: "var(--foreground)" }}
                 autoComplete="off"
                 aria-label="Search any AI topic"
-                autoFocus
               />
               <button
                 type="submit"
@@ -225,182 +240,106 @@ export default function Home() {
                 <ArrowRight size={14} />
               </button>
             </div>
-          </form>
+          </motion.form>
 
-          {/* Suggested queries */}
-          <div className="flex flex-col items-center gap-3 w-full">
-            <p
-              className="text-xs font-semibold uppercase tracking-widest"
-              style={{
-                color: "var(--ts-muted)",
-                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
-              }}
-            >
-              Try
-            </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {suggestions.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => navigateToSearch(s)}
-                  className="suggestion-chip rounded-full border px-3 py-1.5 text-xs font-medium active:scale-95 cursor-pointer"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+          {/* Suggestion chips — stagger in */}
+          <div className="flex flex-wrap justify-center gap-2">
+            {suggestions.map((s, i) => (
+              <motion.button
+                key={s}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.3,
+                  delay: chipsDelay + i * 0.05,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                onClick={() => navigateToSearch(s)}
+                className="suggestion-chip rounded-full border px-3 py-1.5 text-xs font-medium active:scale-95 cursor-pointer"
+              >
+                {s}
+              </motion.button>
+            ))}
           </div>
-
-          {/* Social proof */}
-          <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
-            3 free searches — no account required
-          </p>
         </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 2 — Demo Preview (Show don't tell)
+          SECTION 2 — Inline Topic Preview
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="px-4 pb-16 sm:pb-24 relative z-10">
-        <RevealSection className="w-full max-w-2xl mx-auto">
-          <div
-            className="glass-card rounded-2xl p-6 flex flex-col gap-4"
-            style={{ cursor: "default" }}
-            onMouseEnter={() => {}} // disable hover lift on demo card
-          >
-            {/* Mock query header */}
-            <div className="flex items-center gap-2">
-              <Sparkles size={14} style={{ color: "var(--ts-accent)" }} />
-              <span
-                className="text-xs font-semibold uppercase tracking-widest"
-                style={{
-                  color: "var(--ts-accent)",
-                  fontFamily: "var(--font-heading), 'Instrument Serif', serif",
-                }}
-              >
-                Example result
-              </span>
-            </div>
-            <p
-              className="text-lg font-bold text-white"
-              style={{
-                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
-              }}
-            >
-              &ldquo;build an AI agent with n8n&rdquo;
-            </p>
-
-            {/* Mock TL;DR */}
-            <div
-              className="rounded-lg p-4 tldr-card"
-              style={{
-                background: "var(--ts-surface-2)",
-                borderTop: "none",
-                borderRight: "none",
-                borderBottom: "none",
-              }}
-            >
-              <p
-                className="text-xs font-semibold uppercase tracking-widest mb-2"
-                style={{ color: "var(--ts-accent)" }}
-              >
-                TL;DR
-              </p>
-              <p
-                className="text-sm leading-relaxed"
-                style={{ color: "var(--foreground)" }}
-              >
-                n8n lets you build AI agents by chaining LLM calls with tool
-                nodes — connect a trigger, add an AI Agent node with tools like
-                HTTP Request or Code, set your system prompt, and deploy. No
-                Python needed.
-              </p>
-            </div>
-
-            {/* Mock key concepts */}
-            <div className="flex flex-wrap gap-2">
-              {[
-                "AI Agent Node",
-                "Tool Calling",
-                "System Prompt",
-                "Webhooks",
-                "Vector Stores",
-              ].map((c) => (
-                <span
-                  key={c}
-                  className="rounded-full border px-2.5 py-0.5 text-xs font-medium"
-                  style={{
-                    borderColor: "var(--ts-accent-25)",
-                    color: "var(--ts-accent-2)",
-                    background: "var(--ts-accent-6)",
-                  }}
-                >
-                  {c}
-                </span>
-              ))}
-            </div>
-
-            {/* Source count */}
-            <div className="flex items-center gap-2">
-              <Layers size={12} style={{ color: "var(--ts-muted)" }} />
-              <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
-                Sourced from 6 platforms — official blogs, HN, Reddit, arXiv
-              </p>
-            </div>
+        <SectionReveal>
+          <div className="w-full max-w-2xl mx-auto">
+            <InlinePreview />
           </div>
-        </RevealSection>
+        </SectionReveal>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 3 — How It Works (compact horizontal strip)
+          SECTION 3 — How It Works
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="px-4 py-16 sm:py-24 relative z-10">
-        <div className="w-full max-w-4xl mx-auto flex flex-col items-center gap-12">
-          <RevealSection className="text-center flex flex-col gap-3">
-            <p
-              className="text-xs font-semibold uppercase tracking-widest"
-              style={{
-                color: "var(--ts-accent)",
-                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
-              }}
-            >
-              How it works
-            </p>
-            <h2
-              className="font-bold tracking-tight text-white"
-              style={{
-                fontSize: "clamp(1.5rem, 4vw, 2rem)",
-                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
-              }}
-            >
-              From question to answer in 30 seconds
-            </h2>
-          </RevealSection>
+        <div className="content-container-wide flex flex-col items-center gap-12">
+          <SectionReveal>
+            <div className="text-center flex flex-col gap-3">
+              <p
+                className="text-xs font-semibold uppercase tracking-widest"
+                style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
+              >
+                How it works
+              </p>
+              <h2
+                className="font-bold tracking-tight text-white"
+                style={{
+                  fontSize: "clamp(1.5rem, 4vw, 2rem)",
+                  fontFamily: headingFont,
+                }}
+              >
+                From question to answer in 30 seconds
+              </h2>
+            </div>
+          </SectionReveal>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 w-full">
             {[
               {
-                step: "01",
-                title: "Search a topic",
-                desc: "Type any AI or automation topic — or browse today's trending developments.",
+                step: 1,
+                title: "Search",
+                desc: "Type any AI topic. That's it.",
                 icon: Search,
               },
               {
-                step: "02",
-                title: "AI reads the sources",
-                desc: "TopSnip pulls from official blogs, HN, Reddit, arXiv, GitHub, and YouTube to build a complete picture.",
+                step: 2,
+                title: "We Research",
+                desc: "We scan 7+ platforms and distill the signal.",
                 icon: Layers,
               },
               {
-                step: "03",
-                title: "Understand it clearly",
-                desc: "Get a structured learning brief: what happened, why it matters, and what to do next.",
-                icon: Zap,
+                step: 3,
+                title: "You Learn",
+                desc: "Get a structured brief in under 3 minutes.",
+                icon: BookOpen,
               },
             ].map(({ step, title, desc, icon: Icon }, i) => (
-              <RevealSection key={step} delay={i * 100}>
-                <div className="glass-card rounded-xl p-5 flex flex-col gap-3 h-full">
+              <SectionReveal key={step} delay={i * 0.15}>
+                <div
+                  className="rounded-xl p-5 flex flex-col gap-4 h-full border"
+                  style={{
+                    background: "var(--ts-surface)",
+                    borderColor: "var(--border)",
+                    borderRadius: "12px",
+                  }}
+                >
+                  {/* Step number indicator */}
                   <div className="flex items-center gap-3">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white"
+                      style={{
+                        background: "var(--ts-accent)",
+                      }}
+                    >
+                      {step}
+                    </div>
                     <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                       style={{
@@ -410,23 +349,11 @@ export default function Home() {
                     >
                       <Icon size={15} style={{ color: "var(--ts-accent)" }} />
                     </div>
-                    <span
-                      className="text-xs font-bold uppercase tracking-widest"
-                      style={{
-                        color: "var(--ts-muted)",
-                        fontFamily:
-                          "var(--font-heading), 'Instrument Serif', serif",
-                      }}
-                    >
-                      Step {step}
-                    </span>
                   </div>
+
                   <p
                     className="text-base font-semibold text-white"
-                    style={{
-                      fontFamily:
-                        "var(--font-heading), 'Instrument Serif', serif",
-                    }}
+                    style={{ fontFamily: headingFont }}
                   >
                     {title}
                   </p>
@@ -437,192 +364,67 @@ export default function Home() {
                     {desc}
                   </p>
                 </div>
-              </RevealSection>
+              </SectionReveal>
             ))}
           </div>
         </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 4 — Comparison (concrete value prop)
+          SECTION 4 — Social Proof / Stats
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="px-4 py-16 sm:py-24 relative z-10">
-        <div className="w-full max-w-3xl mx-auto flex flex-col items-center gap-12">
-          <RevealSection className="text-center flex flex-col gap-3">
-            <p
-              className="text-xs font-semibold uppercase tracking-widest"
-              style={{
-                color: "var(--ts-accent)",
-                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
-              }}
-            >
-              Why Topsnip
-            </p>
-            <h2
-              className="font-bold tracking-tight text-white"
-              style={{
-                fontSize: "clamp(1.5rem, 4vw, 2rem)",
-                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
-              }}
-            >
-              3 hours of research → 3 minutes on TopSnip
-            </h2>
-          </RevealSection>
-
-          <RevealSection className="w-full">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
-              {/* Without */}
-              <div
-                className="rounded-xl p-6 flex flex-col gap-4 border"
-                style={{
-                  background: "var(--ts-error-3)",
-                  borderColor: "var(--ts-error-12)",
-                }}
-              >
-                <p
-                  className="text-xs font-bold uppercase tracking-widest"
-                  style={{
-                    color: "var(--error)",
-                    fontFamily:
-                      "var(--font-heading), 'Instrument Serif', serif",
-                  }}
-                >
-                  Without Topsnip
-                </p>
-                <ul className="flex flex-col gap-2.5">
-                  {[
-                    "Read 10 blog posts, Reddit threads, and papers",
-                    "Cross-reference conflicting information",
-                    "Piece together scattered announcements",
-                    "No clear takeaways or next steps",
-                  ].map((item) => (
-                    <li
-                      key={item}
-                      className="flex items-start gap-2 text-sm"
-                      style={{ color: "var(--ts-text-2)" }}
-                    >
-                      <span
-                        className="text-xs mt-1 flex-shrink-0"
-                        style={{ color: "var(--error)" }}
-                      >
-                        ✕
-                      </span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex items-center gap-2 pt-2">
-                  <Clock size={14} style={{ color: "var(--error)" }} />
-                  <span
-                    className="text-sm font-semibold"
-                    style={{ color: "var(--error)" }}
-                  >
-                    ~3 hours
-                  </span>
-                </div>
-              </div>
-
-              {/* With */}
-              <div
-                className="rounded-xl p-6 flex flex-col gap-4 border"
-                style={{
-                  background: "var(--ts-success-3)",
-                  borderColor: "var(--ts-success-15)",
-                }}
-              >
-                <p
-                  className="text-xs font-bold uppercase tracking-widest"
-                  style={{
-                    color: "var(--success)",
-                    fontFamily:
-                      "var(--font-heading), 'Instrument Serif', serif",
-                  }}
-                >
-                  With Topsnip
-                </p>
-                <ul className="flex flex-col gap-2.5">
-                  {[
-                    "One search, 6 platforms analyzed",
-                    "Structured brief: what, so what, now what",
-                    "Multiple sources cross-referenced",
-                    "Full source attribution + Go Deeper links",
-                  ].map((item) => (
-                    <li
-                      key={item}
-                      className="flex items-start gap-2 text-sm"
-                      style={{ color: "var(--ts-text-2)" }}
-                    >
-                      <Check
-                        size={13}
-                        className="mt-0.5 flex-shrink-0"
-                        style={{ color: "var(--success)" }}
-                      />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex items-center gap-2 pt-2">
-                  <Zap size={14} style={{ color: "var(--success)" }} />
-                  <span
-                    className="text-sm font-semibold"
-                    style={{ color: "var(--success)" }}
-                  >
-                    ~30 seconds
-                  </span>
-                </div>
-              </div>
+        <SectionReveal>
+          <div className="content-container-wide">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 w-full">
+              <AnimatedCounter target={12000} suffix="+" label="Topics explained" />
+              <AnimatedCounter target={50} suffix="+" label="Sources scanned" />
+              <AnimatedCounter target={3} suffix=" min" label="Average read time" />
             </div>
-          </RevealSection>
-        </div>
+          </div>
+        </SectionReveal>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 5 — Pricing (2 tiers: Free + Pro)
+          SECTION 5 — Pricing
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="px-4 py-16 sm:py-24 relative z-10">
-        <div className="w-full max-w-3xl mx-auto flex flex-col items-center gap-12">
-          <RevealSection className="text-center flex flex-col gap-3">
-            <p
-              className="text-xs font-semibold uppercase tracking-widest"
-              style={{
-                color: "var(--ts-accent)",
-                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
-              }}
-            >
-              Pricing
-            </p>
-            <h2
-              className="font-bold tracking-tight text-white"
-              style={{
-                fontSize: "clamp(1.5rem, 4vw, 2rem)",
-                fontFamily: "var(--font-heading), 'Instrument Serif', serif",
-              }}
-            >
-              Start free. Upgrade when you need more.
-            </h2>
-          </RevealSection>
+        <div className="content-container-wide flex flex-col items-center gap-12">
+          <SectionReveal>
+            <div className="text-center flex flex-col gap-3">
+              <p
+                className="text-xs font-semibold uppercase tracking-widest"
+                style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
+              >
+                Pricing
+              </p>
+              <h2
+                className="font-bold tracking-tight text-white"
+                style={{
+                  fontSize: "clamp(1.5rem, 4vw, 2rem)",
+                  fontFamily: headingFont,
+                }}
+              >
+                Start free. Upgrade when you need more.
+              </h2>
+            </div>
+          </SectionReveal>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-2xl">
-            {/* Free */}
-            <RevealSection delay={0}>
+            {/* Free — Explore */}
+            <SectionReveal delay={0}>
               <div className="glass-card rounded-xl p-6 flex flex-col gap-5 h-full">
                 <div className="flex flex-col gap-1">
                   <p
                     className="text-sm font-semibold text-white"
-                    style={{
-                      fontFamily:
-                        "var(--font-heading), 'Instrument Serif', serif",
-                    }}
+                    style={{ fontFamily: headingFont }}
                   >
-                    Free
+                    Explore
                   </p>
                   <div className="flex items-baseline gap-1">
                     <span
                       className="text-3xl font-bold tracking-tight text-white"
-                      style={{
-                        fontFamily:
-                          "var(--font-heading), 'Instrument Serif', serif",
-                      }}
+                      style={{ fontFamily: headingFont }}
                     >
                       $0
                     </span>
@@ -670,15 +472,15 @@ export default function Home() {
                     border: "1px solid var(--border)",
                   }}
                 >
-                  Start searching
+                  Get Started
                 </button>
               </div>
-            </RevealSection>
+            </SectionReveal>
 
-            {/* Pro — highlighted */}
-            <RevealSection delay={120}>
+            {/* Pro — Learn (highlighted) */}
+            <SectionReveal delay={0.12}>
               <div className="pro-card-glow rounded-xl p-6 flex flex-col gap-5 relative h-full">
-                {/* Badge */}
+                {/* Most popular badge */}
                 <div
                   className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-semibold whitespace-nowrap"
                   style={{
@@ -686,43 +488,35 @@ export default function Home() {
                       "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
                     color: "#fff",
                     boxShadow: "0 0 12px var(--ts-accent-50)",
-                    fontFamily:
-                      "var(--font-heading), 'Instrument Serif', serif",
+                    fontFamily: headingFont,
                   }}
                 >
-                  Recommended
+                  Most popular
                 </div>
 
                 <div className="flex flex-col gap-1">
                   <p
                     className="text-sm font-semibold"
-                    style={{
-                      color: "var(--ts-accent)",
-                      fontFamily:
-                        "var(--font-heading), 'Instrument Serif', serif",
-                    }}
+                    style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
                   >
-                    Pro
+                    Learn
                   </p>
                   <div className="flex items-baseline gap-1">
                     <span
                       className="text-3xl font-bold tracking-tight text-white"
-                      style={{
-                        fontFamily:
-                          "var(--font-heading), 'Instrument Serif', serif",
-                      }}
+                      style={{ fontFamily: headingFont }}
                     >
-                      $9
+                      $9.99
                     </span>
                     <span
                       className="text-sm"
                       style={{ color: "var(--ts-text-2)" }}
                     >
-                      /month
+                      /mo
                     </span>
                   </div>
                   <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
-                    or $79/year (save $29)
+                    Cancel anytime
                   </p>
                 </div>
                 <ul className="flex flex-col gap-2.5 flex-1">
@@ -757,91 +551,95 @@ export default function Home() {
                     boxShadow: "0 0 24px var(--ts-accent-30)",
                   }}
                 >
-                  Get Pro
+                  Start Pro
                 </Link>
               </div>
-            </RevealSection>
+            </SectionReveal>
           </div>
         </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 6 — Final CTA (interactive search)
+          SECTION 6 — Final CTA
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="px-4 py-16 sm:py-24 relative z-10">
-        <RevealSection className="w-full max-w-xl mx-auto text-center flex flex-col items-center gap-6">
-          <h2
-            className="font-bold tracking-tight text-white"
-            style={{
-              fontSize: "clamp(1.5rem, 4vw, 2rem)",
-              fontFamily: "var(--font-heading), 'Instrument Serif', serif",
-            }}
-          >
-            Ready to skip the noise?
-          </h2>
-          <p
-            className="text-sm leading-relaxed max-w-md"
-            style={{ color: "var(--ts-text-2)" }}
-          >
-            Search any AI topic and understand it clearly — sourced, structured,
-            and actionable.
-          </p>
-          <form
-            onSubmit={handleBottomSubmit}
-            className="w-full flex gap-2 max-w-md"
-          >
-            <div
-              className="flex-1 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm"
+        <SectionReveal>
+          <div className="w-full max-w-xl mx-auto text-center flex flex-col items-center gap-6">
+            <h2
+              className="font-bold tracking-tight text-white"
               style={{
-                background: "var(--ts-surface)",
-                borderColor: "var(--border)",
-                backdropFilter: "blur(12px)",
+                fontSize: "clamp(1.5rem, 4vw, 2rem)",
+                fontFamily: headingFont,
               }}
             >
-              <Search
-                size={15}
-                style={{ color: "var(--ts-muted)", flexShrink: 0 }}
-              />
-              <input
-                type="text"
-                value={bottomQuery}
-                onChange={(e) => setBottomQuery(e.target.value)}
-                placeholder="Search a topic..."
-                className="flex-1 bg-transparent outline-none text-sm"
-                style={{ color: "var(--foreground)" }}
-                aria-label="Search a topic"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={!bottomQuery.trim()}
-              className="flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 hover:opacity-90 active:scale-95 cursor-pointer shadow-[0_0_20px_var(--ts-accent-30)]"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
-              }}
+              Ready to understand AI?
+            </h2>
+
+            <form
+              onSubmit={handleBottomSubmit}
+              className="w-full flex gap-2 max-w-md"
             >
-              Go
-              <ArrowRight size={14} />
-            </button>
-          </form>
-        </RevealSection>
+              <div
+                className={`flex-1 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm transition-all duration-200 ${
+                  bottomFocused ? "accent-glow" : ""
+                }`}
+                style={{
+                  background: "var(--ts-surface)",
+                  borderColor: bottomFocused
+                    ? "var(--ts-accent-50)"
+                    : "var(--border)",
+                  backdropFilter: "blur(12px)",
+                }}
+              >
+                <Search
+                  size={15}
+                  style={{ color: "var(--ts-muted)", flexShrink: 0 }}
+                />
+                <input
+                  type="text"
+                  value={bottomQuery}
+                  onChange={(e) => setBottomQuery(e.target.value)}
+                  onFocus={() => setBottomFocused(true)}
+                  onBlur={() => setBottomFocused(false)}
+                  placeholder="Search any AI topic..."
+                  className="flex-1 bg-transparent outline-none text-sm"
+                  style={{ color: "var(--foreground)" }}
+                  aria-label="Search a topic"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={!bottomQuery.trim()}
+                className="flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-30 hover:opacity-90 active:scale-95 cursor-pointer shadow-[0_0_20px_var(--ts-accent-30)]"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+                }}
+              >
+                Go
+                <ArrowRight size={14} />
+              </button>
+            </form>
+
+            <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
+              No credit card required. Start free.
+            </p>
+          </div>
+        </SectionReveal>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          Footer
+          SECTION 7 — Footer
           ═══════════════════════════════════════════════════════════════════ */}
       <footer
         className="px-6 py-8 relative z-10"
         style={{ borderTop: "1px solid var(--border)" }}
       >
-        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="content-container-wide flex flex-col sm:flex-row items-center justify-between gap-4">
           <Link
             href="/"
             className="text-base font-bold tracking-tight text-white"
-            style={{
-              fontFamily: "var(--font-heading), 'Instrument Serif', serif",
-            }}
+            style={{ fontFamily: headingFont }}
           >
             top<span style={{ color: "var(--ts-accent)" }}>snip</span>
           </Link>
@@ -860,9 +658,16 @@ export default function Home() {
             >
               Pricing
             </Link>
+            <Link
+              href="/auth/login"
+              className="text-xs font-medium transition-colors hover:text-white"
+              style={{ color: "var(--ts-muted)" }}
+            >
+              Login
+            </Link>
           </div>
           <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
-            © {new Date().getFullYear()} Topsnip
+            &copy; {new Date().getFullYear()} TopSnip
           </p>
         </div>
       </footer>
