@@ -24,7 +24,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { interval } = await req.json();
+  // Limit request body size
+  const text = await req.text();
+  if (text.length > 512) {
+    return NextResponse.json({ error: "Request too large" }, { status: 413 });
+  }
+
+  let parsedBody: Record<string, unknown>;
+  try {
+    parsedBody = JSON.parse(text);
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const interval = typeof parsedBody.interval === "string" ? parsedBody.interval : "";
 
   if (!interval || !["monthly", "yearly"].includes(interval)) {
     return NextResponse.json({ error: "interval must be 'monthly' or 'yearly'" }, { status: 400 });

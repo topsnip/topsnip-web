@@ -53,10 +53,8 @@ const ANON_LINKS = [
 /**
  * Unified navigation for all TopSnip pages.
  *
- * - Anonymous: floating pill with Logo, About, Pricing, Sign in
- * - Authenticated: floating pill with Logo, Feed, Search, Knowledge, Profile
- * - Mobile: top logo only + MobileTabBar at bottom (auth only)
- * - Desktop: full floating pill nav
+ * - Anonymous: floating pill with Logo + links (all screen sizes)
+ * - Authenticated: floating pill with Logo + desktop links + MobileTabBar at bottom
  */
 export function SiteNav({ user }: SiteNavProps) {
   const pathname = usePathname();
@@ -91,11 +89,10 @@ export function SiteNav({ user }: SiteNavProps) {
             top<span style={{ color: "var(--ts-accent)" }}>snip</span>
           </Link>
 
-          {/* Desktop links — hidden on mobile */}
-          <div className="hidden sm:flex items-center gap-3 sm:gap-5">
-            {isAuth ? (
-              /* Authenticated links */
-              AUTH_LINKS.map(({ href, label, activeWhen }) => {
+          {isAuth ? (
+            /* Authenticated links — hidden on mobile (MobileTabBar handles it) */
+            <div className="hidden sm:flex items-center gap-3 sm:gap-5">
+              {AUTH_LINKS.map(({ href, label, activeWhen }) => {
                 const isActive = activeWhen(pathname);
                 return (
                   <Link
@@ -109,34 +106,34 @@ export function SiteNav({ user }: SiteNavProps) {
                     {label}
                   </Link>
                 );
-              })
-            ) : (
-              /* Anonymous links + Sign in */
-              <>
-                {ANON_LINKS.map(({ href, label }) => {
-                  const isActive = pathname === href;
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      className={`text-sm font-medium transition-colors hover:text-white ${
-                        isActive ? "text-white" : ""
-                      }`}
-                      style={isActive ? undefined : { color: "var(--ts-text-2)" }}
-                    >
-                      {label}
-                    </Link>
-                  );
-                })}
-                <Link
-                  href="/auth/login"
-                  className="btn-primary rounded-full px-4 py-1.5 text-xs"
-                >
-                  Sign in
-                </Link>
-              </>
-            )}
-          </div>
+              })}
+            </div>
+          ) : (
+            /* Anonymous links — always visible (mobile + desktop) */
+            <div className="flex items-center gap-3 sm:gap-5">
+              {ANON_LINKS.map(({ href, label }) => {
+                const isActive = pathname === href;
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`text-xs sm:text-sm font-medium transition-colors hover:text-white ${
+                      isActive ? "text-white" : ""
+                    }`}
+                    style={isActive ? undefined : { color: "var(--ts-text-2)" }}
+                  >
+                    {label}
+                  </Link>
+                );
+              })}
+              <Link
+                href="/auth/login"
+                className="btn-primary rounded-full px-3 sm:px-4 py-1.5 text-xs"
+              >
+                Sign in
+              </Link>
+            </div>
+          )}
         </div>
       </nav>
 

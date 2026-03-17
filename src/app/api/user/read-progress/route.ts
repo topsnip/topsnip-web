@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkOrigin } from "@/lib/csrf";
 
 /**
  * POST /api/user/read-progress
@@ -9,9 +10,26 @@ import { createClient } from "@/lib/supabase/server";
  *
  * Body: { user_id, topic_id, time_spent_sec, scroll_pct }
  */
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    // CSRF Origin check
+    if (!checkOrigin(req)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Limit request body size
+    const text = await req.text();
+    if (text.length > 1024) {
+      return NextResponse.json({ error: "Request too large" }, { status: 413 });
+    }
+
+    let body: Record<string, unknown>;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+
     const { user_id, topic_id, time_spent_sec, scroll_pct } = body;
 
     // Basic validation
