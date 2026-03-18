@@ -6,7 +6,7 @@ import { runContentGeneration } from "@/lib/content/orchestrator";
 export const dynamic = "force-dynamic";
 export const maxDuration = 120; // Content generation can take longer than ingestion
 
-const MIN_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes between runs
+const MIN_INTERVAL_MS = 1 * 60 * 1000; // 1 minute between runs (temporarily reduced for bulk regen)
 
 /**
  * POST /api/content/generate
