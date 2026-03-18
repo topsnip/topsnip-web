@@ -22,6 +22,7 @@ import { FeedGreeting } from "./feed-greeting";
 import { TopicCardList } from "./topic-card";
 import type { TopicCardData } from "./topic-card";
 import { SinceLastVisit } from "./since-last-visit";
+import { getCategoryColor } from "@/lib/utils/category-colors";
 
 // ── "Since you were last here" types ────────────────────────────────────────
 
@@ -179,7 +180,7 @@ export default async function FeedPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col relative"
       style={{ background: "var(--background)" }}
     >
       {/* ── Background glow ─────────────────────────────────────────────── */}
@@ -189,6 +190,10 @@ export default async function FeedPage() {
           background: "var(--ts-glow-radial)",
         }}
       />
+
+      {/* Background gradient for depth */}
+      <div className="absolute top-0 left-0 right-0 h-96 pointer-events-none" aria-hidden="true"
+        style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(232,115,74,0.06) 0%, transparent 70%)" }} />
 
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
       <SiteNav user={{ id: user.id, plan: profile.plan ?? "free" }} />
@@ -248,7 +253,7 @@ export default async function FeedPage() {
           <aside className="hidden xl:block sticky top-28 self-start">
             <div className="flex flex-col gap-5">
               {/* Quick Stats Card */}
-              <div className="rounded-xl p-5" style={{ background: "var(--ts-surface)", border: "1px solid var(--border)" }}>
+              <div className="rounded-xl p-5" style={{ background: "var(--ts-surface)", border: "1px solid var(--border)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)" }}>
                 <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--ts-muted)" }}>
                   Your Activity
                 </p>
@@ -269,29 +274,32 @@ export default async function FeedPage() {
               </div>
 
               {/* Category Filter Card */}
-              <div className="rounded-xl p-5" style={{ background: "var(--ts-surface)", border: "1px solid var(--border)" }}>
+              <div className="rounded-xl p-5" style={{ background: "var(--ts-surface)", border: "1px solid var(--border)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)" }}>
                 <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--ts-muted)" }}>
                   Categories
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {["Models", "Tools", "Research", "Industry", "Open Source", "Ethics"].map((cat) => (
-                    <span
-                      key={cat}
-                      className="text-xs px-2.5 py-1 rounded-full cursor-pointer transition-colors"
-                      style={{
-                        background: "var(--ts-accent-6)",
-                        color: "var(--ts-text-2)",
-                        border: "1px solid var(--ts-accent-12)",
-                      }}
-                    >
-                      {cat}
-                    </span>
-                  ))}
+                  {["Models", "Tools", "Research", "Industry", "Open Source", "Ethics"].map((cat) => {
+                    const color = getCategoryColor(cat);
+                    return (
+                      <span
+                        key={cat}
+                        className="text-xs px-2.5 py-1 rounded-full cursor-pointer transition-all hover:scale-105"
+                        style={{
+                          background: `${color}15`,
+                          color: `${color}`,
+                          border: `1px solid ${color}25`,
+                        }}
+                      >
+                        {cat}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Quick Links */}
-              <div className="rounded-xl p-5" style={{ background: "var(--ts-surface)", border: "1px solid var(--border)" }}>
+              <div className="rounded-xl p-5" style={{ background: "var(--ts-surface)", border: "1px solid var(--border)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)" }}>
                 <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--ts-muted)" }}>
                   Quick Links
                 </p>

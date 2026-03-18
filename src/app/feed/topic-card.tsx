@@ -13,6 +13,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { SectionReveal } from "@/components/SectionReveal";
+import { getCategoryColor } from "@/lib/utils/category-colors";
 
 const headingFont = "var(--font-heading), 'Instrument Serif', serif";
 
@@ -108,25 +109,30 @@ function TopicCardInner({ topic, index }: { topic: TopicCardData; index: number 
     >
       <Link
         href={`/topic/${topic.slug}`}
-        className="topic-card card-interactive group block rounded-xl p-6"
+        className="topic-card card-interactive group block rounded-xl p-6 relative overflow-hidden"
         style={{
           background: "var(--ts-surface)",
           border: "1px solid var(--border)",
+          borderLeft: `3px solid ${getCategoryColor(topic.primary_tag)}`,
           borderRadius: 12,
           textDecoration: "none",
           opacity: topic.is_read ? 0.55 : 1,
         }}
       >
+        {/* Hover glow */}
+        <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+          style={{ background: `radial-gradient(ellipse at 50% 0%, ${getCategoryColor(topic.primary_tag)}08, transparent 70%)` }} />
         {/* Category row + badges */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center"
               style={{
-                background: "var(--ts-accent-6)",
+                background: `linear-gradient(135deg, ${getCategoryColor(topic.primary_tag)}20, ${getCategoryColor(topic.primary_tag)}08)`,
+                border: `1px solid ${getCategoryColor(topic.primary_tag)}30`,
               }}
             >
-              <Icon size={16} style={{ color: "var(--ts-accent)" }} />
+              <Icon size={16} style={{ color: getCategoryColor(topic.primary_tag) }} />
             </div>
             <span
               className="text-xs font-medium"

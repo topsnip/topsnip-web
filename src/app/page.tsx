@@ -7,9 +7,6 @@ import {
   Search,
   ArrowRight,
   Check,
-  Zap,
-  Layers,
-  BookOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -158,7 +155,13 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════════════
           SECTION 1 — Hero
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="flex flex-col items-center px-4 pt-28 pb-16 sm:pt-36 sm:pb-24 relative z-10">
+      <section className="flex flex-col items-center px-4 pt-28 pb-16 sm:pt-36 sm:pb-24 relative z-10 dot-grid-bg">
+        {/* Hero background glow */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full animate-pulse-glow"
+            style={{ background: "radial-gradient(ellipse, var(--ts-accent) 0%, transparent 70%)", opacity: 0.2 }} />
+        </div>
+
         <div className="w-full max-w-3xl mx-auto flex flex-col items-center gap-8">
           {/* Headline — word stagger */}
           <HeroHeadline />
@@ -257,6 +260,53 @@ export default function Home() {
               </motion.button>
             ))}
           </div>
+
+          {/* Product mockup */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: chipsDelay + 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full max-w-3xl mx-auto mt-12 relative"
+          >
+            {/* Browser chrome */}
+            <div className="rounded-t-xl px-4 py-3 flex items-center gap-2" style={{ background: "var(--ts-surface)", borderBottom: "1px solid var(--border)" }}>
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full" style={{ background: "#ff5f56" }} />
+                <div className="w-3 h-3 rounded-full" style={{ background: "#ffbd2e" }} />
+                <div className="w-3 h-3 rounded-full" style={{ background: "#27ca40" }} />
+              </div>
+              <div className="flex-1 mx-8">
+                <div className="text-xs px-3 py-1 rounded-md text-center" style={{ background: "rgba(255,255,255,0.06)", color: "var(--ts-text-2)" }}>
+                  topsnip.co/topic/claude-4-release
+                </div>
+              </div>
+            </div>
+            {/* Mock brief content */}
+            <div className="rounded-b-xl p-6 sm:p-8" style={{ background: "var(--ts-surface)", border: "1px solid var(--border)", borderTop: "none" }}>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "var(--ts-accent-12)", color: "var(--ts-accent)" }}>Models</span>
+                  <span className="text-xs" style={{ color: "var(--ts-text-2)" }}>3 min read &middot; 5 sources</span>
+                </div>
+                <h3 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Claude 4 Is Here: What Changed and Why It Matters</h3>
+                <div className="rounded-lg p-4" style={{ background: "rgba(232,115,74,0.06)", border: "1px solid rgba(232,115,74,0.12)" }}>
+                  <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--ts-accent)" }}>TL;DR</p>
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
+                    Anthropic released Claude 4, their most capable model yet. It scores 92% on graduate-level reasoning benchmarks and can now process entire codebases in a single context window.
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <div className="flex-1 h-2 rounded-full" style={{ background: "var(--ts-accent-12)" }}>
+                    <div className="h-full w-3/4 rounded-full" style={{ background: "var(--ts-accent)" }} />
+                  </div>
+                  <span className="text-xs" style={{ color: "var(--ts-text-2)" }}>75% read</span>
+                </div>
+              </div>
+            </div>
+            {/* Glow under mockup */}
+            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-3/4 h-16 rounded-full opacity-30 blur-2xl"
+              style={{ background: "var(--ts-accent)" }} />
+          </motion.div>
         </div>
       </section>
 
@@ -274,7 +324,11 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════════════
           SECTION 3 — How It Works
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="px-4 py-16 sm:py-24 relative z-10">
+      <section className="px-4 py-16 sm:py-24 relative z-10 overflow-hidden">
+        {/* Floating decorative orb */}
+        <div className="absolute right-0 top-0 w-64 h-64 rounded-full opacity-10 blur-3xl pointer-events-none animate-float"
+          style={{ background: "var(--ts-accent)" }} />
+
         <div className="content-container-wide flex flex-col items-center gap-12">
           <SectionReveal>
             <div className="text-center flex flex-col gap-3">
@@ -297,85 +351,121 @@ export default function Home() {
           </SectionReveal>
 
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_auto_1fr] gap-5 sm:gap-3 w-full items-center">
-            {[
-              {
-                step: 1,
-                title: "Search",
-                desc: "Type any AI topic. That's it.",
-                icon: Search,
-              },
-              {
-                step: 2,
-                title: "We Research",
-                desc: "We scan 7+ platforms and distill the signal.",
-                icon: Layers,
-              },
-              {
-                step: 3,
-                title: "You Learn",
-                desc: "Get a structured brief in under 3 minutes.",
-                icon: BookOpen,
-              },
-            ].flatMap(({ step, title, desc, icon: Icon }, i) => {
-              const card = (
-                <SectionReveal key={step} delay={i * 0.15}>
-                  <div
-                    className="rounded-xl p-5 flex flex-col gap-4 h-full border"
-                    style={{
-                      background: "var(--ts-surface)",
-                      borderColor: "var(--border)",
-                      borderRadius: "12px",
-                    }}
-                  >
-                    {/* Step number indicator */}
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold text-white"
-                        style={{
-                          background: "var(--ts-accent)",
-                        }}
-                      >
-                        {step}
-                      </div>
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{
-                          background: "var(--ts-accent-8)",
-                          border: "1px solid var(--ts-accent-20)",
-                        }}
-                      >
-                        <Icon size={20} style={{ color: "var(--ts-accent)" }} />
-                      </div>
-                    </div>
-
-                    <p
-                      className="text-base font-semibold text-white"
-                      style={{ fontFamily: headingFont }}
-                    >
-                      {title}
-                    </p>
-                    <p
-                      className="text-base leading-relaxed"
-                      style={{ color: "var(--ts-text-2)" }}
-                    >
-                      {desc}
-                    </p>
-                  </div>
-                </SectionReveal>
-              );
-
-              if (i < 2) {
-                const arrow = (
-                  <div key={`arrow-${step}`} className="hidden sm:flex items-center justify-center" aria-hidden="true">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--ts-muted)" }}>
-                      <path d="M5 12h14M12 5l7 7-7 7" />
+            {(() => {
+              const steps = [
+                {
+                  step: 1,
+                  title: "Search",
+                  desc: "Type any AI topic. That's it.",
+                  svg: (
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="22" cy="22" r="12" stroke="var(--ts-accent)" strokeWidth="2" />
+                      <line x1="30.5" y1="30.5" x2="40" y2="40" stroke="var(--ts-accent)" strokeWidth="2" strokeLinecap="round" />
+                      <circle cx="22" cy="22" r="6" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
+                      <line x1="22" y1="4" x2="22" y2="8" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
+                      <line x1="22" y1="36" x2="22" y2="40" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
+                      <line x1="4" y1="22" x2="8" y2="22" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
+                      <line x1="36" y1="22" x2="40" y2="22" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
                     </svg>
-                  </div>
+                  ),
+                },
+                {
+                  step: 2,
+                  title: "We Research",
+                  desc: "We scan 7+ platforms and distill the signal.",
+                  svg: (
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="4" y="4" width="14" height="18" rx="2" stroke="var(--ts-accent)" strokeWidth="1.5" opacity="0.5" />
+                      <rect x="17" y="2" width="14" height="18" rx="2" stroke="var(--ts-accent)" strokeWidth="1.5" opacity="0.7" />
+                      <rect x="30" y="4" width="14" height="18" rx="2" stroke="var(--ts-accent)" strokeWidth="1.5" opacity="0.5" />
+                      <line x1="7" y1="9" x2="15" y2="9" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
+                      <line x1="7" y1="13" x2="13" y2="13" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
+                      <line x1="20" y1="7" x2="28" y2="7" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
+                      <line x1="20" y1="11" x2="26" y2="11" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
+                      <line x1="33" y1="9" x2="41" y2="9" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
+                      <path d="M10 26 L24 36 L38 26" stroke="var(--ts-accent)" strokeWidth="1.5" fill="none" opacity="0.6" />
+                      <path d="M24 36 L24 44" stroke="var(--ts-accent)" strokeWidth="1.5" strokeLinecap="round" />
+                      <rect x="18" y="40" width="12" height="6" rx="1" stroke="var(--ts-accent)" strokeWidth="1.5" fill="rgba(232,115,74,0.1)" />
+                    </svg>
+                  ),
+                },
+                {
+                  step: 3,
+                  title: "You Learn",
+                  desc: "Get a structured brief in under 3 minutes.",
+                  svg: (
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="8" y="4" width="32" height="40" rx="3" stroke="var(--ts-accent)" strokeWidth="1.5" />
+                      <line x1="14" y1="12" x2="34" y2="12" stroke="var(--ts-accent)" strokeWidth="1.5" opacity="0.5" />
+                      <line x1="14" y1="18" x2="30" y2="18" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
+                      <line x1="14" y1="22" x2="32" y2="22" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
+                      <line x1="14" y1="26" x2="28" y2="26" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
+                      <circle cx="34" cy="34" r="8" fill="var(--ts-accent)" opacity="0.15" />
+                      <circle cx="34" cy="34" r="8" stroke="var(--ts-accent)" strokeWidth="1.5" />
+                      <path d="M30 34 L33 37 L39 31" stroke="var(--ts-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ),
+                },
+              ];
+
+              return steps.flatMap(({ step, title, desc, svg }, i) => {
+                const card = (
+                  <SectionReveal key={step} delay={i * 0.15}>
+                    <div
+                      className="rounded-xl p-5 flex flex-col gap-4 h-full border backdrop-blur-sm"
+                      style={{
+                        background: "var(--ts-surface)",
+                        borderColor: "var(--border)",
+                        borderRadius: "12px",
+                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+                      }}
+                    >
+                      {/* Step number + SVG illustration */}
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold text-white"
+                          style={{
+                            background: "var(--ts-accent)",
+                          }}
+                        >
+                          {step}
+                        </div>
+                      </div>
+
+                      {/* SVG illustration */}
+                      <div className="flex items-center justify-center py-2">
+                        {svg}
+                      </div>
+
+                      <p
+                        className="text-base font-semibold text-white"
+                        style={{ fontFamily: headingFont }}
+                      >
+                        {title}
+                      </p>
+                      <p
+                        className="text-base leading-relaxed"
+                        style={{ color: "var(--ts-text-2)" }}
+                      >
+                        {desc}
+                      </p>
+                    </div>
+                  </SectionReveal>
                 );
-                return [card, arrow];
-              }
-              return [card];
-            })}
+
+                if (i < 2) {
+                  const arrow = (
+                    <div key={`arrow-${step}`} className="hidden sm:flex items-center justify-center" aria-hidden="true">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--ts-muted)" }}>
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  );
+                  return [card, arrow];
+                }
+                return [card];
+              });
+            })()}
           </div>
         </div>
       </section>
@@ -384,21 +474,27 @@ export default function Home() {
           SECTION 4 — Social Proof / Stats
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="px-4 py-16 sm:py-24 relative z-10">
-        <SectionReveal>
-          <div className="content-container-wide">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 w-full">
-              <AnimatedCounter target={12000} suffix="+" label="Topics explained" />
-              <AnimatedCounter target={50} suffix="+" label="Sources scanned" />
-              <AnimatedCounter target={3} suffix=" min" label="Average read time" />
+        <div className="relative" style={{ background: "linear-gradient(180deg, transparent, var(--ts-surface) 20%, var(--ts-surface) 80%, transparent)" }}>
+          <SectionReveal>
+            <div className="content-container-wide py-12">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 w-full">
+                <AnimatedCounter target={12000} suffix="+" label="Topics explained" />
+                <AnimatedCounter target={50} suffix="+" label="Sources scanned" />
+                <AnimatedCounter target={3} suffix=" min" label="Average read time" />
+              </div>
             </div>
-          </div>
-        </SectionReveal>
+          </SectionReveal>
+        </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════
           SECTION 5 — Pricing
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="px-4 py-16 sm:py-24 relative z-10">
+      <section className="px-4 py-16 sm:py-24 relative z-10 overflow-hidden">
+        {/* Floating decorative orb */}
+        <div className="absolute left-0 bottom-0 w-48 h-48 rounded-full opacity-10 blur-3xl pointer-events-none"
+          style={{ background: "var(--ts-accent)" }} />
+
         <div className="content-container-wide flex flex-col items-center gap-12">
           <SectionReveal>
             <div className="text-center flex flex-col gap-3">
@@ -423,7 +519,7 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-3xl">
             {/* Free — Explore */}
             <SectionReveal delay={0}>
-              <div className="glass-card rounded-xl p-8 flex flex-col gap-5 h-full">
+              <div className="glass-card backdrop-blur-sm rounded-xl p-8 flex flex-col gap-5 h-full" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)" }}>
                 <div className="flex flex-col gap-1">
                   <p
                     className="text-sm font-semibold text-white"
@@ -485,7 +581,7 @@ export default function Home() {
 
             {/* Pro — Learn (highlighted) */}
             <SectionReveal delay={0.12}>
-              <div className="pro-card-glow rounded-xl p-8 flex flex-col gap-5 relative h-full">
+              <div className="pro-card-glow backdrop-blur-sm rounded-xl p-8 flex flex-col gap-5 relative h-full" style={{ boxShadow: "0 0 40px rgba(232,115,74,0.1), inset 0 1px 0 rgba(255,255,255,0.05)" }}>
                 {/* Most popular badge */}
                 <div
                   className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-semibold whitespace-nowrap"

@@ -774,6 +774,31 @@
   color: var(--foreground) !important;
 }
 
+/* ── Dot grid background pattern ──────────────────────────────────── */
+.dot-grid-bg {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ── Floating / pulse-glow animations ────────────────────────────── */
+@keyframes animate-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.25; }
+}
+
+.animate-float {
+  animation: animate-float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
 /* ── Accessibility: Reduced Motion ─────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   * {
@@ -809,6 +834,10 @@
   .headline-float {
     animation: none;
     opacity: 0.08;
+  }
+  .animate-float,
+  .animate-pulse-glow {
+    animation: none;
   }
   .btn-primary:hover,
   .btn-secondary:hover,
