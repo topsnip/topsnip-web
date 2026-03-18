@@ -194,48 +194,120 @@ export default async function FeedPage() {
       <SiteNav user={{ id: user.id, plan: profile.plan ?? "free" }} />
 
       {/* ── Main Content ────────────────────────────────────────────────── */}
-      <main className="flex-1 content-container pt-28 pb-16 relative z-10">
-        {/* Search bar (client component) with pulse dot */}
-        <div className="feed-search-container relative">
-          <FeedSearchBar />
+      <div className="flex-1 w-full max-w-[900px] xl:max-w-6xl mx-auto px-[var(--space-page-x)] pt-28 pb-16 relative z-10">
+        <div className="xl:grid xl:grid-cols-[1fr_280px] xl:gap-8">
+          <main>
+            {/* Search bar (client component) with pulse dot */}
+            <div className="feed-search-container relative">
+              <FeedSearchBar />
+            </div>
+
+            {/* Quick suggestion chips below search */}
+            <QuickSuggestions />
+
+            {/* Time-of-day greeting */}
+            <FeedGreeting
+              email={user.email}
+              isQuietDay={isQuietDay}
+              topicCount={feedTopics.length}
+            />
+
+            {/* ── Quiet Day State ───────────────────────────────────────────── */}
+            {isQuietDay && (
+              <QuietDayState showLearningDebt={isPro} />
+            )}
+
+            {/* ── Empty State (no digest for today yet) ─────────────────────── */}
+            {!isQuietDay && feedTopics.length === 0 && (
+              <div
+                className="empty-state-gradient rounded-2xl p-8 flex flex-col items-center text-center gap-6"
+                style={{ animation: "fadeInUp 0.35s ease 0.06s both" }}
+              >
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-auto mb-4 opacity-60">
+                  <circle cx="35" cy="35" r="20" stroke="var(--ts-accent)" strokeWidth="2" />
+                  <line x1="49" y1="49" x2="65" y2="65" stroke="var(--ts-accent)" strokeWidth="2" strokeLinecap="round" />
+                  <circle cx="35" cy="35" r="8" stroke="var(--ts-accent)" strokeWidth="1.5" opacity="0.4" />
+                </svg>
+                <TrendingSuggestions />
+              </div>
+            )}
+
+            {/* ── Since You Were Last Here ─────────────────────────────────── */}
+            <SinceLastVisit topics={sinceLastVisitTopics} />
+
+            {/* ── Topic Cards ───────────────────────────────────────────────── */}
+            {feedTopics.length > 0 && (
+              <TopicCardList topics={topicCardData} />
+            )}
+
+            {/* ── Learning Debt (Pro only) ────────────────────────────────── */}
+            {isPro && <LearningDebt userId={user.id} isPro={isPro} />}
+          </main>
+
+          {/* ── Sidebar (xl screens only) ──────────────────────────────────── */}
+          <aside className="hidden xl:block sticky top-28 self-start">
+            <div className="flex flex-col gap-5">
+              {/* Quick Stats Card */}
+              <div className="rounded-xl p-5" style={{ background: "var(--ts-surface)", border: "1px solid var(--border)" }}>
+                <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--ts-muted)" }}>
+                  Your Activity
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: "var(--ts-text-2)" }}>Topics read</span>
+                    <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>&mdash;</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: "var(--ts-text-2)" }}>Current streak</span>
+                    <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>&mdash;</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: "var(--ts-text-2)" }}>Time saved</span>
+                    <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>&mdash;</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Category Filter Card */}
+              <div className="rounded-xl p-5" style={{ background: "var(--ts-surface)", border: "1px solid var(--border)" }}>
+                <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--ts-muted)" }}>
+                  Categories
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {["Models", "Tools", "Research", "Industry", "Open Source", "Ethics"].map((cat) => (
+                    <span
+                      key={cat}
+                      className="text-xs px-2.5 py-1 rounded-full cursor-pointer transition-colors"
+                      style={{
+                        background: "var(--ts-accent-6)",
+                        color: "var(--ts-text-2)",
+                        border: "1px solid var(--ts-accent-12)",
+                      }}
+                    >
+                      {cat}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick Links */}
+              <div className="rounded-xl p-5" style={{ background: "var(--ts-surface)", border: "1px solid var(--border)" }}>
+                <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--ts-muted)" }}>
+                  Quick Links
+                </p>
+                <div className="space-y-2">
+                  <a href="/knowledge" className="text-sm block hover:underline" style={{ color: "var(--ts-text-2)" }}>
+                    Knowledge Dashboard &rarr;
+                  </a>
+                  <a href="/settings" className="text-sm block hover:underline" style={{ color: "var(--ts-text-2)" }}>
+                    Your Preferences &rarr;
+                  </a>
+                </div>
+              </div>
+            </div>
+          </aside>
         </div>
-
-        {/* Quick suggestion chips below search */}
-        <QuickSuggestions />
-
-        {/* Time-of-day greeting */}
-        <FeedGreeting
-          email={user.email}
-          isQuietDay={isQuietDay}
-          topicCount={feedTopics.length}
-        />
-
-        {/* ── Quiet Day State ───────────────────────────────────────────── */}
-        {isQuietDay && (
-          <QuietDayState showLearningDebt={isPro} />
-        )}
-
-        {/* ── Empty State (no digest for today yet) ─────────────────────── */}
-        {!isQuietDay && feedTopics.length === 0 && (
-          <div
-            className="empty-state-gradient rounded-2xl p-8 flex flex-col items-center text-center gap-6"
-            style={{ animation: "fadeInUp 0.35s ease 0.06s both" }}
-          >
-            <TrendingSuggestions />
-          </div>
-        )}
-
-        {/* ── Since You Were Last Here ─────────────────────────────────── */}
-        <SinceLastVisit topics={sinceLastVisitTopics} />
-
-        {/* ── Topic Cards ───────────────────────────────────────────────── */}
-        {feedTopics.length > 0 && (
-          <TopicCardList topics={topicCardData} />
-        )}
-
-        {/* ── Learning Debt (Pro only) ────────────────────────────────── */}
-        {isPro && <LearningDebt userId={user.id} isPro={isPro} />}
-      </main>
+      </div>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
       <footer

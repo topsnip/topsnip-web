@@ -108,7 +108,7 @@ function TopicCardInner({ topic, index }: { topic: TopicCardData; index: number 
     >
       <Link
         href={`/topic/${topic.slug}`}
-        className="topic-card card-interactive group block rounded-xl p-5"
+        className="topic-card card-interactive group block rounded-xl p-6"
         style={{
           background: "var(--ts-surface)",
           border: "1px solid var(--border)",
@@ -191,7 +191,7 @@ function TopicCardInner({ topic, index }: { topic: TopicCardData; index: number 
         {/* TL;DR */}
         {topic.tldr && (
           <p
-            className="text-sm leading-relaxed line-clamp-2 mb-3"
+            className="text-base leading-relaxed line-clamp-2 mb-3"
             style={{ color: "var(--ts-text-2)" }}
           >
             {decodeHtml(topic.tldr)}
@@ -200,7 +200,7 @@ function TopicCardInner({ topic, index }: { topic: TopicCardData; index: number 
 
         {/* Metadata row */}
         <div
-          className="flex items-center justify-between text-xs"
+          className="flex items-center justify-between text-sm"
           style={{ color: "var(--ts-muted)" }}
         >
           <span>
@@ -223,7 +223,7 @@ interface TopicCardListProps {
 export function TopicCardList({ topics }: TopicCardListProps) {
   return (
     <SectionReveal>
-      <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {topics.map((topic, i) => (
           <TopicCardInner key={topic.id} topic={topic} index={i} />
         ))}

@@ -297,7 +297,7 @@ export default async function TopicDetailPage({
       <SiteNav user={user ? { id: user.id, plan: "free" } : null} />
 
       {/* Main content area */}
-      <main className="flex-1 content-container-wide py-8" style={{ paddingTop: "5rem" }}>
+      <main className="flex-1 w-full max-w-[1120px] mx-auto px-[var(--space-page-x)] py-8" style={{ paddingTop: "5rem" }}>
         {/* ── Topic Header ─────────────────────────────────────────────── */}
         <div
           className="flex flex-col gap-3 mb-8"
@@ -410,6 +410,9 @@ export default async function TopicDetailPage({
             information.
           </p>
         </div>
+
+        {/* ── Visual divider ──────────────────────────────────────────── */}
+        <div className="h-px w-full my-8" style={{ background: "var(--border)" }} />
 
         {/* ── Two-column layout ───────────────────────────────────────── */}
         <div className="two-column">

@@ -114,21 +114,21 @@
   --error: #f87171;
 
   /* Fluid typography scale using clamp() */
-  --text-xs: clamp(0.7rem, 0.65rem + 0.25vw, 0.75rem);
-  --text-sm: clamp(0.8rem, 0.75rem + 0.25vw, 0.875rem);
-  --text-base: clamp(0.9rem, 0.85rem + 0.25vw, 1rem);
-  --text-lg: clamp(1.05rem, 0.95rem + 0.5vw, 1.125rem);
-  --text-xl: clamp(1.2rem, 1rem + 1vw, 1.5rem);
-  --text-2xl: clamp(1.5rem, 1.2rem + 1.5vw, 2rem);
-  --text-3xl: clamp(1.8rem, 1.4rem + 2vw, 2.5rem);
-  --text-4xl: clamp(2.2rem, 1.6rem + 3vw, 3.5rem);
+  --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.8125rem);
+  --text-sm: clamp(0.875rem, 0.82rem + 0.28vw, 0.9375rem);
+  --text-base: clamp(1rem, 0.94rem + 0.3vw, 1.0625rem);
+  --text-lg: clamp(1.125rem, 1.05rem + 0.4vw, 1.25rem);
+  --text-xl: clamp(1.375rem, 1.15rem + 1.1vw, 1.625rem);
+  --text-2xl: clamp(1.625rem, 1.3rem + 1.6vw, 2.125rem);
+  --text-3xl: clamp(2rem, 1.5rem + 2.5vw, 2.75rem);
+  --text-4xl: clamp(2.5rem, 1.8rem + 3.5vw, 3.75rem);
 
   /* Content width constraints */
   --content-sm: 640px;
   --content-md: 768px;
-  --content-lg: 1024px;
+  --content-lg: 1120px;
   --content-xl: 1280px;
-  --content-reading: 720px; /* Optimal reading width */
+  --content-reading: 800px; /* Optimal reading width */
 
   /* Spacing scale */
   --space-page-x: clamp(1rem, 0.5rem + 2vw, 2rem);
@@ -200,12 +200,27 @@
 .two-column {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 2rem;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .two-column {
+    grid-template-columns: 1fr 280px;
+    gap: 2rem;
+  }
 }
 
 @media (min-width: 1024px) {
   .two-column {
-    grid-template-columns: 1fr 320px;
+    grid-template-columns: 1fr 340px;
+    gap: 2.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .two-column {
+    grid-template-columns: 1fr 360px;
+    gap: 3rem;
   }
 }
 

@@ -18,8 +18,9 @@ import {
 
 const ALL_ROLES: Role[] = ["general", "developer", "pm", "cto"];
 
-// Use Haiku for speed + cost — same as the existing search route
-const MODEL = "claude-haiku-4-5";
+// Sonnet for quality content generation — upgraded from Haiku in v1.1
+const MODEL = "claude-sonnet-4-5";
+const QUALITY_CHECK_MODEL = "claude-haiku-4-5";
 const MAX_TOKENS = 3000;
 
 // Quality threshold — content below this score gets flagged, not published
@@ -112,13 +113,13 @@ async function generateForRole(
     }))
   );
 
-  // [M6 fix] 30-second timeout on Claude calls
+  // [M6 fix] 45-second timeout on Claude calls (bumped for Sonnet)
   const message = await anthropic.messages.create({
     model: MODEL,
     max_tokens: MAX_TOKENS,
     system: systemPrompt,
     messages: [{ role: "user", content: userPrompt }],
-  }, { signal: AbortSignal.timeout(30_000) });
+  }, { signal: AbortSignal.timeout(45_000) });
 
   const text = message.content[0];
   if (text.type !== "text") throw new Error("Unexpected Claude response type");
@@ -176,7 +177,7 @@ async function checkQuality(
 
   try {
     const message = await anthropic.messages.create({
-      model: MODEL,
+      model: QUALITY_CHECK_MODEL,
       max_tokens: 500,
       messages: [{ role: "user", content: prompt }],
     }, { signal: AbortSignal.timeout(30_000) });

@@ -98,7 +98,7 @@ export function SiteNav({ user }: SiteNavProps) {
                   <Link
                     key={href}
                     href={href}
-                    className={`text-xs sm:text-sm font-medium transition-colors hover:text-white ${
+                    className={`text-sm font-medium transition-colors hover:text-white ${
                       isActive ? "text-white" : ""
                     }`}
                     style={isActive ? undefined : { color: "var(--ts-text-2)" }}
@@ -117,7 +117,7 @@ export function SiteNav({ user }: SiteNavProps) {
                   <Link
                     key={href}
                     href={href}
-                    className={`text-xs sm:text-sm font-medium transition-colors hover:text-white ${
+                    className={`text-sm font-medium transition-colors hover:text-white ${
                       isActive ? "text-white" : ""
                     }`}
                     style={isActive ? undefined : { color: "var(--ts-text-2)" }}

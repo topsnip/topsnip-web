@@ -262,7 +262,7 @@ export default function SettingsPage() {
       <SiteNav user={userId && profile ? { id: userId, plan: profile.plan } : null} />
 
       {/* ── Content ────────────────────────────────────────────────────────── */}
-      <div className="w-full max-w-2xl mx-auto px-4 pt-28 pb-16 sm:pt-32 flex flex-col gap-8 relative z-10">
+      <div className="w-full max-w-3xl mx-auto px-4 pt-28 pb-16 sm:pt-32 flex flex-col gap-8 relative z-10">
         <h1
           className="text-2xl font-bold tracking-tight text-white"
           style={{
@@ -288,7 +288,7 @@ export default function SettingsPage() {
 
         {/* ── Section: Profile ─────────────────────────────────────────────── */}
         <section
-          className="glass-card rounded-xl p-6 flex flex-col gap-4"
+          className="glass-card rounded-xl p-8 flex flex-col gap-4"
           style={{ cursor: "default" }}
         >
           <div className="flex items-center gap-2">
@@ -350,7 +350,7 @@ export default function SettingsPage() {
 
         {/* ── Section: Role ────────────────────────────────────────────────── */}
         <section
-          className="glass-card rounded-xl p-6 flex flex-col gap-4"
+          className="glass-card rounded-xl p-8 flex flex-col gap-4"
           style={{ cursor: "default" }}
         >
           <div className="flex items-center justify-between">
@@ -415,7 +415,7 @@ export default function SettingsPage() {
                       </div>
                     )}
                   </div>
-                  <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
+                  <p className="text-sm" style={{ color: "var(--ts-muted)" }}>
                     {r.description}
                   </p>
                 </button>
@@ -436,7 +436,7 @@ export default function SettingsPage() {
 
         {/* ── Section: Interests ───────────────────────────────────────────── */}
         <section
-          className="glass-card rounded-xl p-6 flex flex-col gap-4"
+          className="glass-card rounded-xl p-8 flex flex-col gap-4"
           style={{ cursor: "default" }}
         >
           <div className="flex items-center justify-between">
@@ -514,7 +514,7 @@ export default function SettingsPage() {
 
         {/* ── Section: Subscription ────────────────────────────────────────── */}
         <section
-          className="glass-card rounded-xl p-6 flex flex-col gap-4"
+          className="glass-card rounded-xl p-8 flex flex-col gap-4"
           style={{ cursor: "default" }}
         >
           <h2

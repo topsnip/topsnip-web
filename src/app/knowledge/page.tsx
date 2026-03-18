@@ -240,7 +240,7 @@ export default async function KnowledgeDashboardPage() {
       {/* Level-up detector (client component) */}
       <LevelUpDetector level={stats.level} />
 
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 pt-28 pb-16 relative z-10">
+      <main className="flex-1 max-w-4xl mx-auto w-full px-4 pt-28 pb-16 relative z-10">
         {/* ── Header ───────────────────────────────────────────────────────── */}
         <div
           className="flex flex-col gap-1 mb-8"
@@ -291,7 +291,7 @@ export default async function KnowledgeDashboardPage() {
               No tags available yet.
             </p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {allTags.map((tag) => {
                 const isCovered = coveredSet.has(tag.slug);
                 // Placeholder progress — in future, replace with per-tag read/total counts
@@ -318,7 +318,7 @@ export default async function KnowledgeDashboardPage() {
                   >
                     <ProgressRing progress={progress} />
                     <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-medium truncate group-hover:opacity-80 transition-opacity">
+                      <span className="text-base font-medium truncate group-hover:opacity-80 transition-opacity">
                         {tag.label}
                       </span>
                       <span

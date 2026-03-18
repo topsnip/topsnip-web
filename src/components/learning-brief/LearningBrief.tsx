@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { Zap, Newspaper, AlertCircle, ListChecks, ExternalLink } from "lucide-react";
 import { SourceCitation } from "./SourceCitation";
 import { NowWhatChecklist } from "./NowWhatChecklist";
 import { YouTubeRecs } from "./YouTubeRecs";
@@ -36,19 +37,113 @@ export interface LearningBriefProps {
   redirectPath?: string;
 }
 
-// ── Markdown-lite renderer (bold only) ─────────────────────────────────────
+// ── Markdown-lite renderer (bold + inline code) ────────────────────────────
 
-function renderMarkdown(text: string) {
-  const parts = text.split(/\*\*(.*?)\*\*/g);
-  return parts.map((part, i) =>
-    i % 2 === 1 ? (
-      <strong key={i} className="text-white font-semibold">
-        {part}
-      </strong>
-    ) : (
-      <span key={i}>{part}</span>
-    ),
-  );
+function renderMarkdown(text: string): React.ReactNode[] {
+  // Split on **bold** (allows internal single *) and `code` patterns
+  const parts = text.split(/(\*\*(?:[^*]|\*(?!\*))+\*\*|`[^`]+`)/g);
+  return parts
+    .filter((p) => p !== "")
+    .map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return (
+          <strong key={i} className="font-semibold" style={{ color: "var(--foreground)" }}>
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      if (part.startsWith("`") && part.endsWith("`")) {
+        return (
+          <code
+            key={i}
+            className="font-mono text-sm px-1.5 py-0.5 rounded-md"
+            style={{
+              background: "var(--ts-accent-6)",
+              border: "1px solid var(--ts-accent-12)",
+              color: "var(--ts-accent-2)",
+            }}
+          >
+            {part.slice(1, -1)}
+          </code>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+}
+
+// ── Content block renderer (paragraphs, bullets, numbered lists) ────────────
+
+function lineType(line: string): "bullet" | "numbered" | "text" {
+  if (/^\s*[-*]\s/.test(line)) return "bullet";
+  if (/^\s*\d+\.\s/.test(line)) return "numbered";
+  return "text";
+}
+
+function renderContentBlock(text: string): React.ReactNode {
+  // Split on double newlines into blocks, then split each block into
+  // contiguous runs of same-type lines to handle mixed content.
+  const blocks = text.split("\n\n");
+  let key = 0;
+  const elements: React.ReactNode[] = [];
+
+  for (const block of blocks) {
+    const trimmed = block.trim();
+    if (!trimmed) continue;
+
+    const lines = trimmed.split("\n").filter((l) => l.trim());
+    // Group consecutive lines of the same type
+    let runStart = 0;
+    while (runStart < lines.length) {
+      const type = lineType(lines[runStart]);
+      let runEnd = runStart + 1;
+      while (runEnd < lines.length && lineType(lines[runEnd]) === type) runEnd++;
+      const run = lines.slice(runStart, runEnd);
+
+      if (type === "bullet") {
+        elements.push(
+          <ul key={key++} className={`space-y-2 ${elements.length > 0 ? "mt-4" : ""}`}>
+            {run.map((line, li) => (
+              <li key={li} className="flex items-start gap-3">
+                <span
+                  className="mt-2 w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ background: "var(--ts-accent)" }}
+                />
+                <span>{renderMarkdown(line.replace(/^\s*[-*]\s+/, ""))}</span>
+              </li>
+            ))}
+          </ul>
+        );
+      } else if (type === "numbered") {
+        elements.push(
+          <ol key={key++} className={`space-y-2 ${elements.length > 0 ? "mt-4" : ""}`}>
+            {run.map((line, li) => {
+              const num = line.match(/^\s*(\d+)\./)?.[1] || String(li + 1);
+              return (
+                <li key={li} className="flex items-start gap-3">
+                  <span
+                    className="mt-0.5 w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-xs font-semibold"
+                    style={{ background: "var(--ts-accent-12)", color: "var(--ts-accent)" }}
+                  >
+                    {num}
+                  </span>
+                  <span>{renderMarkdown(line.replace(/^\s*\d+\.\s+/, ""))}</span>
+                </li>
+              );
+            })}
+          </ol>
+        );
+      } else {
+        // Text lines — join back into a paragraph
+        elements.push(
+          <p key={key++} className={elements.length > 0 ? "mt-3" : ""}>
+            {renderMarkdown(run.join(" "))}
+          </p>
+        );
+      }
+      runStart = runEnd;
+    }
+  }
+  return elements;
 }
 
 // ── Parse now_what into action items ───────────────────────────────────────
@@ -146,13 +241,15 @@ export function LearningBrief({
           }}
         >
           <p
-            className="text-xs font-semibold uppercase tracking-widest mb-3"
+            className="text-sm font-semibold uppercase tracking-widest mb-4 pb-3 border-b"
             style={{
               color: "var(--ts-accent)",
+              borderColor: "var(--border)",
               fontFamily: headingFont,
               fontVariant: "small-caps",
             }}
           >
+            <Zap size={12} className="inline mr-1.5" />
             TL;DR
           </p>
           <p
@@ -239,24 +336,22 @@ export function LearningBrief({
                 }}
               >
                 <p
-                  className="text-xs font-semibold uppercase tracking-widest mb-4"
+                  className="text-sm font-semibold uppercase tracking-widest mb-4 pb-3 border-b"
                   style={{
                     color: "var(--ts-muted)",
+                    borderColor: "var(--border)",
                     fontFamily: headingFont,
                     fontVariant: "small-caps",
                   }}
                 >
+                  <Newspaper size={12} className="inline mr-1.5" />
                   What Happened
                 </p>
                 <div
-                  className="text-sm leading-relaxed"
+                  className="text-base leading-relaxed"
                   style={{ color: "var(--foreground)", lineHeight: 1.7 }}
                 >
-                  {whatHappened.split("\n\n").map((para, i) => (
-                    <p key={i} className={i > 0 ? "mt-3" : ""}>
-                      {renderMarkdown(para)}
-                    </p>
-                  ))}
+                  {renderContentBlock(whatHappened)}
                 </div>
               </div>
             </Section>
@@ -268,31 +363,30 @@ export function LearningBrief({
               <div
                 className="rounded-xl"
                 style={{
-                  background: "var(--ts-accent-3)",
-                  border: "1px solid var(--ts-accent-6)",
+                  background: "var(--ts-accent-6)",
+                  border: "1px solid var(--ts-accent-12)",
+                  borderLeft: "3px solid var(--ts-accent)",
                   borderRadius: "12px",
                   padding: "1.5rem",
                 }}
               >
                 <p
-                  className="text-xs font-semibold uppercase tracking-widest mb-4"
+                  className="text-sm font-semibold uppercase tracking-widest mb-4 pb-3 border-b"
                   style={{
                     color: "var(--ts-accent)",
+                    borderColor: "var(--border)",
                     fontFamily: headingFont,
                     fontVariant: "small-caps",
                   }}
                 >
+                  <AlertCircle size={12} className="inline mr-1.5" />
                   So What?
                 </p>
                 <div
-                  className="text-sm leading-relaxed"
+                  className="text-base leading-relaxed"
                   style={{ color: "var(--foreground)", lineHeight: 1.7 }}
                 >
-                  {soWhat.split("\n\n").map((para, i) => (
-                    <p key={i} className={i > 0 ? "mt-3" : ""}>
-                      {renderMarkdown(para)}
-                    </p>
-                  ))}
+                  {renderContentBlock(soWhat)}
                 </div>
               </div>
             </Section>
@@ -311,13 +405,15 @@ export function LearningBrief({
                 }}
               >
                 <p
-                  className="text-xs font-semibold uppercase tracking-widest mb-4"
+                  className="text-sm font-semibold uppercase tracking-widest mb-4 pb-3 border-b"
                   style={{
                     color: "var(--ts-muted)",
+                    borderColor: "var(--border)",
                     fontFamily: headingFont,
                     fontVariant: "small-caps",
                   }}
                 >
+                  <ListChecks size={12} className="inline mr-1.5" />
                   Now What?
                 </p>
                 <NowWhatChecklist items={nowWhatItems} />
@@ -338,13 +434,15 @@ export function LearningBrief({
                 }}
               >
                 <p
-                  className="text-xs font-semibold uppercase tracking-widest mb-4"
+                  className="text-sm font-semibold uppercase tracking-widest mb-4 pb-3 border-b"
                   style={{
                     color: "var(--ts-muted)",
+                    borderColor: "var(--border)",
                     fontFamily: headingFont,
                     fontVariant: "small-caps",
                   }}
                 >
+                  <ExternalLink size={12} className="inline mr-1.5" />
                   Sources
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -444,12 +542,8 @@ function BlurredSections({
           >
             What Happened
           </p>
-          <div className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-            {whatHappened.split("\n\n").map((para, i) => (
-              <p key={i} className={i > 0 ? "mt-3" : ""}>
-                {para}
-              </p>
-            ))}
+          <div className="text-base leading-relaxed" style={{ color: "var(--foreground)" }}>
+            {renderContentBlock(whatHappened)}
           </div>
         </div>
       )}
@@ -467,12 +561,8 @@ function BlurredSections({
           <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "var(--ts-accent)" }}>
             So What?
           </p>
-          <div className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-            {soWhat.split("\n\n").map((para, i) => (
-              <p key={i} className={i > 0 ? "mt-3" : ""}>
-                {para}
-              </p>
-            ))}
+          <div className="text-base leading-relaxed" style={{ color: "var(--foreground)" }}>
+            {renderContentBlock(soWhat)}
           </div>
         </div>
       )}

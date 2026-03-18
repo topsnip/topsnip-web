@@ -159,7 +159,7 @@ export default function Home() {
           SECTION 1 — Hero
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="flex flex-col items-center px-4 pt-28 pb-16 sm:pt-36 sm:pb-24 relative z-10">
-        <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-8">
+        <div className="w-full max-w-3xl mx-auto flex flex-col items-center gap-8">
           {/* Headline — word stagger */}
           <HeroHeadline />
 
@@ -192,7 +192,7 @@ export default function Home() {
               delay: searchBarDelay,
               ease: [0.16, 1, 0.3, 1],
             }}
-            className="w-full flex flex-col gap-3 max-w-xl"
+            className="w-full flex flex-col gap-3 max-w-2xl"
           >
             <div
               className={`flex gap-2 items-center rounded-2xl border px-5 py-4 transition-all duration-200 ${
@@ -251,7 +251,7 @@ export default function Home() {
                   ease: [0.16, 1, 0.3, 1],
                 }}
                 onClick={() => navigateToSearch(s)}
-                className="suggestion-chip pill-interactive rounded-full border px-3 py-1.5 text-xs font-medium"
+                className="suggestion-chip pill-interactive rounded-full border px-3 py-1.5 text-sm font-medium"
               >
                 {s}
               </motion.button>
@@ -296,7 +296,7 @@ export default function Home() {
             </div>
           </SectionReveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_auto_1fr] gap-5 sm:gap-3 w-full items-center">
             {[
               {
                 step: 1,
@@ -316,52 +316,66 @@ export default function Home() {
                 desc: "Get a structured brief in under 3 minutes.",
                 icon: BookOpen,
               },
-            ].map(({ step, title, desc, icon: Icon }, i) => (
-              <SectionReveal key={step} delay={i * 0.15}>
-                <div
-                  className="rounded-xl p-5 flex flex-col gap-4 h-full border"
-                  style={{
-                    background: "var(--ts-surface)",
-                    borderColor: "var(--border)",
-                    borderRadius: "12px",
-                  }}
-                >
-                  {/* Step number indicator */}
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white"
-                      style={{
-                        background: "var(--ts-accent)",
-                      }}
-                    >
-                      {step}
+            ].flatMap(({ step, title, desc, icon: Icon }, i) => {
+              const card = (
+                <SectionReveal key={step} delay={i * 0.15}>
+                  <div
+                    className="rounded-xl p-5 flex flex-col gap-4 h-full border"
+                    style={{
+                      background: "var(--ts-surface)",
+                      borderColor: "var(--border)",
+                      borderRadius: "12px",
+                    }}
+                  >
+                    {/* Step number indicator */}
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold text-white"
+                        style={{
+                          background: "var(--ts-accent)",
+                        }}
+                      >
+                        {step}
+                      </div>
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{
+                          background: "var(--ts-accent-8)",
+                          border: "1px solid var(--ts-accent-20)",
+                        }}
+                      >
+                        <Icon size={20} style={{ color: "var(--ts-accent)" }} />
+                      </div>
                     </div>
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{
-                        background: "var(--ts-accent-8)",
-                        border: "1px solid var(--ts-accent-20)",
-                      }}
-                    >
-                      <Icon size={15} style={{ color: "var(--ts-accent)" }} />
-                    </div>
-                  </div>
 
-                  <p
-                    className="text-base font-semibold text-white"
-                    style={{ fontFamily: headingFont }}
-                  >
-                    {title}
-                  </p>
-                  <p
-                    className="text-sm leading-relaxed"
-                    style={{ color: "var(--ts-text-2)" }}
-                  >
-                    {desc}
-                  </p>
-                </div>
-              </SectionReveal>
-            ))}
+                    <p
+                      className="text-base font-semibold text-white"
+                      style={{ fontFamily: headingFont }}
+                    >
+                      {title}
+                    </p>
+                    <p
+                      className="text-base leading-relaxed"
+                      style={{ color: "var(--ts-text-2)" }}
+                    >
+                      {desc}
+                    </p>
+                  </div>
+                </SectionReveal>
+              );
+
+              if (i < 2) {
+                const arrow = (
+                  <div key={`arrow-${step}`} className="hidden sm:flex items-center justify-center" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--ts-muted)" }}>
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                );
+                return [card, arrow];
+              }
+              return [card];
+            })}
           </div>
         </div>
       </section>
@@ -406,10 +420,10 @@ export default function Home() {
             </div>
           </SectionReveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-2xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-3xl">
             {/* Free — Explore */}
             <SectionReveal delay={0}>
-              <div className="glass-card rounded-xl p-6 flex flex-col gap-5 h-full">
+              <div className="glass-card rounded-xl p-8 flex flex-col gap-5 h-full">
                 <div className="flex flex-col gap-1">
                   <p
                     className="text-sm font-semibold text-white"
@@ -445,7 +459,7 @@ export default function Home() {
                   ].map((f) => (
                     <li
                       key={f}
-                      className="flex items-start gap-2 text-sm"
+                      className="flex items-start gap-2 text-base"
                       style={{ color: "var(--ts-text-2)" }}
                     >
                       <Check
@@ -471,7 +485,7 @@ export default function Home() {
 
             {/* Pro — Learn (highlighted) */}
             <SectionReveal delay={0.12}>
-              <div className="pro-card-glow rounded-xl p-6 flex flex-col gap-5 relative h-full">
+              <div className="pro-card-glow rounded-xl p-8 flex flex-col gap-5 relative h-full">
                 {/* Most popular badge */}
                 <div
                   className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-semibold whitespace-nowrap"
@@ -522,7 +536,7 @@ export default function Home() {
                   ].map((f) => (
                     <li
                       key={f}
-                      className="flex items-start gap-2 text-sm"
+                      className="flex items-start gap-2 text-base"
                       style={{ color: "var(--ts-text-2)" }}
                     >
                       <Check

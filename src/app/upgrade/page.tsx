@@ -183,7 +183,7 @@ function UpgradeContent() {
       {/* ── Nav ────────────────────────────────────────────────────────── */}
       <SiteNav user={null} />
 
-      <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-10 relative z-10 pt-20">
+      <div className="w-full max-w-3xl mx-auto flex flex-col items-center gap-10 relative z-10 pt-20">
         {/* Heading */}
         <div className="text-center flex flex-col gap-3">
           <h1
@@ -202,7 +202,7 @@ function UpgradeContent() {
         </div>
 
         {/* Pricing cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
           {/* Monthly */}
           <div className="glass-card rounded-2xl p-6 flex flex-col gap-5">
             <div className="flex flex-col gap-1">
@@ -231,7 +231,7 @@ function UpgradeContent() {
               ].map((f) => (
                 <li
                   key={f}
-                  className="flex items-center gap-2 text-sm"
+                  className="flex items-center gap-2 text-base"
                   style={{ color: "var(--ts-text-2)" }}
                 >
                   <Check
@@ -299,7 +299,7 @@ function UpgradeContent() {
               ].map((f) => (
                 <li
                   key={f}
-                  className="flex items-center gap-2 text-sm"
+                  className="flex items-center gap-2 text-base"
                   style={{ color: "var(--ts-text-2)" }}
                 >
                   <Check
@@ -323,7 +323,7 @@ function UpgradeContent() {
 
         {/* Compare tiers — minimal reference */}
         <div
-          className="w-full max-w-xl rounded-xl border overflow-hidden"
+          className="w-full max-w-2xl rounded-xl border overflow-hidden"
           style={{ borderColor: "var(--border)" }}
         >
           <div

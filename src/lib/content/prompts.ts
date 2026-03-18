@@ -1,7 +1,7 @@
 // Prompt templates for content generation (Step 4)
 // Each role gets structurally different output — not just different words.
 
-import type { Role, ContentType } from "./types";
+import type { Role } from "./types";
 
 // [H4 fix] Defense-in-depth: strip XML-like tags from source content
 // before embedding in prompt XML structure, preventing tag injection.
@@ -18,39 +18,74 @@ Rules:
 - Cite specific products, versions, numbers, and dates from the sources.
 - Write like a knowledgeable friend, not a corporate AI.
 - Be direct. No filler, no "in today's rapidly evolving landscape" nonsense.
-- If the source material is thin, say less — don't pad.`;
+- If the source material is thin, say less — don't pad.
+
+Formatting rules:
+- Use **bold** for key terms, product names, and important numbers on first mention.
+- Use bullet points (- ) for any list of 3+ items. Never write lists as comma-separated paragraphs.
+- Keep paragraphs short: 2-4 sentences max. White space is your friend.
+- In "what_happened": if describing a sequence of events, use numbered steps. If describing a change, use a Before/After comparison.
+- In "so_what": lead each paragraph with a bold one-line takeaway, then explain.
+- In "now_what": each bullet must start with an action verb (Try, Update, Evaluate, Read, Test, Check).
+- Never use filler transitions like "Furthermore," "Additionally," "It's worth noting that." Just state the next point.`;
 
 const ROLE_INSTRUCTIONS: Record<Role, string> = {
-  general: `You are writing for a curious non-technical person who wants to understand AI developments without jargon.
+  general: `You are writing for someone who has never worked in tech. Think: explaining to your mom, your barber, or your neighbor. They're smart people — they just don't know what an API is.
 
-- Explain technical concepts using everyday analogies
-- Focus on "why should I care?" and real-world impact
-- Avoid acronyms unless you define them first
-- Use concrete examples anyone can relate to (apps they use, tasks they do)
-- The "Now What?" section should suggest things a non-technical person can actually do`,
+- Explain EVERY technical concept with a simple analogy or comparison to something physical/everyday. Example: "A language model is like autocomplete on your phone, but for entire paragraphs."
+- Define every acronym on first use. If a concept needs more than one sentence to explain, add a "Think of it like..." aside.
+- Focus on "how does this affect my daily life?" — connect to apps they already use (Google, Netflix, their phone's camera, Siri/Alexa).
+- Include at least one concrete real-life example per section: "For example, if you use Google Photos, this means..."
+- Use short paragraphs (2-3 sentences max). Use **bold** for key terms when first introduced.
+- In "what_happened": structure as clear steps when describing a process (Step 1, Step 2...) or use a simple Before/After when describing a change.
+- The "Now What?" bullets should be things a non-tech person can literally do today — not "evaluate the API" but "Open Settings > Privacy on your iPhone."
+- NEVER assume the reader knows what machine learning, neural networks, tokens, fine-tuning, or inference mean.`,
 
   developer: `You are writing for a software developer who builds with AI tools and APIs.
 
-- Include specific technical details: API names, model versions, parameter changes
-- Show code-relevant implications: what breaks, what's new, migration paths
-- The "So What?" section should cover: impact on existing codebases, new capabilities unlocked
-- The "Now What?" section should include concrete actions: "try this API", "update this dependency", "prototype this pattern"
-- Use technical language freely — they know what embeddings, fine-tuning, and inference mean`,
+- Include specific technical details: API names, model versions, parameter changes, pricing changes.
+- Format all code-related information as bullet points, not paragraphs. Example:
+  - **New endpoint:** \`POST /v2/embeddings\`
+  - **Breaking change:** \`max_tokens\` renamed to \`max_completion_tokens\`
+  - **Migration:** Replace \`model="gpt-4"\` with \`model="gpt-4-turbo"\`
+- When listing multiple changes, capabilities, or specs, ALWAYS use bullet points.
+- The "So What?" section should cover: impact on existing codebases, new capabilities unlocked, performance/cost changes.
+- The "Now What?" section should be a concrete checklist:
+  - "Try this API: [specific endpoint]"
+  - "Update this dependency: [package@version]"
+  - "Prototype this pattern: [specific pattern]"
+- Use technical language freely — they know what embeddings, fine-tuning, and inference mean.
+- Include version numbers, dates, and pricing where available.`,
 
   pm: `You are writing for a product manager who needs to understand AI for product decisions.
 
-- Frame everything in product terms: features, user value, competitive positioning
-- The "So What?" section should cover: product implications, feature opportunities, competitive moves
-- The "Now What?" section should include sprint-actionable items: "evaluate for roadmap", "test with users", "brief engineering on..."
-- Include comparisons to existing products/features users already know
-- Focus on what's now possible that wasn't before, from a product perspective`,
+- Frame everything in product terms: features, user value, competitive positioning.
+- When describing features/capabilities, use a Before vs After format:
+  **Before:** Users had to manually...
+  **After:** The new feature automatically...
+- Structure competitive implications as bullet points with specific company/product names.
+- The "So What?" section should cover: product implications, feature opportunities, competitive moves.
+- The "Now What?" section should be sprint-actionable tasks:
+  - "**Evaluate:** Test [product] against current [feature]"
+  - "**Brief:** Share [finding] with engineering"
+  - "**Roadmap:** Consider adding [feature] to Q[X] planning"
+- Include comparisons to existing products/features users already know.
+- Focus on what's now possible that wasn't before.`,
 
   cto: `You are writing for a CTO or engineering leader making strategic technical decisions.
 
-- Frame in terms of architecture, cost, team capability, and strategic positioning
-- The "So What?" section should cover: build-vs-buy implications, infrastructure impact, hiring needs
-- The "Now What?" section should include: evaluation criteria, risk assessment, timeline considerations
-- Include cost implications where relevant (API pricing, compute requirements, team ramp-up)
+- Frame in terms of architecture, cost, team capability, and strategic positioning.
+- Use structured formats for decision-relevant information:
+  **Build cost:** [estimate] | **Buy cost:** [estimate] | **Timeline:** [estimate]
+- The "So What?" section should cover: build-vs-buy implications, infrastructure impact, hiring needs.
+- The "Now What?" section should be a prioritized action list:
+  - **P0:** [immediate action]
+  - **P1:** [this sprint]
+  - **P2:** [this quarter]
+- Include risk assessment where relevant:
+  - **High risk:** [risk + mitigation]
+  - **Low risk:** [risk]
+- Include cost implications: API pricing, compute requirements, team ramp-up time.
 - Address "should we adopt this?" not just "what is this?"`,
 };
 
@@ -112,6 +147,8 @@ export function buildExplainerUserPrompt(
 <source_material>
 ${sourcesText}
 </source_material>
+
+RELEVANCE FILTER: Only use information from sources that is DIRECTLY about "${sanitizeForPrompt(topicTitle)}". If a source mentions this topic only in passing or is primarily about something else, IGNORE that source entirely. Do not include tangential information.
 
 Generate a learning brief about this topic. Your response must be valid JSON matching this exact schema:
 

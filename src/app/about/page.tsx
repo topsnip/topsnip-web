@@ -18,14 +18,14 @@ export default function AboutPage() {
       {/* ── Floating Nav ─────────────── */}
       <SiteNav user={null} />
 
-      <div className="max-w-2xl mx-auto flex flex-col gap-12 pt-12">
+      <div className="max-w-3xl mx-auto flex flex-col gap-12 pt-16">
         {/* Hero */}
         <div className="flex flex-col gap-4">
           <h1 className="text-3xl font-extrabold tracking-tight text-white">
             What is TopSnip?
           </h1>
           <p
-            className="text-base leading-relaxed"
+            className="text-base leading-[1.8]"
             style={{ color: "var(--ts-text-2)" }}
           >
             You know the feeling. Something big happens in AI — a new model
@@ -88,7 +88,7 @@ export default function AboutPage() {
                 <div className="flex flex-col gap-1">
                   <p className="text-sm font-semibold text-white">{title}</p>
                   <p
-                    className="text-sm leading-relaxed"
+                    className="text-base leading-relaxed"
                     style={{ color: "var(--ts-text-2)" }}
                   >
                     {desc}
@@ -170,7 +170,7 @@ export default function AboutPage() {
                 <div className="flex flex-col gap-0.5">
                   <p className="text-sm font-semibold text-white">{title}</p>
                   <p
-                    className="text-sm leading-relaxed"
+                    className="text-base leading-relaxed"
                     style={{ color: "var(--ts-text-2)" }}
                   >
                     {desc}
