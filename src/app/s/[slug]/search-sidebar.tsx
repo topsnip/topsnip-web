@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { YouTubeRecs } from "@/components/learning-brief";
 import type { LearningBriefYouTubeRec } from "@/components/learning-brief";
+import { getCategoryColor } from "@/lib/utils/category-colors";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -82,6 +83,7 @@ export function SearchSidebar({
             border: "1px solid var(--border)",
             borderRadius: "12px",
             padding: "1.25rem",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
           }}
         >
           <p
@@ -107,6 +109,7 @@ export function SearchSidebar({
             border: "1px solid var(--border)",
             borderRadius: "12px",
             padding: "1.25rem",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
           }}
         >
           <p
@@ -120,20 +123,31 @@ export function SearchSidebar({
             Related Topics
           </p>
           <div className="flex flex-wrap gap-2">
-            {relatedTopics.map((topic) => (
-              <button
-                key={topic}
-                onClick={() => handleTopicClick(topic)}
-                className="pill-interactive rounded-full px-3 py-1.5 text-xs font-medium"
-                style={{
-                  background: "var(--ts-accent-3, rgba(232,115,74,0.04))",
-                  border: "1px solid var(--ts-accent-6, rgba(232,115,74,0.08))",
-                  color: "var(--ts-accent)",
-                }}
-              >
-                {topic}
-              </button>
-            ))}
+            {relatedTopics.map((topic) => {
+              // Derive a color from the topic text for visual variety
+              const topicLower = topic.toLowerCase();
+              let color = "var(--ts-accent)";
+              if (topicLower.includes("model") || topicLower.includes("gpt") || topicLower.includes("claude") || topicLower.includes("llm")) color = getCategoryColor("models");
+              else if (topicLower.includes("tool") || topicLower.includes("api") || topicLower.includes("sdk") || topicLower.includes("chain")) color = getCategoryColor("tools");
+              else if (topicLower.includes("research") || topicLower.includes("paper") || topicLower.includes("benchmark")) color = getCategoryColor("research");
+              else if (topicLower.includes("safe") || topicLower.includes("ethic") || topicLower.includes("regul")) color = getCategoryColor("ethics");
+              else if (topicLower.includes("open") || topicLower.includes("source")) color = getCategoryColor("open-source");
+
+              return (
+                <button
+                  key={topic}
+                  onClick={() => handleTopicClick(topic)}
+                  className="pill-interactive rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
+                  style={{
+                    background: `${color}15`,
+                    border: `1px solid ${color}25`,
+                    color: color,
+                  }}
+                >
+                  {topic}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -146,6 +160,7 @@ export function SearchSidebar({
           border: "1px solid var(--border)",
           borderRadius: "12px",
           padding: "1.25rem",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
         }}
       >
         <div className="flex flex-col gap-2">

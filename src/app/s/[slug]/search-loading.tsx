@@ -66,7 +66,18 @@ export function SearchLoading({ query }: SearchLoadingProps) {
   }, [stage]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 relative">
+      {/* Background glow */}
+      <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-[400px] h-[300px] rounded-full pointer-events-none"
+        aria-hidden="true"
+        style={{
+          background: "var(--ts-accent)",
+          opacity: 0.08,
+          filter: "blur(80px)",
+          animation: "pulseGlow 3s ease-in-out infinite",
+        }}
+      />
+
       {/* Query heading */}
       <div className="flex flex-col gap-2">
         <h1
@@ -266,6 +277,17 @@ export function SearchLoading({ query }: SearchLoadingProps) {
           60%,
           100% {
             opacity: 0;
+          }
+        }
+        @keyframes pulseGlow {
+          0%,
+          100% {
+            opacity: 0.06;
+            transform: translateX(-50%) scale(1);
+          }
+          50% {
+            opacity: 0.12;
+            transform: translateX(-50%) scale(1.1);
           }
         }
       `}</style>
