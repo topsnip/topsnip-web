@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Zap, Newspaper, AlertCircle, ListChecks, ExternalLink } from "lucide-react";
@@ -101,7 +101,7 @@ function renderContentBlock(text: string): React.ReactNode {
 
       if (type === "bullet") {
         elements.push(
-          <ul key={key++} className={`space-y-2 ${elements.length > 0 ? "mt-4" : ""}`}>
+          <ul key={key++} className={`space-y-3 ${elements.length > 0 ? "mt-4" : ""}`}>
             {run.map((line, li) => (
               <li key={li} className="flex items-start gap-3">
                 <span
@@ -135,7 +135,7 @@ function renderContentBlock(text: string): React.ReactNode {
       } else {
         // Text lines — join back into a paragraph
         elements.push(
-          <p key={key++} className={elements.length > 0 ? "mt-3" : ""}>
+          <p key={key++} className={elements.length > 0 ? "mt-4" : ""}>
             {renderMarkdown(run.join(" "))}
           </p>
         );
@@ -171,6 +171,67 @@ const sectionVariants = {
 const customEase = [0.16, 1, 0.3, 1] as const;
 
 const headingFont = "var(--font-heading), 'Instrument Serif', serif";
+
+// ── Collapsible content wrapper ─────────────────────────────────────────────
+
+function CollapsibleContent({ children, maxHeight = 400, bgColor = "var(--ts-surface)" }: { children: React.ReactNode; maxHeight?: number; bgColor?: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [needsCollapse, setNeedsCollapse] = useState(false);
+
+  useEffect(() => {
+    if (contentRef.current && contentRef.current.scrollHeight > maxHeight) {
+      setNeedsCollapse(true);
+    }
+  }, [maxHeight]);
+
+  return (
+    <div className="relative">
+      <div
+        ref={contentRef}
+        style={{
+          maxHeight: !expanded && needsCollapse ? `${maxHeight}px` : undefined,
+          overflow: !expanded && needsCollapse ? "hidden" : undefined,
+        }}
+      >
+        {children}
+      </div>
+      {needsCollapse && !expanded && (
+        <div className="absolute bottom-0 left-0 right-0">
+          <div className="h-24" style={{ background: `linear-gradient(transparent, ${bgColor})` }} />
+          <div className="flex justify-center pb-2" style={{ background: bgColor }}>
+            <button
+              onClick={() => setExpanded(true)}
+              className="text-xs font-medium px-4 py-1.5 rounded-full transition-colors"
+              style={{
+                color: "var(--ts-accent)",
+                background: "var(--ts-accent-6)",
+                border: "1px solid var(--ts-accent-12)",
+              }}
+            >
+              Read more ↓
+            </button>
+          </div>
+        </div>
+      )}
+      {needsCollapse && expanded && (
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={() => setExpanded(false)}
+            className="text-xs font-medium px-4 py-1.5 rounded-full transition-colors"
+            style={{
+              color: "var(--ts-text-2)",
+              background: "var(--ts-accent-3)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            Show less ↑
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── Component ──────────────────────────────────────────────────────────────
 
@@ -229,7 +290,7 @@ export function LearningBrief({
   }
 
   return (
-    <div className="flex flex-col" style={{ gap: "1.5rem" }}>
+    <div className="flex flex-col" style={{ gap: "2rem" }}>
       {/* ── TL;DR ─────────────────────────────────────────────────────── */}
       <Section delay={0}>
         <div
@@ -332,7 +393,7 @@ export function LearningBrief({
                   background: "var(--ts-surface)",
                   border: "1px solid var(--border)",
                   borderRadius: "12px",
-                  padding: "1.5rem",
+                  padding: "2rem",
                 }}
               >
                 <p
@@ -347,12 +408,14 @@ export function LearningBrief({
                   <Newspaper size={12} className="inline mr-1.5" />
                   What Happened
                 </p>
-                <div
-                  className="text-base leading-relaxed"
-                  style={{ color: "var(--foreground)", lineHeight: 1.7 }}
-                >
-                  {renderContentBlock(whatHappened)}
-                </div>
+                <CollapsibleContent maxHeight={400}>
+                  <div
+                    className="text-base leading-relaxed"
+                    style={{ color: "var(--foreground)", lineHeight: 1.7 }}
+                  >
+                    {renderContentBlock(whatHappened)}
+                  </div>
+                </CollapsibleContent>
               </div>
             </Section>
           )}
@@ -367,7 +430,7 @@ export function LearningBrief({
                   border: "1px solid var(--ts-accent-12)",
                   borderLeft: "3px solid var(--ts-accent)",
                   borderRadius: "12px",
-                  padding: "1.5rem",
+                  padding: "2rem",
                 }}
               >
                 <p
@@ -382,12 +445,14 @@ export function LearningBrief({
                   <AlertCircle size={12} className="inline mr-1.5" />
                   So What?
                 </p>
-                <div
-                  className="text-base leading-relaxed"
-                  style={{ color: "var(--foreground)", lineHeight: 1.7 }}
-                >
-                  {renderContentBlock(soWhat)}
-                </div>
+                <CollapsibleContent maxHeight={350} bgColor="var(--ts-accent-6)">
+                  <div
+                    className="text-base leading-relaxed"
+                    style={{ color: "var(--foreground)", lineHeight: 1.7 }}
+                  >
+                    {renderContentBlock(soWhat)}
+                  </div>
+                </CollapsibleContent>
               </div>
             </Section>
           )}
@@ -401,7 +466,7 @@ export function LearningBrief({
                   background: "var(--ts-surface)",
                   border: "1px solid var(--border)",
                   borderRadius: "12px",
-                  padding: "1.5rem",
+                  padding: "2rem",
                 }}
               >
                 <p
@@ -430,7 +495,7 @@ export function LearningBrief({
                   background: "var(--ts-surface)",
                   border: "1px solid var(--border)",
                   borderRadius: "12px",
-                  padding: "1.5rem",
+                  padding: "2rem",
                 }}
               >
                 <p

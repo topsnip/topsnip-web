@@ -222,7 +222,7 @@ function ResultContent() {
       >
         <form
           onSubmit={handleNewSearch}
-          className="max-w-[1120px] mx-auto flex items-center gap-2"
+          className="max-w-[1280px] mx-auto flex items-center gap-2"
         >
           <div
             className="flex-1 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm"
@@ -255,7 +255,7 @@ function ResultContent() {
       </div>
 
       {/* Main content */}
-      <main className="flex-1 max-w-[1120px] mx-auto w-full px-4 py-8">
+      <main className="flex-1 max-w-[1280px] mx-auto w-full px-4 sm:px-6 py-8">
         {/* Loading state — progressive loader */}
         {loading && <SearchLoading query={query} />}
 
@@ -407,7 +407,7 @@ function ResultContent() {
           }} />
           <form
             onSubmit={handleFollowUp}
-            className="max-w-[1120px] mx-auto flex gap-2"
+            className="max-w-[1280px] mx-auto flex gap-2"
           >
             <div
               className="flex-1 flex items-center gap-2 rounded-xl border px-4 py-2.5"
