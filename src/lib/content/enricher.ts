@@ -169,10 +169,16 @@ async function fetchArticle(url: string): Promise<string | null> {
 
 // ── Main enrichment function ────────────────────────────────────────────────
 
+// Total time budget for enrichment — leave room for Claude calls
+const ENRICHMENT_TIMEOUT_MS = 25_000;
+
 export async function enrichSourceMaterial(
   material: TopicSourceMaterial
 ): Promise<TopicSourceMaterial> {
+  const deadline = Date.now() + ENRICHMENT_TIMEOUT_MS;
   const searchResults = await searchWeb(material.topicTitle);
+
+  if (Date.now() > deadline) return material;
 
   if (searchResults.length === 0) {
     return material;
