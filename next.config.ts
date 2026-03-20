@@ -77,23 +77,10 @@ export default withSentryConfig(nextConfig, {
   // Suppresses source map upload logs during build
   silent: !process.env.CI,
 
-  // Upload source maps for better stack traces
-  // Requires SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT env vars
+  // Upload source maps only when auth token is present
   sourcemaps: {
     disable: !process.env.SENTRY_AUTH_TOKEN,
   },
 
-  // Automatically tree-shake Sentry logger statements
-  disableLogger: true,
-
-  // Hide source maps from clients
-  hideSourceMaps: true,
-
-  // Tunnel Sentry events through the app to avoid ad blockers
-  // tunnelRoute: "/monitoring",
-
-  // Widen the upload timeout for large source maps
-  sourcemapUploadOptions: {
-    telemetry: false,
-  },
+  telemetry: false,
 });
