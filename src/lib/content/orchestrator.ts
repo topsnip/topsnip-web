@@ -28,10 +28,12 @@ export async function runContentGeneration(
   let topicsPublished = 0;
 
   // 1. Find detected topics, ordered by trending score (most important first)
+  // Skip evergreen topics — they have hardcoded content and no source items
   const { data: pendingTopics, error: fetchErr } = await supabase
     .from("topics")
     .select("id, title, trending_score")
     .eq("status", "detected")
+    .eq("is_evergreen", false)
     .order("trending_score", { ascending: false })
     .limit(MAX_TOPICS_PER_RUN);
 
