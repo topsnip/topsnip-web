@@ -13,6 +13,7 @@ import { MarkUnderstood } from "./mark-understood";
 import { ShareButton } from "./share-button";
 import { LearningBrief } from "@/components/learning-brief/LearningBrief";
 import { getCategoryColor } from "@/lib/utils/category-colors";
+import { mapTopicToCategory } from "@/lib/utils/category-mapper";
 import { headingFont } from "@/lib/constants";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -128,7 +129,7 @@ export default async function TopicDetailPage({
   const { data: topic } = await supabase
     .from("topics")
     .select(
-      "id, slug, title, status, trending_score, is_breaking, published_at, primary_tag",
+      "id, slug, title, status, trending_score, is_breaking, published_at",
     )
     .eq("slug", slug)
     .eq("status", "published")
@@ -193,6 +194,8 @@ export default async function TopicDetailPage({
   content.what_happened = decodeHtml(content.what_happened);
   content.so_what = decodeHtml(content.so_what);
   content.now_what = decodeHtml(content.now_what);
+
+  const categoryTag = mapTopicToCategory(topic.title);
 
   // ── Fetch YouTube recommendations ────────────────────────────────────────
 
@@ -290,10 +293,10 @@ export default async function TopicDetailPage({
       {/* Category header banner */}
       <div className="absolute top-0 left-0 right-0 h-64 pointer-events-none overflow-hidden" aria-hidden="true">
         <div className="absolute inset-0" style={{
-          background: `linear-gradient(180deg, ${getCategoryColor(topic.primary_tag)}12 0%, transparent 100%)`
+          background: `linear-gradient(180deg, ${getCategoryColor(categoryTag)}12 0%, transparent 100%)`
         }} />
         <div className="absolute top-0 right-0 w-96 h-96 -translate-y-1/2 translate-x-1/4 rounded-full opacity-20 blur-3xl"
-          style={{ background: getCategoryColor(topic.primary_tag) }} />
+          style={{ background: getCategoryColor(categoryTag) }} />
       </div>
 
       {/* Scroll progress bar */}
@@ -422,7 +425,7 @@ export default async function TopicDetailPage({
 
         {/* ── Visual divider ──────────────────────────────────────────── */}
         <div className="h-px w-full my-8" style={{
-          background: `linear-gradient(90deg, transparent, ${getCategoryColor(topic.primary_tag)}40, transparent)`
+          background: `linear-gradient(90deg, transparent, ${getCategoryColor(categoryTag)}40, transparent)`
         }} />
 
         {/* ── Two-column layout ───────────────────────────────────────── */}
