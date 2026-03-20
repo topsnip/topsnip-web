@@ -63,7 +63,7 @@ interface KnowledgeSummary {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const headingFont = "var(--font-heading), 'Instrument Serif', serif";
+import { headingFont } from "@/lib/constants";
 
 // ── Progress Ring SVG ────────────────────────────────────────────────────────
 

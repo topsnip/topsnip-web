@@ -14,8 +14,7 @@ import { SiteNav } from "@/components/SiteNav";
 import { SectionReveal } from "@/components/SectionReveal";
 import { InlinePreview } from "@/app/inline-preview";
 import { AnimatedCounter } from "@/app/animated-counter";
-
-const headingFont = "var(--font-heading), 'Instrument Serif', serif";
+import { headingFont } from "@/lib/constants";
 
 const ALL_SUGGESTIONS = [
   "What is MCP?",

@@ -1,6 +1,5 @@
 import { SiteNav } from "@/components/SiteNav";
-
-const headingFont = "var(--font-heading), 'Instrument Serif', serif";
+import { headingFont } from "@/lib/constants";
 
 function SkeletonBar({ w, h = "h-4" }: { w: string; h?: string }) {
   return (

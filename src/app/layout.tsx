@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Instrument_Serif, Inter, Geist_Mono } from "next/font/google";
+import PostHogProvider from "@/components/providers/PostHogProvider";
 import "./globals.css";
 
 const instrumentSerif = Instrument_Serif({
@@ -68,7 +70,11 @@ export default function RootLayout({
       <body
         className={`${instrumentSerif.variable} ${inter.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <Suspense fallback={null}>
+          <PostHogProvider>
+            {children}
+          </PostHogProvider>
+        </Suspense>
       </body>
     </html>
   );

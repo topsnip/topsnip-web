@@ -1,8 +1,7 @@
 "use client";
 
 import { Sparkles, Layers } from "lucide-react";
-
-const headingFont = "var(--font-heading), 'Instrument Serif', serif";
+import { headingFont } from "@/lib/constants";
 
 export function InlinePreview() {
   return (

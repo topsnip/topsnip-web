@@ -56,7 +56,7 @@ function FlameIcon({ active }: { active: boolean }) {
 
 // ── Stats Bar ───────────────────────────────────────────────────────────────
 
-const headingFont = "var(--font-heading), 'Instrument Serif', serif";
+import { headingFont } from "@/lib/constants";
 
 const LEVEL_LABELS: Record<string, string> = {
   curious: "Curious",

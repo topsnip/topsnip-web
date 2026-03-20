@@ -38,7 +38,7 @@ interface LevelBarProps {
   xp: number;
 }
 
-const headingFont = "var(--font-heading), 'Instrument Serif', serif";
+import { headingFont } from "@/lib/constants";
 
 export default function LevelBar({ level, xp }: LevelBarProps) {
   const [mounted, setMounted] = useState(false);

@@ -6,8 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { FloatingHeadlines } from "./floating-headlines";
-
-const headingFont = "var(--font-heading), 'Instrument Serif', serif";
+import { headingFont } from "@/lib/constants";
 
 function LoginForm() {
   const router = useRouter();

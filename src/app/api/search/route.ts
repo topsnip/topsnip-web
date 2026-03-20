@@ -6,6 +6,8 @@ import { createServiceClient } from "@/lib/ingest/service-client"; // [M1 fix] u
 import { anonymousSearchLimiter, proSearchLimiter, freeSearchLimiter } from "@/lib/ratelimit";
 import { checkOrigin } from "@/lib/csrf";
 import {
+  buildExplainerSystemPrompt,
+  buildExplainerUserPrompt,
   buildOnDemandSystemPrompt,
   buildOnDemandUserPrompt,
 } from "@/lib/content/prompts";
@@ -112,6 +114,7 @@ async function searchYouTube(query: string, maxResults = 6) {
 // ── On-demand content generation ────────────────────────────────────────────
 
 const MODEL = "claude-haiku-4-5";
+const GROUNDED_MODEL = "claude-sonnet-4-5"; // Use Sonnet when we have source material to work with
 const CLAUDE_TIMEOUT_MS = 30_000; // [M6 fix] 30-second timeout on Claude calls
 
 interface GeneratedBrief {
@@ -122,24 +125,123 @@ interface GeneratedBrief {
   sources: Array<{ title: string; url: string; platform: string }>;
 }
 
+interface SourceItem {
+  title: string;
+  url: string;
+  content_snippet: string;
+  platform: string;
+}
+
+// ── Search existing source material for relevant content ────────────────────
+// Before falling back to pure AI knowledge, check if we already have
+// real source data about this topic from our ingestion pipeline.
+
+async function findRelevantSources(
+  serviceClient: SupabaseClient,
+  query: string
+): Promise<SourceItem[]> {
+  // Build search terms: split query into meaningful keywords (>3 chars)
+  const keywords = query
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 3);
+
+  if (keywords.length === 0) return [];
+
+  // Use Postgres full-text search via ilike on title + content_snippet.
+  // Search for items from the last 7 days that match the query keywords.
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  // Search by title — most relevant signal
+  const { data: items } = await serviceClient
+    .from("source_items")
+    .select("title, url, content_snippet, source_id")
+    .gte("ingested_at", sevenDaysAgo)
+    .or(keywords.map((k) => `title.ilike.%${k}%`).join(","))
+    .order("engagement_score", { ascending: false })
+    .limit(20);
+
+  if (!items || items.length === 0) return [];
+
+  // Resolve platform for each item
+  const sourceIds = [...new Set(items.map((i) => i.source_id))];
+  const { data: sources } = await serviceClient
+    .from("sources")
+    .select("id, platform")
+    .in("id", sourceIds);
+
+  const platformMap = new Map(
+    (sources ?? []).map((s: { id: string; platform: string }) => [s.id, s.platform])
+  );
+
+  // Score relevance: how many query keywords appear in the title?
+  // Only keep items where at least half the keywords match.
+  const scored = items
+    .map((item) => {
+      const titleLower = item.title.toLowerCase();
+      const matchCount = keywords.filter((k) => titleLower.includes(k)).length;
+      return {
+        title: item.title,
+        url: item.url ?? "",
+        content_snippet: item.content_snippet ?? "",
+        platform: platformMap.get(item.source_id) ?? "unknown",
+        relevance: matchCount / keywords.length,
+      };
+    })
+    .filter((item) => item.relevance >= 0.5)
+    .sort((a, b) => b.relevance - a.relevance)
+    .slice(0, 8); // Top 8 most relevant sources
+
+  return scored;
+}
+
+// ── Generate brief — source-grounded when possible, knowledge-based as fallback
+
 async function generateOnDemandBrief(
+  serviceClient: SupabaseClient,
   query: string,
   role: Role
 ): Promise<GeneratedBrief> {
   const anthropic = getAnthropic();
 
-  // On-demand uses a different system prompt — Claude uses its own knowledge
-  // since we don't have ingested source material for arbitrary search queries.
-  const systemPrompt = buildOnDemandSystemPrompt(role);
-  const userPrompt = buildOnDemandUserPrompt(query);
+  // First: search our ingested source material for relevant content
+  const relevantSources = await findRelevantSources(serviceClient, query);
+  const hasSourceMaterial = relevantSources.length >= 2;
+
+  let systemPrompt: string;
+  let userPrompt: string;
+  let model: string;
+
+  if (hasSourceMaterial) {
+    // Source-grounded generation — same prompts as the ingestion pipeline.
+    // The AI writes from real, recent source data — not training knowledge.
+    systemPrompt = buildExplainerSystemPrompt(role);
+    userPrompt = buildExplainerUserPrompt(
+      query,
+      relevantSources.map((s) => ({
+        title: s.title,
+        url: s.url,
+        contentSnippet: s.content_snippet,
+        platform: s.platform,
+      }))
+    );
+    model = GROUNDED_MODEL; // Sonnet for quality when we have real sources
+  } else {
+    // Fallback: no relevant source material found — use Claude's knowledge
+    systemPrompt = buildOnDemandSystemPrompt(role);
+    userPrompt = buildOnDemandUserPrompt(query);
+    model = MODEL; // Haiku for knowledge-based generation
+  }
 
   // [M6 fix] Add timeout to Claude API call
+  const timeoutMs = hasSourceMaterial ? 45_000 : CLAUDE_TIMEOUT_MS;
   const message = await anthropic.messages.create({
-    model: MODEL,
+    model,
     max_tokens: 3000,
     system: systemPrompt,
     messages: [{ role: "user", content: userPrompt }],
-  }, { signal: AbortSignal.timeout(CLAUDE_TIMEOUT_MS) });
+  }, { signal: AbortSignal.timeout(timeoutMs) });
 
   const text = message.content[0];
   if (text.type !== "text") throw new Error("Unexpected Claude response");
@@ -149,16 +251,27 @@ async function generateOnDemandBrief(
 
   const parsed = JSON.parse(jsonMatch[0]);
 
-  // [M3 fix] Validate source URLs
-  const sources = Array.isArray(parsed.sources)
-    ? parsed.sources
-        .filter((s: Record<string, string>) => s.url && isValidUrl(s.url))
-        .map((s: Record<string, string>) => ({
-          title: typeof s.title === "string" ? s.title : "",
-          url: s.url,
-          platform: typeof s.platform === "string" ? s.platform : "",
-        }))
-    : [];
+  // Build sources — from real source material when grounded, from AI when not
+  let sources: GeneratedBrief["sources"];
+  if (hasSourceMaterial) {
+    // Use the actual source URLs we fed in — these are real, verified links
+    sources = relevantSources.map((s) => ({
+      title: s.title,
+      url: s.url,
+      platform: s.platform,
+    }));
+  } else {
+    // [M3 fix] Validate source URLs from AI-generated content
+    sources = Array.isArray(parsed.sources)
+      ? parsed.sources
+          .filter((s: Record<string, string>) => s.url && isValidUrl(s.url))
+          .map((s: Record<string, string>) => ({
+            title: typeof s.title === "string" ? s.title : "",
+            url: s.url,
+            platform: typeof s.platform === "string" ? s.platform : "",
+          }))
+      : [];
+  }
 
   return {
     tldr: typeof parsed.tldr === "string" ? parsed.tldr : "",
@@ -380,7 +493,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 6. On-demand generation — no pre-generated topic exists
-    const brief = await generateOnDemandBrief(q, contentRole);
+    const brief = await generateOnDemandBrief(serviceClient, q, contentRole);
 
     // Find YouTube recommendations for "Go Deeper"
     const ytVideos = await searchYouTube(q);

@@ -30,7 +30,7 @@ const fadeVariants = {
   exit: { opacity: 0, y: -8 },
 };
 
-const headingFont = "var(--font-heading), 'Instrument Serif', serif";
+import { headingFont } from "@/lib/constants";
 
 // ── Component ──────────────────────────────────────────────────────────────
 

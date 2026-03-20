@@ -170,7 +170,7 @@ const sectionVariants = {
 
 const customEase = [0.16, 1, 0.3, 1] as const;
 
-const headingFont = "var(--font-heading), 'Instrument Serif', serif";
+import { headingFont } from "@/lib/constants";
 
 // ── Collapsible content wrapper ─────────────────────────────────────────────
 

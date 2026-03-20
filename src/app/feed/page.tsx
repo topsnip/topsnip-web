@@ -14,26 +14,11 @@ export const metadata = {
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { FeedSearchBar } from "./feed-search-bar";
 import { SiteNav } from "@/components/SiteNav";
-import { LearningDebt } from "./learning-debt";
-import { TrendingSuggestions, QuickSuggestions, QuietDayState } from "./trending-suggestions";
-import { FeedGreeting } from "./feed-greeting";
-import { TopicCardList } from "./topic-card";
+import { mapTopicToCategory } from "@/lib/utils/category-mapper";
+import { headingFont } from "@/lib/constants";
 import type { TopicCardData } from "./topic-card";
-import { SinceLastVisit } from "./since-last-visit";
-import { getCategoryColor } from "@/lib/utils/category-colors";
-
-// ── "Since you were last here" types ────────────────────────────────────────
-
-interface SinceLastVisitTopic {
-  topic_id: string;
-  topic_title: string;
-  topic_slug: string;
-  tldr: string;
-  published_at: string;
-  trending_score: number;
-}
+import { FeedClient } from "./feed-client";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -43,6 +28,7 @@ interface Topic {
   title: string;
   trending_score: number;
   is_breaking: boolean;
+  is_evergreen: boolean;
   platform_count: number;
   published_at: string | null;
 }
@@ -52,14 +38,13 @@ interface TopicContent {
   tldr: string;
 }
 
-interface FeedTopic extends Topic {
-  tldr: string;
+interface FeedRow {
+  topic_id: string;
   is_read: boolean;
+  is_new: boolean;
+  featured: boolean;
+  personal_score: number;
 }
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-const headingFont = "var(--font-heading), 'Instrument Serif', serif";
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
@@ -88,55 +73,53 @@ export default async function FeedPage() {
 
   const isPro = profile.plan === "pro";
 
-  // Fetch "since last visit" topics + update last_seen_at in parallel
-  const [sinceLastVisitResult] = await Promise.all([
-    supabase.rpc("get_since_last_visit", { p_user_id: user.id }),
+  // Fetch feed via v2 RPC + update last_seen_at in parallel
+  const [feedResult] = await Promise.all([
+    supabase.rpc("get_user_feed_v2", { p_user_id: user.id }),
     supabase
       .from("profiles")
       .update({ last_seen_at: new Date().toISOString() })
       .eq("id", user.id),
   ]);
 
-  const sinceLastVisitTopics: SinceLastVisitTopic[] =
-    sinceLastVisitResult.data ?? [];
-
-  // Fetch today's feed via RPC
-  const today = new Date().toISOString().split("T")[0];
-  const { data: feedRows } = await supabase.rpc("get_user_feed", {
-    p_user_id: user.id,
-    p_date: today,
-  });
-
-  const isQuietDay = feedRows?.[0]?.is_quiet_day ?? false;
-  const topicIds: string[] =
-    feedRows?.map((row: { topic_id: string }) => row.topic_id) ?? [];
+  const feedRows: FeedRow[] = feedResult.data ?? [];
+  const topicIds = feedRows.map((row) => row.topic_id);
   const readSet = new Set(
-    feedRows
-      ?.filter((row: { is_read: boolean }) => row.is_read)
-      .map((row: { topic_id: string }) => row.topic_id) ?? [],
+    feedRows.filter((row) => row.is_read).map((row) => row.topic_id),
   );
+  const newSet = new Set(
+    feedRows.filter((row) => row.is_new).map((row) => row.topic_id),
+  );
+  const featuredId = feedRows.find((row) => row.featured)?.topic_id ?? null;
 
-  // Fetch topics + content
-  let feedTopics: FeedTopic[] = [];
+  // Fetch topics + content in parallel
+  let allTopicCards: TopicCardData[] = [];
+  let lastPublishedAt: string | null = null;
+  const evergreenTopicIds = new Set<string>();
 
   if (topicIds.length > 0) {
     const [topicsResult, contentResult] = await Promise.all([
       supabase
         .from("topics")
         .select(
-          "id, slug, title, trending_score, is_breaking, platform_count, published_at",
+          "id, slug, title, trending_score, is_breaking, is_evergreen, platform_count, published_at",
         )
         .in("id", topicIds),
       supabase
         .from("topic_content")
         .select("topic_id, tldr")
         .in("topic_id", topicIds)
-        .eq("role", profile.plan === "pro" ? profile.role : "general"),
+        .eq("role", isPro ? profile.role : "general"),
     ]);
 
     const topics: Topic[] = topicsResult.data ?? [];
     const content: TopicContent[] = contentResult.data ?? [];
     const contentMap = new Map(content.map((c) => [c.topic_id, c.tldr]));
+
+    // Track evergreen topics from already-fetched data (no extra DB query)
+    for (const t of topics) {
+      if (t.is_evergreen) evergreenTopicIds.add(t.id);
+    }
 
     // If no role-specific content, fall back to general
     if (content.length === 0 && profile.role !== "general") {
@@ -153,30 +136,52 @@ export default async function FeedPage() {
 
     // Merge topics, preserving the personalized order from the RPC
     const topicMap = new Map(topics.map((t) => [t.id, t]));
-    feedTopics = topicIds
+    allTopicCards = topicIds
       .filter((id) => topicMap.has(id))
       .map((id) => {
         const t = topicMap.get(id)!;
         return {
-          ...t,
+          id: t.id,
+          slug: t.slug,
+          title: t.title,
           tldr: contentMap.get(t.id) ?? "",
+          trending_score: t.trending_score,
+          is_breaking: t.is_breaking,
+          platform_count: t.platform_count,
+          published_at: t.published_at,
           is_read: readSet.has(t.id),
+          is_new: newSet.has(t.id),
+          category: mapTopicToCategory(t.title),
         };
       });
+
+    // Determine last published_at for auto-refresh polling
+    const publishedDates = topics
+      .map((t) => t.published_at)
+      .filter((d): d is string => d !== null)
+      .sort()
+      .reverse();
+    lastPublishedAt = publishedDates[0] ?? null;
   }
 
-  // Map feed topics to TopicCardData shape
-  const topicCardData: TopicCardData[] = feedTopics.map((t) => ({
-    id: t.id,
-    slug: t.slug,
-    title: t.title,
-    tldr: t.tldr,
-    trending_score: t.trending_score,
-    is_breaking: t.is_breaking,
-    platform_count: t.platform_count,
-    published_at: t.published_at,
-    is_read: t.is_read,
-  }));
+  // Separate: featured, quick list, grid topics, evergreen topics
+  const featuredTopic = allTopicCards.find((t) => t.id === featuredId) ?? allTopicCards[0] ?? null;
+  const nonFeaturedTopics = allTopicCards.filter((t) => t.id !== featuredTopic?.id);
+  const quickListTopics = nonFeaturedTopics.slice(0, 3);
+  const gridTopics = nonFeaturedTopics.slice(3);
+
+  // Evergreen topics for the strip (use data already fetched — no extra query)
+  const evergreenTopics = allTopicCards
+    .filter((t) => evergreenTopicIds.has(t.id))
+    .map((t) => ({
+      id: t.id,
+      slug: t.slug,
+      title: t.title,
+      subtitle: t.tldr ? t.tldr.slice(0, 60) + (t.tldr.length > 60 ? "..." : "") : "",
+    }));
+
+  // Filter grid topics to exclude evergreen (they show in the strip instead)
+  const regularGridTopics = gridTopics.filter((t) => !evergreenTopicIds.has(t.id));
 
   return (
     <div
@@ -199,122 +204,16 @@ export default async function FeedPage() {
       <SiteNav user={{ id: user.id, plan: profile.plan ?? "free" }} />
 
       {/* ── Main Content ────────────────────────────────────────────────── */}
-      <div className="flex-1 w-full max-w-[900px] xl:max-w-6xl mx-auto px-[var(--space-page-x)] pt-28 pb-16 relative z-10">
-        <div className="xl:grid xl:grid-cols-[1fr_280px] xl:gap-8">
-          <main>
-            {/* Search bar (client component) with pulse dot */}
-            <div className="feed-search-container relative">
-              <FeedSearchBar />
-            </div>
-
-            {/* Quick suggestion chips below search */}
-            <QuickSuggestions />
-
-            {/* Time-of-day greeting */}
-            <FeedGreeting
-              email={user.email}
-              isQuietDay={isQuietDay}
-              topicCount={feedTopics.length}
-            />
-
-            {/* ── Quiet Day State ───────────────────────────────────────────── */}
-            {isQuietDay && (
-              <QuietDayState showLearningDebt={isPro} />
-            )}
-
-            {/* ── Empty State (no digest for today yet) ─────────────────────── */}
-            {!isQuietDay && feedTopics.length === 0 && (
-              <div
-                className="empty-state-gradient rounded-2xl p-8 flex flex-col items-center text-center gap-6"
-                style={{ animation: "fadeInUp 0.35s ease 0.06s both" }}
-              >
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-auto mb-4 opacity-60">
-                  <circle cx="35" cy="35" r="20" stroke="var(--ts-accent)" strokeWidth="2" />
-                  <line x1="49" y1="49" x2="65" y2="65" stroke="var(--ts-accent)" strokeWidth="2" strokeLinecap="round" />
-                  <circle cx="35" cy="35" r="8" stroke="var(--ts-accent)" strokeWidth="1.5" opacity="0.4" />
-                </svg>
-                <TrendingSuggestions />
-              </div>
-            )}
-
-            {/* ── Since You Were Last Here ─────────────────────────────────── */}
-            <SinceLastVisit topics={sinceLastVisitTopics} />
-
-            {/* ── Topic Cards ───────────────────────────────────────────────── */}
-            {feedTopics.length > 0 && (
-              <TopicCardList topics={topicCardData} />
-            )}
-
-            {/* ── Learning Debt (Pro only) ────────────────────────────────── */}
-            {isPro && <LearningDebt userId={user.id} isPro={isPro} />}
-          </main>
-
-          {/* ── Sidebar (xl screens only) ──────────────────────────────────── */}
-          <aside className="hidden xl:block sticky top-28 self-start">
-            <div className="flex flex-col gap-5">
-              {/* Quick Stats Card */}
-              <div className="rounded-xl p-5" style={{ background: "var(--ts-surface)", border: "1px solid var(--border)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)" }}>
-                <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--ts-muted)" }}>
-                  Your Activity
-                </p>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm" style={{ color: "var(--ts-text-2)" }}>Topics read</span>
-                    <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>&mdash;</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm" style={{ color: "var(--ts-text-2)" }}>Current streak</span>
-                    <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>&mdash;</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm" style={{ color: "var(--ts-text-2)" }}>Time saved</span>
-                    <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>&mdash;</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Category Filter Card */}
-              <div className="rounded-xl p-5" style={{ background: "var(--ts-surface)", border: "1px solid var(--border)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)" }}>
-                <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--ts-muted)" }}>
-                  Categories
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {["Models", "Tools", "Research", "Industry", "Open Source", "Ethics"].map((cat) => {
-                    const color = getCategoryColor(cat);
-                    return (
-                      <span
-                        key={cat}
-                        className="text-xs px-2.5 py-1 rounded-full cursor-pointer transition-all hover:scale-105"
-                        style={{
-                          background: `${color}15`,
-                          color: `${color}`,
-                          border: `1px solid ${color}25`,
-                        }}
-                      >
-                        {cat}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Quick Links */}
-              <div className="rounded-xl p-5" style={{ background: "var(--ts-surface)", border: "1px solid var(--border)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)" }}>
-                <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--ts-muted)" }}>
-                  Quick Links
-                </p>
-                <div className="space-y-2">
-                  <a href="/knowledge" className="text-sm block hover:underline" style={{ color: "var(--ts-text-2)" }}>
-                    Knowledge Dashboard &rarr;
-                  </a>
-                  <a href="/settings" className="text-sm block hover:underline" style={{ color: "var(--ts-text-2)" }}>
-                    Your Preferences &rarr;
-                  </a>
-                </div>
-              </div>
-            </div>
-          </aside>
-        </div>
+      <div className="flex-1 w-full max-w-[900px] mx-auto px-[var(--space-page-x)] pt-28 pb-16 relative z-10">
+        <FeedClient
+          featuredTopic={featuredTopic}
+          quickListTopics={quickListTopics}
+          gridTopics={regularGridTopics}
+          evergreenTopics={evergreenTopics}
+          lastPublishedAt={lastPublishedAt}
+          userId={user.id}
+          isPro={isPro}
+        />
       </div>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}

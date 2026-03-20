@@ -17,7 +17,7 @@ interface KnowledgeSummary {
   total_time_sec: number;
 }
 
-const headingFont = "var(--font-heading), 'Instrument Serif', serif";
+import { headingFont } from "@/lib/constants";
 
 export function LearningDebt({
   userId,

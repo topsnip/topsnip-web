@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   images: {
@@ -40,11 +41,11 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://us-assets.i.posthog.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' https://i.ytimg.com data: https: blob:",
               "font-src 'self' https://fonts.gstatic.com",
-              "connect-src 'self' https://*.supabase.co https://api.stripe.com https://checkout.stripe.com https://api.anthropic.com",
+              "connect-src 'self' https://*.supabase.co https://api.stripe.com https://checkout.stripe.com https://api.anthropic.com https://us.i.posthog.com https://*.ingest.sentry.io",
               "frame-src 'self' https://checkout.stripe.com https://js.stripe.com https://hooks.stripe.com",
               "frame-ancestors 'none'",
             ].join("; "),
@@ -70,4 +71,29 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Wrap with Sentry — only active when DSN is set.
+// Source maps are uploaded during build when SENTRY_AUTH_TOKEN is present.
+export default withSentryConfig(nextConfig, {
+  // Suppresses source map upload logs during build
+  silent: !process.env.CI,
+
+  // Upload source maps for better stack traces
+  // Requires SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT env vars
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+
+  // Automatically tree-shake Sentry logger statements
+  disableLogger: true,
+
+  // Hide source maps from clients
+  hideSourceMaps: true,
+
+  // Tunnel Sentry events through the app to avoid ad blockers
+  // tunnelRoute: "/monitoring",
+
+  // Widen the upload timeout for large source maps
+  sourcemapUploadOptions: {
+    telemetry: false,
+  },
+});

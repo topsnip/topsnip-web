@@ -40,9 +40,7 @@ export function getRelatedTopics(query: string): string[] {
   return TOPIC_MAP.default;
 }
 
-// ── Heading font ───────────────────────────────────────────────────────────
-
-const headingFont = "var(--font-heading), 'Instrument Serif', serif";
+import { headingFont } from "@/lib/constants";
 
 // ── Component ──────────────────────────────────────────────────────────────
 

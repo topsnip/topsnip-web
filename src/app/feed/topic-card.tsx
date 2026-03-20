@@ -1,21 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
-import {
-  Brain,
-  Code,
-  Globe,
-  Cpu,
-  Briefcase,
-  GraduationCap,
-  Zap,
-  CheckCircle,
-} from "lucide-react";
-import { SectionReveal } from "@/components/SectionReveal";
 import { getCategoryColor } from "@/lib/utils/category-colors";
-
-const headingFont = "var(--font-heading), 'Instrument Serif', serif";
+import { headingFont } from "@/lib/constants";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -30,33 +17,11 @@ export interface TopicCardData {
   published_at: string | null;
   is_read: boolean;
   primary_tag?: string;
+  category: string;
+  is_new: boolean;
 }
 
-// ── Category icon mapping ──────────────────────────────────────────────────
-
-function getCategoryIcon(tag?: string) {
-  const t = (tag ?? "").toLowerCase();
-  if (t.includes("llm") || t.includes("model") || t.includes("language")) return Cpu;
-  if (t.includes("code") || t.includes("dev") || t.includes("programming")) return Code;
-  if (t.includes("business") || t.includes("startup") || t.includes("enterprise")) return Briefcase;
-  if (t.includes("research") || t.includes("paper") || t.includes("academic")) return GraduationCap;
-  if (t.includes("product") || t.includes("tool") || t.includes("launch")) return Zap;
-  if (t.includes("agent")) return Brain;
-  return Globe;
-}
-
-function getCategoryLabel(tag?: string): string {
-  const t = (tag ?? "").toLowerCase();
-  if (t.includes("llm") || t.includes("model") || t.includes("language")) return "AI Models";
-  if (t.includes("code") || t.includes("dev") || t.includes("programming")) return "Code & Dev";
-  if (t.includes("business") || t.includes("startup") || t.includes("enterprise")) return "Business";
-  if (t.includes("research") || t.includes("paper") || t.includes("academic")) return "Research";
-  if (t.includes("product") || t.includes("tool") || t.includes("launch")) return "Products";
-  if (t.includes("agent")) return "AI Agents";
-  return "General";
-}
-
-// ── Relative time helper ───────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────
 
 function relativeTime(dateStr: string | null): string {
   if (!dateStr) return "";
@@ -72,18 +37,6 @@ function relativeTime(dateStr: string | null): string {
   return `${diffDay}d ago`;
 }
 
-// ── Reading time estimate ──────────────────────────────────────────────────
-
-function readingTime(tldr: string): string {
-  // Estimate: ~200 wpm for the full brief; TL;DR is ~10% of full content
-  const words = tldr.split(/\s+/).length;
-  const estimatedFullWords = words * 10;
-  const minutes = Math.max(2, Math.ceil(estimatedFullWords / 200));
-  return `${minutes} min read`;
-}
-
-// ── Decode HTML entities ───────────────────────────────────────────────────
-
 function decodeHtml(text: string): string {
   if (typeof window === "undefined") return text;
   const el = document.createElement("textarea");
@@ -91,149 +44,136 @@ function decodeHtml(text: string): string {
   return el.value;
 }
 
-// ── Single Topic Card ──────────────────────────────────────────────────────
+// ── TopicCard ──────────────────────────────────────────────────────────────
 
-function TopicCardInner({ topic, index }: { topic: TopicCardData; index: number }) {
-  const Icon = getCategoryIcon(topic.primary_tag);
-  const categoryLabel = getCategoryLabel(topic.primary_tag);
+interface TopicCardProps {
+  topic: TopicCardData;
+}
+
+export function TopicCard({ topic }: TopicCardProps) {
+  const categoryColor = getCategoryColor(topic.category);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.35,
-        delay: index * 0.05,
-        ease: [0.16, 1, 0.3, 1],
+    <Link
+      href={`/topic/${topic.slug}`}
+      className="topic-card card-interactive group block rounded-xl p-5 relative overflow-hidden"
+      style={{
+        background: "var(--ts-surface)",
+        border: "1px solid var(--border)",
+        borderTop: `3px solid ${categoryColor}`,
+        borderRadius: 12,
+        textDecoration: "none",
+        opacity: topic.is_read ? 0.55 : 1,
+        transition:
+          "border-color 200ms cubic-bezier(0.16,1,0.3,1), box-shadow 200ms cubic-bezier(0.16,1,0.3,1), transform 200ms cubic-bezier(0.16,1,0.3,1)",
+      }}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget;
+        el.style.transform = "translateY(-2px)";
+        el.style.boxShadow = "0 8px 24px rgba(0,0,0,0.3)";
+        el.style.borderTopColor = categoryColor;
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget;
+        el.style.transform = "translateY(0)";
+        el.style.boxShadow = "none";
       }}
     >
-      <Link
-        href={`/topic/${topic.slug}`}
-        className="topic-card card-interactive group block rounded-xl p-6 relative overflow-hidden"
+      {/* Hover glow */}
+      <div
+        className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
         style={{
-          background: "var(--ts-surface)",
-          border: "1px solid var(--border)",
-          borderLeft: `3px solid ${getCategoryColor(topic.primary_tag)}`,
-          borderRadius: 12,
-          textDecoration: "none",
-          opacity: topic.is_read ? 0.55 : 1,
+          background: `radial-gradient(ellipse at 50% 0%, ${categoryColor}08, transparent 70%)`,
+        }}
+      />
+
+      {/* Row 1: Category + relative time */}
+      <div className="flex items-center justify-between mb-3">
+        <span
+          className="text-[11px] font-semibold uppercase tracking-wider"
+          style={{ color: categoryColor }}
+        >
+          {topic.category.replace("-", " ")}
+        </span>
+        {topic.published_at && (
+          <span className="text-xs" style={{ color: "var(--ts-muted)" }}>
+            {relativeTime(topic.published_at)}
+          </span>
+        )}
+      </div>
+
+      {/* Title */}
+      <h2
+        className="mb-2 leading-snug text-white"
+        style={{
+          fontFamily: headingFont,
+          fontSize: "var(--text-xl)",
+          fontWeight: 400,
         }}
       >
-        {/* Hover glow */}
-        <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-          style={{ background: `radial-gradient(ellipse at 50% 0%, ${getCategoryColor(topic.primary_tag)}08, transparent 70%)` }} />
-        {/* Category row + badges */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{
-                background: `linear-gradient(135deg, ${getCategoryColor(topic.primary_tag)}20, ${getCategoryColor(topic.primary_tag)}08)`,
-                border: `1px solid ${getCategoryColor(topic.primary_tag)}30`,
-              }}
-            >
-              <Icon size={16} style={{ color: getCategoryColor(topic.primary_tag) }} />
-            </div>
-            <span
-              className="text-xs font-medium"
-              style={{ color: "var(--ts-text-2)" }}
-            >
-              {categoryLabel}
-            </span>
-          </div>
+        {decodeHtml(topic.title)}
+      </h2>
 
-          <div className="flex items-center gap-1.5">
-            {topic.is_read && (
-              <span
-                className="flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold"
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  color: "var(--ts-muted)",
-                  border: "1px solid var(--border)",
-                }}
-              >
-                Read <CheckCircle size={10} />
-              </span>
-            )}
-            {topic.is_breaking && (
-              <span
-                className="breaking-badge rounded-md px-2 py-0.5 text-[11px] font-semibold"
-                style={{
-                  background: "var(--ts-error-12)",
-                  color: "var(--error)",
-                  border: "1px solid var(--ts-error-25)",
-                }}
-              >
-                Breaking
-              </span>
-            )}
-            {topic.trending_score >= 70 && !topic.is_breaking && !topic.is_read && (
-              <span
-                className="rounded-md px-2 py-0.5 text-[11px] font-semibold"
-                style={{
-                  background: "var(--ts-accent-8)",
-                  color: "var(--ts-accent)",
-                  border: "1px solid var(--ts-accent-20)",
-                }}
-              >
-                Trending
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Title */}
-        <h2
-          className="mb-2 leading-snug text-white"
+      {/* TL;DR — 2-line clamp */}
+      {topic.tldr && (
+        <p
+          className="line-clamp-2 mb-3 leading-relaxed"
           style={{
-            fontFamily: headingFont,
-            fontSize: "var(--text-xl)",
-            fontWeight: 400,
+            color: "var(--ts-text-2)",
+            fontSize: "0.85rem",
           }}
         >
-          {decodeHtml(topic.title)}
-        </h2>
+          {decodeHtml(topic.tldr)}
+        </p>
+      )}
 
-        {/* TL;DR */}
-        {topic.tldr && (
-          <p
-            className="text-base leading-relaxed line-clamp-2 mb-3"
-            style={{ color: "var(--ts-text-2)" }}
+      {/* Row 3: Badges + source count */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {topic.is_breaking && (
+          <span
+            className="breaking-badge rounded-md px-2 py-0.5 text-[11px] font-semibold"
+            style={{
+              background: "var(--ts-error-12)",
+              color: "var(--error)",
+              border: "1px solid var(--ts-error-25)",
+            }}
           >
-            {decodeHtml(topic.tldr)}
-          </p>
+            BREAKING
+          </span>
+        )}
+        {topic.trending_score >= 70 && !topic.is_breaking && (
+          <span
+            className="rounded-md px-2 py-0.5 text-[11px] font-semibold"
+            style={{
+              background: "var(--ts-accent-8)",
+              color: "var(--ts-accent)",
+              border: "1px solid var(--ts-accent-20)",
+            }}
+          >
+            TRENDING
+          </span>
+        )}
+        {topic.is_new && (
+          <span
+            className="rounded-md px-2 py-0.5 text-[11px] font-semibold"
+            style={{
+              background: "rgba(74, 222, 128, 0.12)",
+              color: "#4ade80",
+              border: "1px solid rgba(74, 222, 128, 0.25)",
+            }}
+          >
+            NEW
+          </span>
         )}
 
-        {/* Metadata row */}
-        <div
-          className="flex items-center justify-between text-sm"
+        <span
+          className="ml-auto text-xs"
           style={{ color: "var(--ts-muted)" }}
         >
-          <span>
-            {topic.platform_count} source{topic.platform_count === 1 ? "" : "s"}
-            {topic.published_at && ` · ${relativeTime(topic.published_at)}`}
-          </span>
-          <span>{readingTime(topic.tldr)}</span>
-        </div>
-      </Link>
-    </motion.div>
-  );
-}
-
-// ── Topic Card List ────────────────────────────────────────────────────────
-
-interface TopicCardListProps {
-  topics: TopicCardData[];
-}
-
-export function TopicCardList({ topics }: TopicCardListProps) {
-  return (
-    <SectionReveal>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {topics.map((topic, i) => (
-          <TopicCardInner key={topic.id} topic={topic} index={i} />
-        ))}
+          {topic.platform_count} source{topic.platform_count === 1 ? "" : "s"}
+        </span>
       </div>
-    </SectionReveal>
+    </Link>
   );
 }
+

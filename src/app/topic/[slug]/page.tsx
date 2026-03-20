@@ -13,6 +13,7 @@ import { MarkUnderstood } from "./mark-understood";
 import { ShareButton } from "./share-button";
 import { LearningBrief } from "@/components/learning-brief/LearningBrief";
 import { getCategoryColor } from "@/lib/utils/category-colors";
+import { headingFont } from "@/lib/constants";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -278,8 +279,6 @@ export default async function TopicDetailPage({
     url: s.url,
     platform: s.platform,
   }));
-
-  const headingFont = "var(--font-heading), 'Instrument Serif', serif";
 
   // ── Render ───────────────────────────────────────────────────────────────
 
