@@ -68,6 +68,7 @@ begin
     left join interest_matches im on im.tid = t.id
     where t.published_at >= now() - interval '7 days'
       and t.status = 'published'
+      and t.is_evergreen = false
     order by
       coalesce(t.trending_score, 0)
         + (case when im.tid is not null then 20 else 0 end)
@@ -78,8 +79,16 @@ begin
   -- Count results
   select count(*) into v_count from _feed_results;
 
-  -- Mark the highest-scoring topic as featured
-  select max(fr.personal_score) into v_max_score from _feed_results fr;
+  -- Mark the highest-scoring UNREAD topic as featured (avoid featuring already-read topics)
+  select max(fr.personal_score) into v_max_score
+    from _feed_results fr
+   where fr.is_read = false;
+
+  -- Fall back to any topic if all are read
+  if v_max_score is null then
+    select max(fr.personal_score) into v_max_score from _feed_results fr;
+  end if;
+
   if v_max_score is not null then
     update _feed_results fr
        set featured = true

@@ -37,8 +37,12 @@ export function LearningDebt({
 
     async function fetchDebt() {
       const supabase = createClient();
+      // Use the authenticated user's own ID from the session (not the prop)
+      // to prevent IDOR — the prop is only used as a dependency for re-fetching
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
       const { data, error } = await supabase.rpc("get_knowledge_summary", {
-        p_user_id: userId,
+        p_user_id: user.id,
       });
 
       if (!error && data) {
