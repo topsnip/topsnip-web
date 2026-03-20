@@ -18,7 +18,7 @@ export function mapTopicToCategory(title: string, tags?: string[]): string {
     }
   }
 
-  return "models";
+  return "other";
 }
 
 export { CATEGORY_KEYWORDS };

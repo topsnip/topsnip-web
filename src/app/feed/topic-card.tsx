@@ -77,6 +77,7 @@ export function TopicCard({ topic }: TopicCardProps) {
         const el = e.currentTarget;
         el.style.transform = "translateY(0)";
         el.style.boxShadow = "none";
+        el.style.borderTopColor = categoryColor;
       }}
     >
       {/* Hover glow */}
@@ -93,7 +94,7 @@ export function TopicCard({ topic }: TopicCardProps) {
           className="text-[11px] font-semibold uppercase tracking-wider"
           style={{ color: categoryColor }}
         >
-          {topic.category.replace("-", " ")}
+          {topic.category.replaceAll("-", " ")}
         </span>
         {topic.published_at && (
           <span className="text-xs" style={{ color: "var(--ts-muted)" }}>

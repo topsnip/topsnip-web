@@ -121,12 +121,13 @@ export default async function FeedPage() {
       if (t.is_evergreen) evergreenTopicIds.add(t.id);
     }
 
-    // If no role-specific content, fall back to general
-    if (content.length === 0 && profile.role !== "general") {
+    // Fall back to general content for any topics missing role-specific content
+    const missingTopicIds = topicIds.filter((id) => !contentMap.has(id));
+    if (missingTopicIds.length > 0 && profile.role !== "general") {
       const { data: generalContent } = await supabase
         .from("topic_content")
         .select("topic_id, tldr")
-        .in("topic_id", topicIds)
+        .in("topic_id", missingTopicIds)
         .eq("role", "general");
 
       (generalContent ?? []).forEach((c: TopicContent) => {
@@ -164,11 +165,12 @@ export default async function FeedPage() {
     lastPublishedAt = publishedDates[0] ?? null;
   }
 
-  // Separate: featured, quick list, grid topics, evergreen topics
-  const featuredTopic = allTopicCards.find((t) => t.id === featuredId) ?? allTopicCards[0] ?? null;
-  const nonFeaturedTopics = allTopicCards.filter((t) => t.id !== featuredTopic?.id);
+  // Separate daily vs evergreen first, then split daily into featured/quick/grid
+  const dailyTopics = allTopicCards.filter((t) => !evergreenTopicIds.has(t.id));
+  const featuredTopic = dailyTopics.find((t) => t.id === featuredId) ?? dailyTopics[0] ?? null;
+  const nonFeaturedTopics = dailyTopics.filter((t) => t.id !== featuredTopic?.id);
   const quickListTopics = nonFeaturedTopics.slice(0, 3);
-  const gridTopics = nonFeaturedTopics.slice(3);
+  const regularGridTopics = nonFeaturedTopics.slice(3);
 
   // Evergreen topics for the strip (use data already fetched — no extra query)
   const evergreenTopics = allTopicCards
@@ -179,9 +181,6 @@ export default async function FeedPage() {
       title: t.title,
       subtitle: t.tldr ? t.tldr.slice(0, 60) + (t.tldr.length > 60 ? "..." : "") : "",
     }));
-
-  // Filter grid topics to exclude evergreen (they show in the strip instead)
-  const regularGridTopics = gridTopics.filter((t) => !evergreenTopicIds.has(t.id));
 
   return (
     <div

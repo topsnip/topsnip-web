@@ -45,7 +45,7 @@ export function FeaturedSection({
   const featuredColor = getCategoryColor(featuredTopic.category);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-4 mb-6">
+    <div className={`grid grid-cols-1 ${quickListTopics.length > 0 ? "md:grid-cols-[3fr_2fr]" : ""} gap-4 mb-6`}>
       {/* Featured Card */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -69,7 +69,7 @@ export function FeaturedSection({
               className="text-xs font-semibold uppercase tracking-wider"
               style={{ color: featuredColor }}
             >
-              {featuredTopic.category.replace("-", " ")}
+              {featuredTopic.category.replaceAll("-", " ")}
             </span>
             <span
               className="text-xs"

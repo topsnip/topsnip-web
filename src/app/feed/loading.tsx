@@ -115,7 +115,7 @@ export default function FeedLoading() {
               key={i}
               className="h-8 rounded-lg animate-pulse flex-shrink-0"
               style={{
-                width: i === 0 ? 40 : 60 + Math.random() * 30,
+                width: i === 0 ? 40 : [72, 80, 65, 90, 55, 75][i - 1] ?? 70,
                 background: "rgba(240,240,240,0.04)",
                 animationDelay: `${i * 0.05}s`,
               }}

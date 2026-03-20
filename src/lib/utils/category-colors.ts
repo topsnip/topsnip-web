@@ -8,6 +8,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
   industry: "#e8734a",      // coral
   "open-source": "#4ade80", // green
   ethics: "#f472b6",        // pink
+  other: "#a1a1aa",         // gray (uncategorized)
   default: "#7C6AF7",       // fallback to purple
 };
 

@@ -65,7 +65,8 @@ export function FeedAutoRefresh({ lastPublishedAt, onNewTopics }: FeedAutoRefres
       }
     }
 
-    // Start polling
+    // Poll immediately on mount, then start interval
+    poll();
     startPolling();
 
     // Listen for visibility changes

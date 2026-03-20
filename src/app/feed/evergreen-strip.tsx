@@ -76,7 +76,7 @@ export function EvergreenStrip({ topics }: EvergreenStripProps) {
           Learn the Fundamentals
         </h2>
         <Link
-          href="/topic"
+          href="/feed"
           className="text-xs font-medium link-interactive"
           style={{ color: "var(--ts-accent)" }}
         >

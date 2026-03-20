@@ -13,6 +13,7 @@ const TABS = [
   { key: "open-source", label: "Open Source" },
   { key: "industry", label: "Industry" },
   { key: "ethics", label: "Ethics" },
+  { key: "other", label: "Other" },
 ] as const;
 
 // ── Props ──────────────────────────────────────────────────────────────────

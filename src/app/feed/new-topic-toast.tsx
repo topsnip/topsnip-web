@@ -27,6 +27,7 @@ export function NewTopicToast({ count, onRefresh, onDismiss }: NewTopicToastProp
           className="fixed top-20 z-50 flex items-center gap-3 rounded-xl px-4 py-2.5 shadow-lg"
           style={{
             left: "50%",
+            maxWidth: "calc(100vw - 2rem)",
             background: "var(--ts-surface)",
             border: "1px solid var(--border)",
             boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
