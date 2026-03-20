@@ -10,6 +10,7 @@ import type {
   SourceAttribution,
   TopicGenerationResult,
 } from "./types";
+import { enrichSourceMaterial, isGarbageContent } from "./enricher";
 import {
   buildExplainerSystemPrompt,
   buildExplainerUserPrompt,
@@ -219,8 +220,8 @@ export async function generateForTopic(
     return { topicId, contentByRole: {} as Record<Role, GeneratedContent>, youtubeRecs: [], errors: [`Topic ${topicId} already claimed by another instance`] };
   }
 
-  const material = await gatherSourceMaterial(supabase, topicId);
-  if (!material) {
+  const rawMaterial = await gatherSourceMaterial(supabase, topicId);
+  if (!rawMaterial) {
     errors.push(`No source material found for topic ${topicId}`);
     // Reset status back to detected
     await supabase
@@ -229,6 +230,9 @@ export async function generateForTopic(
       .eq("id", topicId);
     return { topicId, contentByRole: {} as Record<Role, GeneratedContent>, youtubeRecs: [], errors };
   }
+
+  // Enrich thin source material with web search results
+  const material = await enrichSourceMaterial(rawMaterial);
 
   const anthropic = getAnthropic();
 
@@ -291,6 +295,21 @@ export async function generateForTopic(
     if (insertErr) {
       errors.push(`DB insert failed for ${role}: ${insertErr.message}`);
     }
+  }
+
+  // Reject garbage content — if Claude admits it doesn't have enough info, don't publish
+  if (contentByRole.general && isGarbageContent(contentByRole.general.tldr, contentByRole.general.whatHappened)) {
+    errors.push(`Content rejected — insufficient substance for topic ${topicId}`);
+    await supabase
+      .from("topics")
+      .update({ status: "detected" })
+      .eq("id", topicId);
+    return {
+      topicId,
+      contentByRole: contentByRole as Record<Role, GeneratedContent>,
+      youtubeRecs: [],
+      errors,
+    };
   }
 
   // Publish topic if general content exists and quality passes
