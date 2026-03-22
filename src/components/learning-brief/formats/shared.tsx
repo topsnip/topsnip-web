@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import type { LearningBriefSource, LearningBriefYouTubeRec } from "../LearningBrief";
 
@@ -152,29 +152,65 @@ export function Section({
   className = "",
   style = {},
   animated = false,
+  sectionId,
+  revealVariant,
 }: {
   children: React.ReactNode;
   delay?: number;
   className?: string;
   style?: React.CSSProperties;
   animated?: boolean;
+  /** Data attribute for scroll tracking, e.g. "tldr" => data-section-tldr */
+  sectionId?: string;
+  /** Enhanced reveal variant: "slide-left" | "expand-spring" | "slide-opposite" | "stagger-pop" */
+  revealVariant?: "slide-left" | "expand-spring" | "slide-opposite" | "stagger-pop";
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+
+  // Scroll-triggered reveal with intersection observer
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !animated) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [animated]);
+
+  // Build data attribute props
+  const dataProps: Record<string, string> = {};
+  if (sectionId) {
+    dataProps[`data-section-${sectionId}`] = "";
+  }
+
   if (animated) {
+    // Use framer-motion with whileInView for initial load, plus CSS border grow
     return (
       <motion.div
+        ref={ref}
         variants={sectionVariants}
         initial="hidden"
-        animate="visible"
-        transition={{ duration: 0.4, delay, ease: [...customEase] }}
-        className={className}
+        animate={inView ? "visible" : "hidden"}
+        transition={{ duration: 0.35, delay, ease: [...customEase] }}
+        className={`section-reveal ${inView ? "section-revealed" : ""} ${className}`}
         style={style}
+        {...dataProps}
       >
         {children}
       </motion.div>
     );
   }
   return (
-    <div className={className} style={style}>
+    <div ref={ref} className={className} style={style} {...dataProps}>
       {children}
     </div>
   );

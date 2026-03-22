@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, useRef, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -9,7 +9,7 @@ import {
   Check,
 } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { SiteNav } from "@/components/SiteNav";
 import { SectionReveal } from "@/components/SectionReveal";
 import { InlinePreview } from "@/app/inline-preview";
@@ -93,6 +93,22 @@ export default function Home() {
   const [bottomQuery, setBottomQuery] = useState("");
   const [bottomFocused, setBottomFocused] = useState(false);
 
+  // ── Parallax scroll tracking ──────────────────────────────────────
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollY } = useScroll();
+
+  // Layer speeds (back to front): 0.3x, 0.5x, 0.7x, 0.85x
+  const bgGlowY = useTransform(scrollY, [0, 800], [0, 800 * 0.3]);
+  const dotGridY = useTransform(scrollY, [0, 800], [0, 800 * 0.5]);
+  const headlineY = useTransform(scrollY, [0, 800], [0, 800 * 0.7]);
+  const searchBarY = useTransform(scrollY, [0, 800], [0, 800 * 0.85]);
+  // Mockup stays at 1x (stationary relative to scroll) but fades out
+  const mockupOpacity = useTransform(scrollY, [300, 600], [1, 0]);
+  // Hero overall opacity fade
+  const heroOpacity = useTransform(scrollY, [300, 600], [1, 0]);
+  // Floating orbs: slight horizontal sway opposite to scroll
+  const orbSwayX = useTransform(scrollY, [0, 600], [0, -30]);
+
   // Redirect logged-in users to /feed
   useEffect(() => {
     createClient()
@@ -152,119 +168,141 @@ export default function Home() {
       <SiteNav user={null} />
 
       {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 1 — Hero
+          SECTION 1 — Hero (Parallax Depth)
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="flex flex-col items-center px-4 pt-28 pb-16 sm:pt-36 sm:pb-24 relative z-10 dot-grid-bg">
-        {/* Hero background glow */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+      <motion.section
+        ref={heroRef}
+        style={{ opacity: heroOpacity }}
+        className="parallax-container flex flex-col items-center px-4 pt-28 pb-16 sm:pt-36 sm:pb-24 relative z-10"
+      >
+        {/* Layer 1: Background glow orb — 0.3x speed (slowest) */}
+        <motion.div
+          className="absolute inset-0 overflow-hidden pointer-events-none"
+          aria-hidden="true"
+          style={{ y: bgGlowY }}
+        >
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full animate-pulse-glow"
             style={{ background: "radial-gradient(ellipse, var(--ts-accent) 0%, transparent 70%)", opacity: 0.2 }} />
-        </div>
+        </motion.div>
 
-        <div className="w-full max-w-3xl mx-auto flex flex-col items-center gap-8">
-          {/* Headline — word stagger */}
-          <HeroHeadline />
+        {/* Layer 2: Dot grid pattern — 0.5x speed */}
+        <motion.div
+          className="absolute inset-0 dot-grid-bg pointer-events-none"
+          aria-hidden="true"
+          style={{ y: dotGridY }}
+        />
 
-          {/* Subtitle — fades in after headline */}
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.5,
-              delay: subtitleDelay,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="text-base sm:text-lg leading-relaxed max-w-lg mx-auto text-center"
-            style={{
-              color: "var(--ts-text-2)",
-              fontSize: "var(--text-lg)",
-            }}
-          >
-            AI moves fast. TopSnip helps you keep up — in 3 minutes, not 3
-            hours.
-          </motion.p>
+        <div className="w-full max-w-3xl mx-auto flex flex-col items-center gap-8 relative z-10">
+          {/* Layer 3: Headline — 0.7x speed */}
+          <motion.div style={{ y: headlineY }}>
+            <HeroHeadline />
+          </motion.div>
 
-          {/* Search bar — slides up */}
-          <motion.form
-            onSubmit={handleSubmit}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.4,
-              delay: searchBarDelay,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="w-full flex flex-col gap-3 max-w-2xl"
-          >
-            <div
-              className={`flex gap-2 items-center rounded-2xl border px-5 py-4 transition-all duration-200 ${
-                focused ? "accent-glow" : ""
-              }`}
+          {/* Subtitle — also at 0.7x speed (grouped with headline) */}
+          <motion.div style={{ y: headlineY }}>
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.5,
+                delay: subtitleDelay,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className="text-base sm:text-lg leading-relaxed max-w-lg mx-auto text-center"
               style={{
-                background: focused
-                  ? "rgba(12,12,14,0.6)"
-                  : "rgba(12,12,14,0.3)",
-                backdropFilter: "blur(16px)",
-                borderColor: focused
-                  ? "var(--ts-accent-50)"
-                  : "var(--border)",
-                boxShadow: focused
-                  ? "0 0 0 3px var(--ts-glow), 0 8px 40px -8px var(--ts-glow)"
-                  : "inset 0 1px 0 0 rgba(255,255,255,0.03)",
+                color: "var(--ts-text-2)",
+                fontSize: "var(--text-lg)",
               }}
             >
-              <Search
-                size={18}
-                style={{ color: "var(--ts-muted)", flexShrink: 0 }}
-              />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                placeholder="Search any AI topic..."
-                className="flex-1 bg-transparent text-sm sm:text-base outline-none tracking-wide"
-                style={{ color: "var(--foreground)" }}
-                autoComplete="off"
-                aria-label="Search any AI topic"
-              />
-              <button
-                type="submit"
-                disabled={!query.trim()}
-                className="btn-primary flex items-center gap-1.5 rounded-xl px-5 py-2 text-sm disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                Learn
-                <ArrowRight size={14} />
-              </button>
-            </div>
-          </motion.form>
+              AI moves fast. TopSnip helps you keep up — in 3 minutes, not 3
+              hours.
+            </motion.p>
+          </motion.div>
 
-          {/* Suggestion chips — stagger in */}
-          <div className="flex flex-wrap justify-center gap-2">
-            {suggestions.map((s, i) => (
-              <motion.button
-                key={s}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.3,
-                  delay: chipsDelay + i * 0.05,
-                  ease: [0.16, 1, 0.3, 1],
+          {/* Layer 4: Search bar + suggestions — 0.85x speed */}
+          <motion.div style={{ y: searchBarY }} className="w-full flex flex-col items-center gap-3">
+            <motion.form
+              onSubmit={handleSubmit}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.4,
+                delay: searchBarDelay,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className="w-full flex flex-col gap-3 max-w-2xl"
+            >
+              <div
+                className={`flex gap-2 items-center rounded-2xl border px-5 py-4 transition-all duration-200 ${
+                  focused ? "accent-glow" : ""
+                }`}
+                style={{
+                  background: focused
+                    ? "rgba(12,12,14,0.6)"
+                    : "rgba(12,12,14,0.3)",
+                  backdropFilter: "blur(16px)",
+                  borderColor: focused
+                    ? "var(--ts-accent-50)"
+                    : "var(--border)",
+                  boxShadow: focused
+                    ? "0 0 0 3px var(--ts-glow), 0 8px 40px -8px var(--ts-glow)"
+                    : "inset 0 1px 0 0 rgba(255,255,255,0.03)",
                 }}
-                onClick={() => navigateToSearch(s)}
-                className="suggestion-chip pill-interactive rounded-full border px-3 py-1.5 text-sm font-medium"
               >
-                {s}
-              </motion.button>
-            ))}
-          </div>
+                <Search
+                  size={18}
+                  style={{ color: "var(--ts-muted)", flexShrink: 0 }}
+                />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                  placeholder="Search any AI topic..."
+                  className="flex-1 bg-transparent text-sm sm:text-base outline-none tracking-wide"
+                  style={{ color: "var(--foreground)" }}
+                  autoComplete="off"
+                  aria-label="Search any AI topic"
+                />
+                <button
+                  type="submit"
+                  disabled={!query.trim()}
+                  className="btn-primary flex items-center gap-1.5 rounded-xl px-5 py-2 text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  Learn
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            </motion.form>
 
-          {/* Product mockup */}
+            {/* Suggestion chips — stagger in */}
+            <div className="flex flex-wrap justify-center gap-2">
+              {suggestions.map((s, i) => (
+                <motion.button
+                  key={s}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.3,
+                    delay: chipsDelay + i * 0.05,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                  onClick={() => navigateToSearch(s)}
+                  className="suggestion-chip pill-interactive rounded-full border px-3 py-1.5 text-sm font-medium"
+                >
+                  {s}
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Layer 5: Product mockup — 1x speed (stationary), fades out on scroll */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: chipsDelay + 0.4, ease: [0.16, 1, 0.3, 1] }}
+            style={{ opacity: mockupOpacity }}
             className="w-full max-w-3xl mx-auto mt-12 relative"
           >
             {/* Browser chrome */}
@@ -307,7 +345,7 @@ export default function Home() {
               style={{ background: "var(--ts-accent)" }} />
           </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ═══════════════════════════════════════════════════════════════════
           SECTION 2 — Inline Topic Preview
@@ -324,9 +362,11 @@ export default function Home() {
           SECTION 3 — How It Works
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="px-4 py-16 sm:py-24 relative z-10 overflow-hidden">
-        {/* Floating decorative orb */}
-        <div className="absolute right-0 top-0 w-64 h-64 rounded-full opacity-10 blur-3xl pointer-events-none animate-float"
-          style={{ background: "var(--ts-accent)" }} />
+        {/* Floating decorative orb — horizontal parallax sway */}
+        <motion.div
+          className="absolute right-0 top-0 w-64 h-64 rounded-full opacity-10 blur-3xl pointer-events-none animate-float"
+          style={{ background: "var(--ts-accent)", x: orbSwayX }}
+        />
 
         <div className="content-container-wide flex flex-col items-center gap-12">
           <SectionReveal>
@@ -490,9 +530,11 @@ export default function Home() {
           SECTION 5 — Pricing
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="px-4 py-16 sm:py-24 relative z-10 overflow-hidden">
-        {/* Floating decorative orb */}
-        <div className="absolute left-0 bottom-0 w-48 h-48 rounded-full opacity-10 blur-3xl pointer-events-none"
-          style={{ background: "var(--ts-accent)" }} />
+        {/* Floating decorative orb — horizontal parallax sway */}
+        <motion.div
+          className="absolute left-0 bottom-0 w-48 h-48 rounded-full opacity-10 blur-3xl pointer-events-none"
+          style={{ background: "var(--ts-accent)", x: orbSwayX }}
+        />
 
         <div className="content-container-wide flex flex-col items-center gap-12">
           <SectionReveal>

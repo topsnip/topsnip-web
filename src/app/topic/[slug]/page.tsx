@@ -15,6 +15,8 @@ import { LearningBrief } from "@/components/learning-brief/LearningBrief";
 import { getCategoryColor } from "@/lib/utils/category-colors";
 import { mapTopicToCategory } from "@/lib/utils/category-mapper";
 import { headingFont } from "@/lib/constants";
+import { StickyTldr } from "./sticky-tldr";
+import { SuggestedTopics } from "./suggested-topics";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -129,7 +131,7 @@ export default async function TopicDetailPage({
   const { data: topic } = await supabase
     .from("topics")
     .select(
-      "id, slug, title, status, trending_score, is_breaking, published_at",
+      "id, slug, title, status, trending_score, is_breaking, published_at, topic_type",
     )
     .eq("slug", slug)
     .eq("status", "published")
@@ -301,6 +303,9 @@ export default async function TopicDetailPage({
 
       {/* Scroll progress bar */}
       <ScrollProgress />
+
+      {/* Sticky TLDR bar (appears when TLDR scrolls out of view) */}
+      <StickyTldr title={topic.title} tldr={content.tldr} />
 
       {/* Read tracker (client component — records the read, auth only) */}
       {user && <ReadTracker userId={user.id} topicId={topic.id} />}
@@ -672,53 +677,11 @@ export default async function TopicDetailPage({
           </aside>
         </div>
 
-        {/* ── Keep Learning (Related Topics — full width) ─────────────── */}
-        {relatedTopics.length > 0 && (
-          <section
-            className="mt-12 mb-8"
-            style={{ animation: "fadeInUp 0.35s ease 0.42s both" }}
-          >
-            <h2
-              className="text-white mb-5"
-              style={{
-                fontFamily: headingFont,
-                fontSize: "var(--text-xl)",
-              }}
-            >
-              Keep learning
-            </h2>
-
-            {/* Desktop: grid, Mobile: horizontal scroll */}
-            <div
-              className="hidden sm:grid gap-3"
-              style={{
-                gridTemplateColumns: `repeat(${Math.min(relatedTopics.length, 4)}, 1fr)`,
-              }}
-            >
-              {relatedTopics.map((rt) => (
-                <RelatedTopicCard key={rt.id} topic={rt} />
-              ))}
-            </div>
-
-            <div
-              className="sm:hidden flex gap-3 overflow-x-auto pb-2"
-              style={{
-                scrollSnapType: "x mandatory",
-                WebkitOverflowScrolling: "touch",
-                scrollbarWidth: "none",
-              }}
-            >
-              {relatedTopics.map((rt) => (
-                <div
-                  key={rt.id}
-                  style={{ minWidth: "260px", scrollSnapAlign: "start" }}
-                >
-                  <RelatedTopicCard topic={rt} />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        {/* ── Keep Learning (Suggested Topics Carousel) ────────────── */}
+        <SuggestedTopics
+          currentTopicId={topic.id}
+          currentTopicType={topic.topic_type ?? null}
+        />
 
         {/* ── Back to feed link ───────────────────────────────────────── */}
         <div

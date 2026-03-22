@@ -49,11 +49,11 @@ export function TopicCardGrid({ topics, activeCategory }: TopicCardGridProps) {
           <motion.div
             key={topic.id}
             layout
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0, scale: 0.97, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -8 }}
             transition={{
-              delay: index * 0.05,
+              delay: index * 0.04,
               duration: 0.35,
               ease: [0.16, 1, 0.3, 1],
             }}

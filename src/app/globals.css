@@ -774,6 +774,89 @@
   color: var(--foreground) !important;
 }
 
+/* ── Parallax container ──────────────────────────────────────────── */
+.parallax-container {
+  perspective: 1000px;
+  overflow: hidden;
+}
+
+/* ── Topic Card 3D tilt ──────────────────────────────────────────── */
+.topic-card-tilt {
+  transform-style: preserve-3d;
+  transition: transform 300ms var(--ease-out-expo), box-shadow 300ms var(--ease-out-expo);
+}
+
+.topic-card-tilt .tilt-spotlight {
+  opacity: 0;
+  transition: opacity 300ms ease;
+  pointer-events: none;
+}
+
+.topic-card-tilt:hover .tilt-spotlight {
+  opacity: 1;
+}
+
+/* Gradient border on hover */
+.topic-card-tilt::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--ts-accent-30),
+    transparent 60%,
+    var(--ts-accent-12)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.topic-card-tilt:hover::before {
+  opacity: 1;
+}
+
+/* Floating glow underneath card on hover */
+.topic-card-tilt::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 10%;
+  right: 10%;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ts-accent);
+  filter: blur(12px);
+  opacity: 0;
+  transition: opacity 300ms ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.topic-card-tilt:hover::after {
+  opacity: 0.15;
+}
+
+/* Category border entrance animation */
+@keyframes borderWidthIn {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+.category-border-animate {
+  animation: borderWidthIn 400ms var(--ease-out-expo) forwards;
+}
+
 /* ── Dot grid background pattern ──────────────────────────────────── */
 .dot-grid-bg {
   background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
@@ -797,6 +880,74 @@
 
 .animate-pulse-glow {
   animation: pulse-glow 4s ease-in-out infinite;
+}
+
+/* ── Skeleton shimmer animation ───────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* Staggered entrance for skeleton cards */
+@keyframes skeletonFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.skeleton-stagger {
+  opacity: 0;
+  animation: skeletonFadeIn 0.4s var(--ease-out-expo) forwards;
+}
+
+/* ── Section reveal animations ────────────────────────────────────── */
+
+/* Border grow effect on section cards */
+@keyframes borderGrow {
+  from { height: 0; }
+  to { height: 100%; }
+}
+
+.section-reveal > .rounded-xl {
+  position: relative;
+}
+
+.section-reveal > .rounded-xl::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3px;
+  height: 0;
+  background: var(--ts-accent);
+  border-radius: 3px 0 0 3px;
+  z-index: 1;
+}
+
+.section-revealed > .rounded-xl::before {
+  animation: borderGrow 400ms var(--ease-out-expo) forwards;
+}
+
+/* Hide scrollbar for carousels */
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
 }
 
 /* ── Accessibility: Reduced Motion ─────────────────────────────────── */
@@ -839,6 +990,14 @@
   .animate-pulse-glow {
     animation: none;
   }
+  .skeleton-shimmer {
+    animation: none;
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .skeleton-stagger {
+    opacity: 1;
+    animation: none;
+  }
   .btn-primary:hover,
   .btn-secondary:hover,
   .btn-ghost:hover,
@@ -850,5 +1009,23 @@
   .typewriter-line-2 {
     opacity: 1;
     transform: none;
+  }
+  .topic-card-tilt {
+    transform: none !important;
+  }
+  .topic-card-tilt::before,
+  .topic-card-tilt::after {
+    display: none;
+  }
+  .category-border-animate {
+    animation: none;
+    clip-path: none;
+  }
+  .section-reveal {
+    clip-path: none;
+  }
+  .section-revealed > .rounded-xl::before {
+    animation: none;
+    height: 100%;
   }
 }

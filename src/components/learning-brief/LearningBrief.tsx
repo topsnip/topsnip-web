@@ -197,7 +197,7 @@ export function LearningBrief({
 function TldrSection({ tldr, animated }: { tldr?: string; animated: boolean }) {
   if (!tldr) return null;
   return (
-    <Section delay={0} animated={animated}>
+    <Section delay={0} animated={animated} sectionId="tldr">
       <div
         className="rounded-xl p-6"
         style={{
@@ -388,7 +388,7 @@ const customEase = [0.16, 1, 0.3, 1] as const;
 
 // ── Collapsible content wrapper ─────────────────────────────────────────────
 
-function CollapsibleContent({ children, maxHeight = 400, bgColor = "var(--ts-surface)" }: { children: React.ReactNode; maxHeight?: number; bgColor?: string }) {
+function CollapsibleContent({ children, maxHeight = 400, bgColor = "var(--ts-surface)" }: { children: React.ReactNode; maxHeight?: number; bgColor?: string; }) {
   const [expanded, setExpanded] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const [needsCollapse, setNeedsCollapse] = useState(false);
@@ -455,29 +455,59 @@ function Section({
   className = "",
   style = {},
   animated = false,
+  sectionId,
 }: {
   children: React.ReactNode;
   delay?: number;
   className?: string;
   style?: React.CSSProperties;
   animated?: boolean;
+  /** Data attribute for scroll tracking, e.g. "tldr" => data-section-tldr */
+  sectionId?: string;
 }) {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || !animated) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [animated]);
+
+  // Build data attribute props
+  const dataProps: Record<string, string> = {};
+  if (sectionId) {
+    dataProps[`data-section-${sectionId}`] = "";
+  }
+
   if (animated) {
     return (
       <motion.div
+        ref={sectionRef}
         variants={sectionVariants}
         initial="hidden"
-        animate="visible"
-        transition={{ duration: 0.4, delay, ease: [...customEase] }}
-        className={className}
+        animate={inView ? "visible" : "hidden"}
+        transition={{ duration: 0.35, delay, ease: [...customEase] }}
+        className={`section-reveal ${inView ? "section-revealed" : ""} ${className}`}
         style={style}
+        {...dataProps}
       >
         {children}
       </motion.div>
     );
   }
   return (
-    <div className={className} style={style}>
+    <div ref={sectionRef} className={className} style={style} {...dataProps}>
       {children}
     </div>
   );
@@ -515,7 +545,7 @@ function LegacyBrief({
   return (
     <div className="flex flex-col" style={{ gap: "2rem" }}>
       {/* TL;DR */}
-      <Section delay={0} animated={animated}>
+      <Section delay={0} animated={animated} sectionId="tldr">
         <div
           className="rounded-xl p-6"
           style={{
@@ -547,7 +577,7 @@ function LegacyBrief({
 
       {/* What Happened */}
       {whatHappened && (
-        <Section delay={animated ? 0.1 : 0} animated={animated}>
+        <Section delay={animated ? 0.1 : 0} animated={animated} sectionId="what-happened">
           <div
             className="rounded-xl"
             style={{
@@ -583,7 +613,7 @@ function LegacyBrief({
 
       {/* So What? */}
       {soWhat && (
-        <Section delay={animated ? 0.2 : 0} animated={animated}>
+        <Section delay={animated ? 0.2 : 0} animated={animated} sectionId="so-what">
           <div
             className="rounded-xl"
             style={{
@@ -620,7 +650,7 @@ function LegacyBrief({
 
       {/* Now What? */}
       {nowWhatItems.length > 0 && (
-        <Section delay={animated ? 0.3 : 0} animated={animated}>
+        <Section delay={animated ? 0.3 : 0} animated={animated} sectionId="now-what">
           <div
             className="rounded-xl"
             style={{
@@ -649,7 +679,7 @@ function LegacyBrief({
 
       {/* Sources */}
       {sources.length > 0 && (
-        <Section delay={animated ? 0.4 : 0} animated={animated}>
+        <Section delay={animated ? 0.4 : 0} animated={animated} sectionId="sources">
           <div
             className="rounded-xl"
             style={{

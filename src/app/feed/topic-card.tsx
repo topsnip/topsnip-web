@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useCallback, useState } from "react";
 import Link from "next/link";
 import { getCategoryColor } from "@/lib/utils/category-colors";
 import { headingFont } from "@/lib/constants";
@@ -44,6 +45,18 @@ function decodeHtml(text: string): string {
   return el.value;
 }
 
+// ── Tilt detection: check for touch device + reduced motion ────────────
+
+function isTouchDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  return "ontouchstart" in window || navigator.maxTouchPoints > 0;
+}
+
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 // ── TopicCard ──────────────────────────────────────────────────────────────
 
 interface TopicCardProps {
@@ -52,11 +65,69 @@ interface TopicCardProps {
 
 export function TopicCard({ topic }: TopicCardProps) {
   const categoryColor = getCategoryColor(topic.category);
+  const cardRef = useRef<HTMLAnchorElement>(null);
+  const [spotlightPos, setSpotlightPos] = useState({ x: 50, y: 50 });
+
+  const MAX_TILT = 4; // degrees
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      if (isTouchDevice() || prefersReducedMotion()) return;
+      const el = cardRef.current;
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      // Normalized -1 to 1
+      const normX = (x - centerX) / centerX;
+      const normY = (y - centerY) / centerY;
+
+      const rotateY = normX * MAX_TILT;
+      const rotateX = -normY * MAX_TILT;
+
+      el.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
+      el.style.willChange = "transform";
+
+      // Update spotlight position (percentage)
+      setSpotlightPos({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 });
+    },
+    [],
+  );
+
+  const handleMouseEnter = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      const el = cardRef.current;
+      if (!el) return;
+      el.style.boxShadow = "0 8px 24px rgba(0,0,0,0.3)";
+      el.style.borderTopColor = categoryColor;
+      if (!isTouchDevice() && !prefersReducedMotion()) {
+        el.style.willChange = "transform";
+      }
+    },
+    [categoryColor],
+  );
+
+  const handleMouseLeave = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      const el = cardRef.current;
+      if (!el) return;
+      el.style.transform = "perspective(800px) rotateX(0deg) rotateY(0deg) translateY(0)";
+      el.style.boxShadow = "none";
+      el.style.borderTopColor = categoryColor;
+      el.style.willChange = "auto";
+    },
+    [categoryColor],
+  );
 
   return (
     <Link
+      ref={cardRef}
       href={`/topic/${topic.slug}`}
-      className="topic-card card-interactive group block rounded-xl p-5 relative overflow-hidden"
+      className="topic-card topic-card-tilt card-interactive group block rounded-xl p-5 relative overflow-hidden"
       style={{
         background: "var(--ts-surface)",
         border: "1px solid var(--border)",
@@ -65,27 +136,32 @@ export function TopicCard({ topic }: TopicCardProps) {
         textDecoration: "none",
         opacity: topic.is_read ? 0.55 : 1,
         transition:
-          "border-color 200ms cubic-bezier(0.16,1,0.3,1), box-shadow 200ms cubic-bezier(0.16,1,0.3,1), transform 200ms cubic-bezier(0.16,1,0.3,1)",
+          "border-color 200ms cubic-bezier(0.16,1,0.3,1), box-shadow 200ms cubic-bezier(0.16,1,0.3,1), transform 300ms cubic-bezier(0.16,1,0.3,1)",
       }}
-      onMouseEnter={(e) => {
-        const el = e.currentTarget;
-        el.style.transform = "translateY(-2px)";
-        el.style.boxShadow = "0 8px 24px rgba(0,0,0,0.3)";
-        el.style.borderTopColor = categoryColor;
-      }}
-      onMouseLeave={(e) => {
-        const el = e.currentTarget;
-        el.style.transform = "translateY(0)";
-        el.style.boxShadow = "none";
-        el.style.borderTopColor = categoryColor;
-      }}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
+      {/* Spotlight overlay — follows cursor */}
+      <div
+        className="tilt-spotlight absolute inset-0 rounded-xl pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at ${spotlightPos.x}% ${spotlightPos.y}%, rgba(255,255,255,0.06), transparent 60%)`,
+        }}
+      />
+
       {/* Hover glow */}
       <div
         className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
         style={{
           background: `radial-gradient(ellipse at 50% 0%, ${categoryColor}08, transparent 70%)`,
         }}
+      />
+
+      {/* Category top border — animates width on entrance */}
+      <div
+        className="category-border-animate absolute top-0 left-0 right-0 h-[3px] pointer-events-none"
+        style={{ background: categoryColor }}
       />
 
       {/* Row 1: Category + relative time */}
@@ -177,4 +253,3 @@ export function TopicCard({ topic }: TopicCardProps) {
     </Link>
   );
 }
-
