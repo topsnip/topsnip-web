@@ -11,8 +11,8 @@ import type {
 
 const QUALITY_CHECK_MODEL = "claude-haiku-4-5";
 
-export const MIN_QUALITY_SCORE = 60; // Raised from 40
-export const MIN_DIMENSION_SCORE = 10; // Any dimension below this = auto-reject
+export const MIN_QUALITY_SCORE = 50; // Eased from 60 for initial v2 rollout — tighten after calibration
+export const MIN_DIMENSION_SCORE = 8; // Any dimension below this = auto-reject
 
 // ── Quality check prompt ────────────────────────────────────────────────────
 
