@@ -4,6 +4,8 @@ export type Role = "general" | "developer" | "pm" | "cto";
 
 export type ContentType = "explainer" | "tldr" | "what_changed";
 
+export type TopicType = 'tool_launch' | 'research_paper' | 'industry_news' | 'regulatory' | 'tutorial' | 'opinion_debate';
+
 /** Source material gathered for a topic — from source_items + topic_sources */
 export interface TopicSourceMaterial {
   topicId: string;
@@ -12,6 +14,7 @@ export interface TopicSourceMaterial {
   trendingScore: number;
   platformCount: number;
   isBreaking: boolean;
+  topicType?: TopicType;  // Optional — defaults to 'industry_news' if not set
   items: SourceItemSummary[];
 }
 
@@ -35,6 +38,7 @@ export interface GeneratedContent {
   nowWhat: string;
   sourcesJson: SourceAttribution[];
   qualityScore: number | null;
+  contentJson?: Record<string, unknown>;  // Flexible format-specific content
 }
 
 export interface SourceAttribution {
@@ -42,6 +46,15 @@ export interface SourceAttribution {
   url: string;
   platform: string;
   publishedAt: string;
+}
+
+export interface QualityScoreBreakdown {
+  factualGrounding: number;  // 0-25
+  actionability: number;     // 0-25
+  formatCompliance: number;  // 0-25
+  voiceCompliance: number;   // 0-25
+  total: number;             // 0-100
+  issues: string[];
 }
 
 /** YouTube recommendation for "Go Deeper" section */

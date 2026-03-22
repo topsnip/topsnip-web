@@ -7,6 +7,17 @@ import { Zap, Newspaper, AlertCircle, ListChecks, ExternalLink } from "lucide-re
 import { SourceCitation } from "./SourceCitation";
 import { NowWhatChecklist } from "./NowWhatChecklist";
 import { YouTubeRecs } from "./YouTubeRecs";
+import { headingFont } from "@/lib/constants";
+import type { TopicType } from "@/lib/content/types";
+import {
+  ToolLaunchBrief,
+  ResearchPaperBrief,
+  IndustryNewsBrief,
+  RegulatoryBrief,
+  TutorialBrief,
+  OpinionDebateBrief,
+} from "./formats";
+import type { FormatRendererProps } from "./formats";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -24,10 +35,15 @@ export interface LearningBriefYouTubeRec {
 }
 
 export interface LearningBriefProps {
-  tldr: string;
-  whatHappened: string;
-  soWhat: string;
-  nowWhat: string;
+  // Legacy props (still work for pre-v2 content)
+  tldr?: string;
+  whatHappened?: string;
+  soWhat?: string;
+  nowWhat?: string;
+  // New v2 props
+  contentJson?: Record<string, unknown>;
+  topicType?: string;
+  // Unchanged
   sources?: LearningBriefSource[];
   youtubeRecs?: LearningBriefYouTubeRec[];
   isBlurred?: boolean;
@@ -37,10 +53,214 @@ export interface LearningBriefProps {
   redirectPath?: string;
 }
 
+// ── Format renderer map ─────────────────────────────────────────────────────
+
+const FORMAT_RENDERERS: Record<TopicType, React.ComponentType<FormatRendererProps>> = {
+  tool_launch: ToolLaunchBrief,
+  research_paper: ResearchPaperBrief,
+  industry_news: IndustryNewsBrief,
+  regulatory: RegulatoryBrief,
+  tutorial: TutorialBrief,
+  opinion_debate: OpinionDebateBrief,
+};
+
+const KNOWN_TYPES = new Set<string>(Object.keys(FORMAT_RENDERERS));
+
+// ── Router Component ────────────────────────────────────────────────────────
+
+export function LearningBrief({
+  tldr,
+  whatHappened,
+  soWhat,
+  nowWhat,
+  contentJson,
+  topicType,
+  sources = [],
+  youtubeRecs = [],
+  isBlurred = false,
+  onMarkUnderstood,
+  animated = false,
+  redirectPath,
+}: LearningBriefProps) {
+  // Route to v2 format renderer if contentJson + known topicType exist
+  const useV2 = contentJson && topicType && KNOWN_TYPES.has(topicType);
+
+  // Blurred overlay wraps whatever format is selected
+  if (isBlurred) {
+    return (
+      <div className="flex flex-col" style={{ gap: "2rem" }}>
+        {/* Show TL;DR unblurred (from contentJson or legacy) */}
+        <TldrSection
+          tldr={useV2 ? (typeof contentJson?.tldr === "string" ? contentJson.tldr : tldr) : tldr}
+          animated={animated}
+        />
+
+        {/* Blurred content + CTA overlay */}
+        <div className="relative">
+          <div
+            style={{
+              filter: "blur(8px)",
+              userSelect: "none",
+              pointerEvents: "none",
+            }}
+          >
+            {useV2 ? (
+              <BlurredPlaceholder />
+            ) : (
+              <LegacyBlurredSections
+                whatHappened={whatHappened || ""}
+                soWhat={soWhat || ""}
+                nowWhatItems={parseNowWhatItems(nowWhat || "")}
+                sources={sources}
+              />
+            )}
+          </div>
+
+          {/* CTA overlay */}
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{ zIndex: 10 }}
+          >
+            <div
+              className="rounded-2xl p-8 text-center flex flex-col items-center gap-4"
+              style={{
+                background: "rgba(12,12,14,0.9)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                backdropFilter: "blur(12px)",
+                maxWidth: "400px",
+              }}
+            >
+              <h3
+                className="text-2xl text-white"
+                style={{ fontFamily: headingFont }}
+              >
+                Sign up to read the full brief
+              </h3>
+              <p
+                className="text-sm"
+                style={{ color: "var(--ts-text-2)" }}
+              >
+                Free account. No credit card.
+              </p>
+              <Link
+                href={redirectPath ? `/auth/login?redirect=${encodeURIComponent(redirectPath)}` : "/auth/login"}
+                className="btn-primary rounded-xl px-8 py-3 text-base font-medium"
+              >
+                Sign up — it&apos;s free
+              </Link>
+              <Link
+                href={redirectPath ? `/auth/login?redirect=${encodeURIComponent(redirectPath)}` : "/auth/login"}
+                className="btn-ghost text-sm underline"
+              >
+                Sign in
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // V2 format renderer
+  if (useV2) {
+    const Renderer = FORMAT_RENDERERS[topicType as TopicType];
+    return (
+      <Renderer
+        content={contentJson!}
+        sources={sources}
+        youtubeRecs={youtubeRecs}
+        isBlurred={false}
+        onMarkUnderstood={onMarkUnderstood}
+        animated={animated}
+        redirectPath={redirectPath}
+      />
+    );
+  }
+
+  // Legacy renderer
+  return (
+    <LegacyBrief
+      tldr={tldr || ""}
+      whatHappened={whatHappened || ""}
+      soWhat={soWhat || ""}
+      nowWhat={nowWhat || ""}
+      sources={sources}
+      youtubeRecs={youtubeRecs}
+      onMarkUnderstood={onMarkUnderstood}
+      animated={animated}
+    />
+  );
+}
+
+// ── TL;DR Section (shared between blurred states) ───────────────────────────
+
+function TldrSection({ tldr, animated }: { tldr?: string; animated: boolean }) {
+  if (!tldr) return null;
+  return (
+    <Section delay={0} animated={animated}>
+      <div
+        className="rounded-xl p-6"
+        style={{
+          background: "rgba(232,115,74,0.04)",
+          borderLeft: "4px solid var(--ts-accent)",
+          borderRadius: "0 12px 12px 0",
+        }}
+      >
+        <p
+          className="text-sm font-semibold uppercase tracking-widest mb-4 pb-3 border-b"
+          style={{
+            color: "var(--ts-accent)",
+            borderColor: "var(--border)",
+            fontFamily: headingFont,
+            fontVariant: "small-caps",
+          }}
+        >
+          <Zap size={12} className="inline mr-1.5" />
+          TL;DR
+        </p>
+        <p
+          className="font-medium leading-relaxed text-white"
+          style={{ fontSize: "var(--text-lg)" }}
+        >
+          {tldr}
+        </p>
+      </div>
+    </Section>
+  );
+}
+
+// ── Blurred placeholder for v2 content ──────────────────────────────────────
+
+function BlurredPlaceholder() {
+  return (
+    <div className="flex flex-col" style={{ gap: "1.5rem" }}>
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="rounded-xl"
+          style={{
+            background: "var(--ts-surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "12px",
+            padding: "1.5rem",
+            minHeight: "120px",
+          }}
+        >
+          <div className="space-y-3">
+            <div className="h-3 rounded" style={{ background: "var(--border)", width: "40%" }} />
+            <div className="h-3 rounded" style={{ background: "var(--border)", width: "90%" }} />
+            <div className="h-3 rounded" style={{ background: "var(--border)", width: "75%" }} />
+            <div className="h-3 rounded" style={{ background: "var(--border)", width: "60%" }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Markdown-lite renderer (bold + inline code) ────────────────────────────
 
 function renderMarkdown(text: string): React.ReactNode[] {
-  // Split on **bold** (allows internal single *) and `code` patterns
   const parts = text.split(/(\*\*(?:[^*]|\*(?!\*))+\*\*|`[^`]+`)/g);
   return parts
     .filter((p) => p !== "")
@@ -80,8 +300,6 @@ function lineType(line: string): "bullet" | "numbered" | "text" {
 }
 
 function renderContentBlock(text: string): React.ReactNode {
-  // Split on double newlines into blocks, then split each block into
-  // contiguous runs of same-type lines to handle mixed content.
   const blocks = text.split("\n\n");
   let key = 0;
   const elements: React.ReactNode[] = [];
@@ -91,7 +309,6 @@ function renderContentBlock(text: string): React.ReactNode {
     if (!trimmed) continue;
 
     const lines = trimmed.split("\n").filter((l) => l.trim());
-    // Group consecutive lines of the same type
     let runStart = 0;
     while (runStart < lines.length) {
       const type = lineType(lines[runStart]);
@@ -133,7 +350,6 @@ function renderContentBlock(text: string): React.ReactNode {
           </ol>
         );
       } else {
-        // Text lines — join back into a paragraph
         elements.push(
           <p key={key++} className={elements.length > 0 ? "mt-4" : ""}>
             {renderMarkdown(run.join(" "))}
@@ -169,8 +385,6 @@ const sectionVariants = {
 };
 
 const customEase = [0.16, 1, 0.3, 1] as const;
-
-import { headingFont } from "@/lib/constants";
 
 // ── Collapsible content wrapper ─────────────────────────────────────────────
 
@@ -233,22 +447,64 @@ function CollapsibleContent({ children, maxHeight = 400, bgColor = "var(--ts-sur
   );
 }
 
-// ── Component ──────────────────────────────────────────────────────────────
+// ── Section wrapper ─────────────────────────────────────────────────────────
 
-export function LearningBrief({
+function Section({
+  children,
+  delay = 0,
+  className = "",
+  style = {},
+  animated = false,
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+  style?: React.CSSProperties;
+  animated?: boolean;
+}) {
+  if (animated) {
+    return (
+      <motion.div
+        variants={sectionVariants}
+        initial="hidden"
+        animate="visible"
+        transition={{ duration: 0.4, delay, ease: [...customEase] }}
+        className={className}
+        style={style}
+      >
+        {children}
+      </motion.div>
+    );
+  }
+  return (
+    <div className={className} style={style}>
+      {children}
+    </div>
+  );
+}
+
+// ── Legacy Brief (pre-v2 content) ───────────────────────────────────────────
+
+function LegacyBrief({
   tldr,
   whatHappened,
   soWhat,
   nowWhat,
   sources = [],
   youtubeRecs = [],
-  isBlurred = false,
   onMarkUnderstood,
   animated = false,
-  redirectPath,
-}: LearningBriefProps) {
+}: {
+  tldr: string;
+  whatHappened: string;
+  soWhat: string;
+  nowWhat: string;
+  sources?: LearningBriefSource[];
+  youtubeRecs?: LearningBriefYouTubeRec[];
+  onMarkUnderstood?: () => void;
+  animated?: boolean;
+}) {
   const [understood, setUnderstood] = useState(false);
-
   const nowWhatItems = parseNowWhatItems(nowWhat);
 
   function handleMarkUnderstood() {
@@ -256,43 +512,10 @@ export function LearningBrief({
     onMarkUnderstood?.();
   }
 
-  // Wrapper: motion.div when animated, plain div otherwise
-  function Section({
-    children,
-    delay = 0,
-    className = "",
-    style = {},
-  }: {
-    children: React.ReactNode;
-    delay?: number;
-    className?: string;
-    style?: React.CSSProperties;
-  }) {
-    if (animated) {
-      return (
-        <motion.div
-          variants={sectionVariants}
-          initial="hidden"
-          animate="visible"
-          transition={{ duration: 0.4, delay, ease: [...customEase] }}
-          className={className}
-          style={style}
-        >
-          {children}
-        </motion.div>
-      );
-    }
-    return (
-      <div className={className} style={style}>
-        {children}
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col" style={{ gap: "2rem" }}>
-      {/* ── TL;DR ─────────────────────────────────────────────────────── */}
-      <Section delay={0}>
+      {/* TL;DR */}
+      <Section delay={0} animated={animated}>
         <div
           className="rounded-xl p-6"
           style={{
@@ -322,263 +545,199 @@ export function LearningBrief({
         </div>
       </Section>
 
-      {/* ── Blurred overlay wrapper for remaining sections ─────────── */}
-      {isBlurred ? (
-        <div className="relative">
-          {/* Blurred content */}
+      {/* What Happened */}
+      {whatHappened && (
+        <Section delay={animated ? 0.1 : 0} animated={animated}>
           <div
+            className="rounded-xl"
             style={{
-              filter: "blur(8px)",
-              userSelect: "none",
-              pointerEvents: "none",
+              background: "var(--ts-surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "12px",
+              padding: "2rem",
             }}
           >
-            <BlurredSections
-              whatHappened={whatHappened}
-              soWhat={soWhat}
-              nowWhatItems={nowWhatItems}
-              sources={sources}
-            />
-          </div>
-
-          {/* CTA overlay */}
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ zIndex: 10 }}
-          >
-            <div
-              className="rounded-2xl p-8 text-center flex flex-col items-center gap-4"
+            <p
+              className="text-sm font-semibold uppercase tracking-widest mb-4 pb-3 border-b"
               style={{
-                background: "rgba(12,12,14,0.9)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px)",
-                maxWidth: "400px",
+                color: "var(--ts-muted)",
+                borderColor: "var(--border)",
+                fontFamily: headingFont,
+                fontVariant: "small-caps",
               }}
             >
-              <h3
-                className="text-2xl text-white"
-                style={{ fontFamily: headingFont }}
+              <Newspaper size={12} className="inline mr-1.5" />
+              What Happened
+            </p>
+            <CollapsibleContent maxHeight={400}>
+              <div
+                className="text-base leading-relaxed"
+                style={{ color: "var(--foreground)", lineHeight: 1.7 }}
               >
-                Sign up to read the full brief
-              </h3>
-              <p
-                className="text-sm"
-                style={{ color: "var(--ts-text-2)" }}
+                {renderContentBlock(whatHappened)}
+              </div>
+            </CollapsibleContent>
+          </div>
+        </Section>
+      )}
+
+      {/* So What? */}
+      {soWhat && (
+        <Section delay={animated ? 0.2 : 0} animated={animated}>
+          <div
+            className="rounded-xl"
+            style={{
+              background: "var(--ts-accent-6)",
+              border: "1px solid var(--ts-accent-12)",
+              borderLeft: "3px solid var(--ts-accent)",
+              borderRadius: "12px",
+              padding: "2rem",
+            }}
+          >
+            <p
+              className="text-sm font-semibold uppercase tracking-widest mb-4 pb-3 border-b"
+              style={{
+                color: "var(--ts-accent)",
+                borderColor: "var(--border)",
+                fontFamily: headingFont,
+                fontVariant: "small-caps",
+              }}
+            >
+              <AlertCircle size={12} className="inline mr-1.5" />
+              So What?
+            </p>
+            <CollapsibleContent maxHeight={350} bgColor="var(--ts-accent-6)">
+              <div
+                className="text-base leading-relaxed"
+                style={{ color: "var(--foreground)", lineHeight: 1.7 }}
               >
-                Free account. No credit card.
-              </p>
-              <Link
-                href={redirectPath ? `/auth/login?redirect=${encodeURIComponent(redirectPath)}` : "/auth/login"}
-                className="btn-primary rounded-xl px-8 py-3 text-base font-medium"
-              >
-                Sign up — it&apos;s free
-              </Link>
-              <Link
-                href={redirectPath ? `/auth/login?redirect=${encodeURIComponent(redirectPath)}` : "/auth/login"}
-                className="btn-ghost text-sm underline"
-              >
-                Sign in
-              </Link>
+                {renderContentBlock(soWhat)}
+              </div>
+            </CollapsibleContent>
+          </div>
+        </Section>
+      )}
+
+      {/* Now What? */}
+      {nowWhatItems.length > 0 && (
+        <Section delay={animated ? 0.3 : 0} animated={animated}>
+          <div
+            className="rounded-xl"
+            style={{
+              background: "var(--ts-surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "12px",
+              padding: "2rem",
+            }}
+          >
+            <p
+              className="text-sm font-semibold uppercase tracking-widest mb-4 pb-3 border-b"
+              style={{
+                color: "var(--ts-muted)",
+                borderColor: "var(--border)",
+                fontFamily: headingFont,
+                fontVariant: "small-caps",
+              }}
+            >
+              <ListChecks size={12} className="inline mr-1.5" />
+              Now What?
+            </p>
+            <NowWhatChecklist items={nowWhatItems} />
+          </div>
+        </Section>
+      )}
+
+      {/* Sources */}
+      {sources.length > 0 && (
+        <Section delay={animated ? 0.4 : 0} animated={animated}>
+          <div
+            className="rounded-xl"
+            style={{
+              background: "var(--ts-surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "12px",
+              padding: "2rem",
+            }}
+          >
+            <p
+              className="text-sm font-semibold uppercase tracking-widest mb-4 pb-3 border-b"
+              style={{
+                color: "var(--ts-muted)",
+                borderColor: "var(--border)",
+                fontFamily: headingFont,
+                fontVariant: "small-caps",
+              }}
+            >
+              <ExternalLink size={12} className="inline mr-1.5" />
+              Sources
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {sources
+                .filter((s) => s.url)
+                .map((source, i) => (
+                  <SourceCitation
+                    key={i}
+                    number={i + 1}
+                    source={source}
+                  />
+                ))}
             </div>
           </div>
-        </div>
-      ) : (
-        <>
-          {/* ── What Happened ───────────────────────────────────────── */}
-          {whatHappened && (
-            <Section delay={animated ? 0.1 : 0}>
-              <div
-                className="rounded-xl"
-                style={{
-                  background: "var(--ts-surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "12px",
-                  padding: "2rem",
-                }}
-              >
-                <p
-                  className="text-sm font-semibold uppercase tracking-widest mb-4 pb-3 border-b"
-                  style={{
-                    color: "var(--ts-muted)",
-                    borderColor: "var(--border)",
-                    fontFamily: headingFont,
-                    fontVariant: "small-caps",
-                  }}
-                >
-                  <Newspaper size={12} className="inline mr-1.5" />
-                  What Happened
-                </p>
-                <CollapsibleContent maxHeight={400}>
-                  <div
-                    className="text-base leading-relaxed"
-                    style={{ color: "var(--foreground)", lineHeight: 1.7 }}
-                  >
-                    {renderContentBlock(whatHappened)}
-                  </div>
-                </CollapsibleContent>
-              </div>
-            </Section>
-          )}
+        </Section>
+      )}
 
-          {/* ── So What? ────────────────────────────────────────────── */}
-          {soWhat && (
-            <Section delay={animated ? 0.2 : 0}>
-              <div
-                className="rounded-xl"
-                style={{
-                  background: "var(--ts-accent-6)",
-                  border: "1px solid var(--ts-accent-12)",
-                  borderLeft: "3px solid var(--ts-accent)",
-                  borderRadius: "12px",
-                  padding: "2rem",
-                }}
-              >
-                <p
-                  className="text-sm font-semibold uppercase tracking-widest mb-4 pb-3 border-b"
-                  style={{
-                    color: "var(--ts-accent)",
-                    borderColor: "var(--border)",
-                    fontFamily: headingFont,
-                    fontVariant: "small-caps",
-                  }}
-                >
-                  <AlertCircle size={12} className="inline mr-1.5" />
-                  So What?
-                </p>
-                <CollapsibleContent maxHeight={350} bgColor="var(--ts-accent-6)">
-                  <div
-                    className="text-base leading-relaxed"
-                    style={{ color: "var(--foreground)", lineHeight: 1.7 }}
-                  >
-                    {renderContentBlock(soWhat)}
-                  </div>
-                </CollapsibleContent>
-              </div>
-            </Section>
-          )}
+      {/* YouTube Recs */}
+      {youtubeRecs.length > 0 && (
+        <Section delay={animated ? 0.5 : 0} animated={animated}>
+          <div
+            className="rounded-xl"
+            style={{
+              background: "var(--ts-surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "12px",
+              padding: "1.5rem",
+            }}
+          >
+            <p
+              className="text-xs font-semibold uppercase tracking-widest mb-4"
+              style={{
+                color: "var(--ts-muted)",
+                fontFamily: headingFont,
+                fontVariant: "small-caps",
+              }}
+            >
+              Go Deeper
+            </p>
+            <YouTubeRecs recs={youtubeRecs} />
+          </div>
+        </Section>
+      )}
 
-          {/* ── Now What? ───────────────────────────────────────────── */}
-          {nowWhatItems.length > 0 && (
-            <Section delay={animated ? 0.3 : 0}>
-              <div
-                className="rounded-xl"
-                style={{
-                  background: "var(--ts-surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "12px",
-                  padding: "2rem",
-                }}
-              >
-                <p
-                  className="text-sm font-semibold uppercase tracking-widest mb-4 pb-3 border-b"
-                  style={{
-                    color: "var(--ts-muted)",
-                    borderColor: "var(--border)",
-                    fontFamily: headingFont,
-                    fontVariant: "small-caps",
-                  }}
-                >
-                  <ListChecks size={12} className="inline mr-1.5" />
-                  Now What?
-                </p>
-                <NowWhatChecklist items={nowWhatItems} />
-              </div>
-            </Section>
-          )}
-
-          {/* ── Sources ─────────────────────────────────────────────── */}
-          {sources.length > 0 && (
-            <Section delay={animated ? 0.4 : 0}>
-              <div
-                className="rounded-xl"
-                style={{
-                  background: "var(--ts-surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "12px",
-                  padding: "2rem",
-                }}
-              >
-                <p
-                  className="text-sm font-semibold uppercase tracking-widest mb-4 pb-3 border-b"
-                  style={{
-                    color: "var(--ts-muted)",
-                    borderColor: "var(--border)",
-                    fontFamily: headingFont,
-                    fontVariant: "small-caps",
-                  }}
-                >
-                  <ExternalLink size={12} className="inline mr-1.5" />
-                  Sources
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {sources
-                    .filter((s) => s.url)
-                    .map((source, i) => (
-                      <SourceCitation
-                        key={i}
-                        number={i + 1}
-                        source={source}
-                      />
-                    ))}
-                </div>
-              </div>
-            </Section>
-          )}
-
-          {/* ── YouTube Recs ────────────────────────────────────────── */}
-          {youtubeRecs.length > 0 && (
-            <Section delay={animated ? 0.5 : 0}>
-              <div
-                className="rounded-xl"
-                style={{
-                  background: "var(--ts-surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "12px",
-                  padding: "1.5rem",
-                }}
-              >
-                <p
-                  className="text-xs font-semibold uppercase tracking-widest mb-4"
-                  style={{
-                    color: "var(--ts-muted)",
-                    fontFamily: headingFont,
-                    fontVariant: "small-caps",
-                  }}
-                >
-                  Go Deeper
-                </p>
-                <YouTubeRecs recs={youtubeRecs} />
-              </div>
-            </Section>
-          )}
-
-          {/* ── Mark as Understood ───────────────────────────────────── */}
-          {onMarkUnderstood && (
-            <Section delay={animated ? 0.6 : 0}>
-              <button
-                onClick={handleMarkUnderstood}
-                disabled={understood}
-                className="btn-primary w-full rounded-xl px-8 py-3.5 text-base font-medium disabled:cursor-default"
-                style={{
-                  background: understood
-                    ? "var(--success)"
-                    : undefined,
-                  boxShadow: understood ? "none" : undefined,
-                }}
-              >
-                {understood ? "Understood!" : "I understand this \u2713"}
-              </button>
-            </Section>
-          )}
-        </>
+      {/* Mark as Understood */}
+      {onMarkUnderstood && (
+        <Section delay={animated ? 0.6 : 0} animated={animated}>
+          <button
+            onClick={handleMarkUnderstood}
+            disabled={understood}
+            className="btn-primary w-full rounded-xl px-8 py-3.5 text-base font-medium disabled:cursor-default"
+            style={{
+              background: understood
+                ? "var(--success)"
+                : undefined,
+              boxShadow: understood ? "none" : undefined,
+            }}
+          >
+            {understood ? "Understood!" : "I understand this \u2713"}
+          </button>
+        </Section>
       )}
     </div>
   );
 }
 
-// ── Blurred placeholder sections (simplified for blur preview) ─────────────
+// ── Blurred placeholder sections for legacy (simplified for blur preview) ───
 
-function BlurredSections({
+function LegacyBlurredSections({
   whatHappened,
   soWhat,
   nowWhatItems,

@@ -167,6 +167,14 @@ async function fetchArticle(url: string): Promise<string | null> {
   }
 }
 
+// ── Enrichment result tracking ───────────────────────────────────────────────
+
+export interface EnrichmentResult {
+  material: TopicSourceMaterial;
+  status: "enriched" | "thin" | "failed";
+  sourcesAdded: number;
+}
+
 // ── Main enrichment function ────────────────────────────────────────────────
 
 // Total time budget for enrichment — leave room for Claude calls
@@ -174,14 +182,23 @@ const ENRICHMENT_TIMEOUT_MS = 25_000;
 
 export async function enrichSourceMaterial(
   material: TopicSourceMaterial
-): Promise<TopicSourceMaterial> {
+): Promise<EnrichmentResult> {
   const deadline = Date.now() + ENRICHMENT_TIMEOUT_MS;
-  const searchResults = await searchWeb(material.topicTitle);
 
-  if (Date.now() > deadline) return material;
+  let searchResults: SerperResult[];
+  try {
+    searchResults = await searchWeb(material.topicTitle);
+  } catch (err) {
+    console.warn(`Enrichment search failed: ${err instanceof Error ? err.message : String(err)}`);
+    return { material, status: "failed", sourcesAdded: 0 };
+  }
+
+  if (Date.now() > deadline) {
+    return { material, status: "failed", sourcesAdded: 0 };
+  }
 
   if (searchResults.length === 0) {
-    return material;
+    return { material, status: "failed", sourcesAdded: 0 };
   }
 
   // Filter out social/video domains and limit to MAX_SEARCH_RESULTS
@@ -190,7 +207,7 @@ export async function enrichSourceMaterial(
     .slice(0, MAX_SEARCH_RESULTS);
 
   if (validResults.length === 0) {
-    return material;
+    return { material, status: "thin", sourcesAdded: 0 };
   }
 
   // Fetch articles in parallel
@@ -222,7 +239,7 @@ export async function enrichSourceMaterial(
   );
 
   if (enrichedSources.length === 0) {
-    return material;
+    return { material, status: "thin", sourcesAdded: 0 };
   }
 
   // Append enriched sources to existing items
@@ -236,9 +253,15 @@ export async function enrichSourceMaterial(
     publishedAt: "",
   }));
 
-  return {
+  const enrichedMaterial = {
     ...material,
     items: [...material.items, ...enrichedItems],
+  };
+
+  return {
+    material: enrichedMaterial,
+    status: "enriched",
+    sourcesAdded: enrichedItems.length,
   };
 }
 

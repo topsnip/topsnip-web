@@ -45,6 +45,7 @@ export interface TopicCandidate {
   platforms: Platform[];
   trendingScore: number;
   platformCount: number;
+  sourceCount: number;
   firstDetectedAt: string;
 }
 

@@ -5,32 +5,89 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Role,
+  TopicType,
   TopicSourceMaterial,
   GeneratedContent,
   SourceAttribution,
   TopicGenerationResult,
+  QualityScoreBreakdown,
 } from "./types";
 import { enrichSourceMaterial, isGarbageContent } from "./enricher";
+import type { EnrichmentResult } from "./enricher";
 import {
   buildExplainerSystemPrompt,
   buildExplainerUserPrompt,
-  buildQualityCheckPrompt,
+  sanitizeForPrompt,
 } from "./prompts";
+import { getFormatDefinition, getJsonSchemaString } from "./formats";
+import { checkQualityV2, isQualityAcceptable, MIN_QUALITY_SCORE } from "./quality";
+import { featureFlags } from "../feature-flags";
 
 const ALL_ROLES: Role[] = ["general", "developer", "pm", "cto"];
 
 // Sonnet for quality content generation — upgraded from Haiku in v1.1
 const MODEL = "claude-sonnet-4-5";
-const QUALITY_CHECK_MODEL = "claude-haiku-4-5";
 const MAX_TOKENS = 3000;
-
-// Quality threshold — content below this score gets flagged, not published
-const MIN_QUALITY_SCORE = 40;
 
 function getAnthropic(): Anthropic {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("Missing ANTHROPIC_API_KEY");
   return new Anthropic({ apiKey });
+}
+
+// ── Retry logic with exponential backoff ──────────────────────────────────
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function callClaudeWithRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3
+): Promise<T> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: unknown) {
+      const status = (err as { status?: number }).status;
+      if (status === 429 && attempt < maxRetries - 1) {
+        const delay = 1000 * Math.pow(2, attempt); // 1s, 2s, 4s
+        console.warn(`Rate limited (429), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+        await sleep(delay);
+        continue;
+      }
+      throw err;
+    }
+  }
+  // Unreachable but satisfies TypeScript
+  throw new Error("callClaudeWithRetry: exhausted retries");
+}
+
+// ── Content JSON validation ───────────────────────────────────────────────
+
+function validateContentJson(
+  contentJson: Record<string, unknown>,
+  topicType: TopicType
+): boolean {
+  try {
+    const format = getFormatDefinition(topicType);
+
+    const expectedFields = Object.keys(format.jsonSchema);
+    const missingFields = expectedFields.filter(
+      (field) => !(field in contentJson) || contentJson[field] === undefined
+    );
+
+    if (missingFields.length > 0) {
+      console.warn(
+        `Content JSON validation: missing fields for ${topicType}: ${missingFields.join(", ")}`
+      );
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn(`Content JSON validation error: ${err instanceof Error ? err.message : String(err)}`);
+    return false;
+  }
 }
 
 // ── Gather source material for a topic ────────────────────────────────────
@@ -39,10 +96,10 @@ export async function gatherSourceMaterial(
   supabase: SupabaseClient,
   topicId: string
 ): Promise<TopicSourceMaterial | null> {
-  // Get topic details
+  // Get topic details — include topic_type for format-aware generation
   const { data: topic, error: topicErr } = await supabase
     .from("topics")
-    .select("id, title, slug, trending_score, platform_count, is_breaking")
+    .select("id, title, slug, trending_score, platform_count, is_breaking, topic_type")
     .eq("id", topicId)
     .single();
 
@@ -84,6 +141,7 @@ export async function gatherSourceMaterial(
     trendingScore: topic.trending_score,
     platformCount: topic.platform_count,
     isBreaking: topic.is_breaking,
+    topicType: (topic.topic_type as TopicType) ?? undefined,
     items: items.map((item) => ({
       id: item.id,
       title: item.title,
@@ -101,26 +159,93 @@ export async function gatherSourceMaterial(
 async function generateForRole(
   anthropic: Anthropic,
   material: TopicSourceMaterial,
-  role: Role
+  role: Role,
+  thinSourceWarning?: string
 ): Promise<GeneratedContent> {
-  const systemPrompt = buildExplainerSystemPrompt(role);
-  const userPrompt = buildExplainerUserPrompt(
-    material.topicTitle,
-    material.items.map((item) => ({
-      title: item.title,
-      url: item.url,
-      contentSnippet: item.contentSnippet,
-      platform: item.platform,
-    }))
-  );
+  const topicType = material.topicType ?? "industry_news";
+  const isNonLegacy = topicType !== "industry_news" && featureFlags.USE_V2_PROMPTS;
 
-  // [M6 fix] 45-second timeout on Claude calls (bumped for Sonnet)
-  const message = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: MAX_TOKENS,
-    system: systemPrompt,
-    messages: [{ role: "user", content: userPrompt }],
-  }, { signal: AbortSignal.timeout(45_000) });
+  // Build prompts — use format-specific schema for non-legacy types (if v2 prompts enabled)
+  let systemPrompt = buildExplainerSystemPrompt(role);
+  let userPrompt: string;
+
+  if (isNonLegacy) {
+    try {
+      const format = getFormatDefinition(topicType);
+      const jsonSchemaStr = getJsonSchemaString(topicType);
+
+      // Add format-specific instructions to system prompt
+      systemPrompt += `\n\n${format.promptInstructions}`;
+
+      // [H4 fix] Sanitize source content to prevent XML tag injection
+      const sourcesText = material.items
+        .map(
+          (item, i) =>
+            `=== Source ${i + 1} [${sanitizeForPrompt(item.platform)}]: "${sanitizeForPrompt(item.title)}" ===\nURL: ${item.url}\n${sanitizeForPrompt(item.contentSnippet)}`
+        )
+        .join("\n\n");
+
+      // Build user prompt with format-specific schema + few-shot examples
+      userPrompt = `<topic>${sanitizeForPrompt(material.topicTitle)}</topic>
+
+<source_material>
+${sourcesText}
+</source_material>
+
+RELEVANCE FILTER: Only use information from sources that is DIRECTLY about "${sanitizeForPrompt(material.topicTitle)}". If a source mentions this topic only in passing or is primarily about something else, IGNORE that source entirely.
+
+Generate a learning brief about this topic. Your response must be valid JSON matching this exact schema:
+
+${jsonSchemaStr}
+
+GOOD example (match this quality and specificity):
+${format.fewShotGood}
+
+BAD example (never write like this):
+${format.fewShotBad}`;
+    } catch (err) {
+      // Format not found — fall back to default prompts
+      console.warn(`Format lookup failed for ${topicType}, falling back to default: ${err instanceof Error ? err.message : String(err)}`);
+      userPrompt = buildExplainerUserPrompt(
+        material.topicTitle,
+        material.items.map((item) => ({
+          title: item.title,
+          url: item.url,
+          contentSnippet: item.contentSnippet,
+          platform: item.platform,
+        }))
+      );
+    }
+  } else {
+    // Legacy industry_news format
+    userPrompt = buildExplainerUserPrompt(
+      material.topicTitle,
+      material.items.map((item) => ({
+        title: item.title,
+        url: item.url,
+        contentSnippet: item.contentSnippet,
+        platform: item.platform,
+      }))
+    );
+  }
+
+  // Add thin-source warning if enrichment was incomplete
+  if (thinSourceWarning) {
+    systemPrompt += `\n\n${thinSourceWarning}`;
+  }
+
+  // Claude API call with retry logic
+  const message = await callClaudeWithRetry(() =>
+    anthropic.messages.create(
+      {
+        model: MODEL,
+        max_tokens: MAX_TOKENS,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }],
+      },
+      { signal: AbortSignal.timeout(45_000) }
+    )
+  );
 
   const text = message.content[0];
   if (text.type !== "text") throw new Error("Unexpected Claude response type");
@@ -146,6 +271,9 @@ async function generateForRole(
         publishedAt: item.publishedAt,
       }));
 
+  // For non-legacy formats, store the full parsed JSON as contentJson
+  const contentJson = isNonLegacy ? (parsed as Record<string, unknown>) : undefined;
+
   return {
     topicId: material.topicId,
     role,
@@ -155,48 +283,11 @@ async function generateForRole(
     nowWhat: typeof parsed.now_what === "string" ? parsed.now_what : "",
     sourcesJson: sources,
     qualityScore: null,
+    contentJson,
   };
 }
 
-// ── Quality check ─────────────────────────────────────────────────────────
-
-async function checkQuality(
-  anthropic: Anthropic,
-  material: TopicSourceMaterial,
-  content: GeneratedContent
-): Promise<number> {
-  const prompt = buildQualityCheckPrompt(
-    material.topicTitle,
-    {
-      tldr: content.tldr,
-      whatHappened: content.whatHappened,
-      soWhat: content.soWhat,
-      nowWhat: content.nowWhat,
-    },
-    material.items.map((i) => ({ title: i.title, contentSnippet: i.contentSnippet }))
-  );
-
-  try {
-    const message = await anthropic.messages.create({
-      model: QUALITY_CHECK_MODEL,
-      max_tokens: 500,
-      messages: [{ role: "user", content: prompt }],
-    }, { signal: AbortSignal.timeout(30_000) });
-
-    const text = message.content[0];
-    if (text.type !== "text") return 0; // default score on error
-
-    const jsonMatch = text.text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return 0;
-
-    const parsed = JSON.parse(jsonMatch[0]);
-    return typeof parsed.score === "number" ? parsed.score : 50;
-  } catch {
-    // Quality check is non-critical — don't block generation
-    console.warn(`Quality check failed for topic ${material.topicId}, defaulting to 0`);
-    return 0;
-  }
-}
+// ── Quality check (delegated to quality.ts) ──────────────────────────────
 
 // ── Generate all roles for a single topic ─────────────────────────────────
 
@@ -232,14 +323,31 @@ export async function generateForTopic(
   }
 
   // Enrich thin source material with web search results
-  const material = await enrichSourceMaterial(rawMaterial);
+  const enrichmentResult: EnrichmentResult = await enrichSourceMaterial(rawMaterial);
+  const material = enrichmentResult.material;
+
+  // Track enrichment status in DB
+  try {
+    await supabase
+      .from("topics")
+      .update({ enrichment_status: enrichmentResult.status })
+      .eq("id", topicId);
+  } catch (err) {
+    console.warn(`Failed to update enrichment_status: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  // If enrichment was thin or failed, add warning to Claude prompt
+  const thinSourceWarning =
+    enrichmentResult.status === "thin" || enrichmentResult.status === "failed"
+      ? "Source material is limited. Be explicit about what you don't know. Do not pad with generalities."
+      : undefined;
 
   const anthropic = getAnthropic();
 
   // Generate content for all 4 roles
   // Run general first, then the 3 specialized roles in parallel
   try {
-    const generalContent = await generateForRole(anthropic, material, "general");
+    const generalContent = await generateForRole(anthropic, material, "general", thinSourceWarning);
     contentByRole.general = generalContent;
   } catch (err) {
     errors.push(`general: ${err instanceof Error ? err.message : String(err)}`);
@@ -248,7 +356,7 @@ export async function generateForTopic(
   // Specialized roles in parallel
   const specializedResults = await Promise.allSettled(
     (["developer", "pm", "cto"] as Role[]).map((role) =>
-      generateForRole(anthropic, material, role)
+      generateForRole(anthropic, material, role, thinSourceWarning)
     )
   );
 
@@ -261,36 +369,73 @@ export async function generateForTopic(
   }
 
   // Quality check on general content (representative of source accuracy)
+  let qualityBreakdown: QualityScoreBreakdown | null = null;
   if (contentByRole.general) {
-    const score = await checkQuality(anthropic, material, contentByRole.general);
-    // Apply score to all generated content for this topic
+    const topicType = material.topicType ?? "industry_news";
+    qualityBreakdown = await checkQualityV2(anthropic, material, contentByRole.general, topicType);
+    console.log(
+      `[Quality] Topic ${topicId}: total=${qualityBreakdown.total} ` +
+      `(factual=${qualityBreakdown.factualGrounding}, action=${qualityBreakdown.actionability}, ` +
+      `format=${qualityBreakdown.formatCompliance}, voice=${qualityBreakdown.voiceCompliance})` +
+      (qualityBreakdown.issues.length > 0 ? ` issues: ${qualityBreakdown.issues.join("; ")}` : "")
+    );
+    // Apply total score to all generated content for backward compat
     for (const role of ALL_ROLES) {
       if (contentByRole[role]) {
-        contentByRole[role].qualityScore = score;
+        contentByRole[role].qualityScore = qualityBreakdown.total;
       }
     }
   }
 
   // Save to DB
+  const topicType = material.topicType ?? "industry_news";
+  const isNonLegacy = topicType !== "industry_news";
+
   for (const role of ALL_ROLES) {
     const content = contentByRole[role];
     if (!content) continue;
 
-    const { error: insertErr } = await supabase.from("topic_content").upsert(
-      {
-        topic_id: content.topicId,
-        role: content.role,
+    // Validate content_json if present
+    if (content.contentJson) {
+      validateContentJson(content.contentJson, topicType);
+      // Validation logs warnings but doesn't block saving
+    }
+
+    // Build the upsert payload
+    const upsertPayload: Record<string, unknown> = {
+      topic_id: content.topicId,
+      role: content.role,
+      sources_json: content.sourcesJson,
+      quality_score: content.qualityScore,
+      generated_by: MODEL,
+      generated_at: new Date().toISOString(),
+    };
+
+    if (isNonLegacy) {
+      // Non-legacy formats: store full JSON in content_json, extract tldr to legacy column
+      upsertPayload.content_json = content.contentJson ?? null;
+      upsertPayload.tldr = content.tldr; // tldr exists in all formats
+      upsertPayload.what_happened = null;
+      upsertPayload.so_what = null;
+      upsertPayload.now_what = null;
+    } else {
+      // Legacy industry_news: write to all legacy columns AND content_json
+      upsertPayload.tldr = content.tldr;
+      upsertPayload.what_happened = content.whatHappened;
+      upsertPayload.so_what = content.soWhat;
+      upsertPayload.now_what = content.nowWhat;
+      // Also write to content_json for forward compatibility
+      upsertPayload.content_json = {
         tldr: content.tldr,
         what_happened: content.whatHappened,
         so_what: content.soWhat,
         now_what: content.nowWhat,
-        sources_json: content.sourcesJson,
-        quality_score: content.qualityScore,
-        generated_by: MODEL,
-        generated_at: new Date().toISOString(),
-      },
-      { onConflict: "topic_id,role" }
-    );
+      };
+    }
+
+    const { error: insertErr } = await supabase
+      .from("topic_content")
+      .upsert(upsertPayload, { onConflict: "topic_id,role" });
 
     if (insertErr) {
       errors.push(`DB insert failed for ${role}: ${insertErr.message}`);
@@ -313,16 +458,16 @@ export async function generateForTopic(
   }
 
   // Publish topic if general content exists and quality passes
-  const generalScore = contentByRole.general?.qualityScore ?? 0;
-  if (contentByRole.general && generalScore >= MIN_QUALITY_SCORE) {
+  if (contentByRole.general && qualityBreakdown && isQualityAcceptable(qualityBreakdown)) {
     await supabase
       .from("topics")
       .update({ status: "published", published_at: new Date().toISOString() })
       .eq("id", topicId);
-  } else if (generalScore < MIN_QUALITY_SCORE) {
-    errors.push(
-      `Quality score ${generalScore} below threshold ${MIN_QUALITY_SCORE} — topic not published`
-    );
+  } else if (qualityBreakdown && !isQualityAcceptable(qualityBreakdown)) {
+    const reason = qualityBreakdown.total < MIN_QUALITY_SCORE
+      ? `total score ${qualityBreakdown.total} below threshold ${MIN_QUALITY_SCORE}`
+      : `dimension score below minimum (factual=${qualityBreakdown.factualGrounding}, action=${qualityBreakdown.actionability}, format=${qualityBreakdown.formatCompliance}, voice=${qualityBreakdown.voiceCompliance})`;
+    errors.push(`Quality check failed: ${reason} — topic not published`);
     // Reset to detected so it can be retried
     await supabase
       .from("topics")

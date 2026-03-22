@@ -158,7 +158,10 @@ async function findRelevantSources(
     .from("source_items")
     .select("title, url, content_snippet, source_id")
     .gte("ingested_at", sevenDaysAgo)
-    .or(keywords.map((k) => `title.ilike.%${k}%`).join(","))
+    .or(keywords.map((k) => {
+      const escaped = k.replace(/%/g, '\\%').replace(/_/g, '\\_');
+      return `title.ilike.%${escaped}%`;
+    }).join(","))
     .order("engagement_score", { ascending: false })
     .limit(20);
 

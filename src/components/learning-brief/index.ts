@@ -15,3 +15,14 @@ export { YouTubeRecs } from "./YouTubeRecs";
 export type { YouTubeRecsProps, YouTubeRecsRec } from "./YouTubeRecs";
 
 export { SkeletonBrief } from "./SkeletonBrief";
+
+// V2 format renderers
+export {
+  ToolLaunchBrief,
+  ResearchPaperBrief,
+  IndustryNewsBrief,
+  RegulatoryBrief,
+  TutorialBrief,
+  OpinionDebateBrief,
+} from "./formats";
+export type { FormatRendererProps } from "./formats";

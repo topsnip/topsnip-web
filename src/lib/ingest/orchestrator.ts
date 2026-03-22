@@ -3,9 +3,13 @@ import type { Source, FetchResult, IngestRunResult } from "./types";
 import { fetchHN, fetchRSS, fetchReddit, fetchYouTube, fetchArxiv, fetchGitHub } from "./fetchers";
 import { scoreAndDedup } from "./scorer";
 import { sanitizeText, sanitizeUrl } from "./safe-fetch";
+import { classifyTopicSmart } from "../content/topic-classifier";
 
 /** Max items to store per source per run */
 const MAX_ITEMS_PER_SOURCE = 100;
+
+/** Max engagement history entries to keep per item */
+const MAX_ENGAGEMENT_SNAPSHOTS = 20;
 
 /**
  * Run a single fetch for one source based on its platform type.
@@ -30,14 +34,61 @@ async function fetchSource(source: Source): Promise<FetchResult> {
 }
 
 /**
+ * Snapshot engagement scores into engagement_history jsonb for velocity tracking.
+ * Appends a new snapshot and prunes to the last MAX_ENGAGEMENT_SNAPSHOTS entries.
+ */
+async function snapshotEngagement(
+  supabase: SupabaseClient,
+  upsertedIds: string[],
+  errors: string[]
+): Promise<void> {
+  if (upsertedIds.length === 0) return;
+
+  const now = new Date().toISOString();
+
+  // Fetch current engagement scores and history for upserted items
+  const { data: items, error: fetchErr } = await supabase
+    .from("source_items")
+    .select("id, engagement_score, engagement_history")
+    .in("id", upsertedIds);
+
+  if (fetchErr || !items) {
+    errors.push(`Engagement snapshot fetch failed: ${fetchErr?.message}`);
+    return;
+  }
+
+  // Update each item with new snapshot
+  for (const item of items) {
+    const history: Array<{ score: number; timestamp: string }> =
+      Array.isArray(item.engagement_history) ? item.engagement_history : [];
+
+    // Add new snapshot
+    history.push({ score: item.engagement_score || 0, timestamp: now });
+
+    // Prune to last N entries
+    const pruned = history.slice(-MAX_ENGAGEMENT_SNAPSHOTS);
+
+    const { error: updateErr } = await supabase
+      .from("source_items")
+      .update({ engagement_history: pruned })
+      .eq("id", item.id);
+
+    if (updateErr) {
+      errors.push(`Engagement snapshot update failed for ${item.id}: ${updateErr.message}`);
+    }
+  }
+}
+
+/**
  * Main ingestion orchestrator.
  *
  * 1. Load active sources from DB
  * 2. Fetch items from each source (in parallel, grouped by platform)
  * 3. Upsert new items into source_items
- * 4. Update source health + last_checked_at
- * 5. Run topic scoring/dedup
- * 6. Insert new topics
+ * 4. Snapshot engagement scores for velocity tracking
+ * 5. Update source health + last_checked_at
+ * 6. Run topic scoring/dedup (velocity-based with clustering)
+ * 7. Insert new topics with topic_type classification
  */
 export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunResult> {
   const start = Date.now();
@@ -67,6 +118,8 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
   );
 
   // 3. Process results
+  const allUpsertedIds: string[] = [];
+
   for (let i = 0; i < fetchResults.length; i++) {
     const source = sources[i];
     const result = fetchResults[i];
@@ -119,17 +172,20 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
       if (upsertErr) {
         errors.push(`Upsert failed for ${source.name}: ${upsertErr.message}`);
       } else {
-        newItems += upserted?.length || 0;
+        const ids = (upserted || []).map((r: { id: string }) => r.id);
+        allUpsertedIds.push(...ids);
+        newItems += ids.length;
       }
     }
   }
 
-  // 4. Score and detect new topics
-  // Cross-platform rule: topic on 1+ platforms with good score = worth covering
-  // (Lowered from 2 for launch — we may not have cross-platform signals on day 1)
+  // 4. Snapshot engagement scores for velocity tracking
+  await snapshotEngagement(supabase, allUpsertedIds, errors);
+
+  // 5. Score and detect new topics (velocity-based with clustering)
   const candidates = await scoreAndDedup(supabase, 1);
 
-  // 5. Insert new topics (skip if slug already exists)
+  // 6. Insert new topics with topic_type and enrichment fields
   for (const candidate of candidates.slice(0, 10)) {
     // Check if topic already exists — append date suffix on collision instead of dropping
     let slug = candidate.slug;
@@ -150,6 +206,13 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
       if (existingWithDate) continue;
     }
 
+    // Classify topic type using smart classifier (keyword-first, LLM fallback)
+    const topicType = await classifyTopicSmart(
+      candidate.title,
+      [], // No content snippets at this stage — title-only classification
+      candidate.platforms
+    );
+
     // Insert new topic
     const { data: topic, error: topicErr } = await supabase
       .from("topics")
@@ -159,8 +222,12 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
         status: "detected",
         trending_score: candidate.trendingScore,
         platform_count: candidate.platformCount,
+        source_count: candidate.sourceCount,
+        platforms: candidate.platforms,
+        topic_type: topicType,
+        enrichment_status: "pending",
         first_detected_at: candidate.firstDetectedAt,
-        is_breaking: candidate.trendingScore > 5, // High-score = breaking
+        is_breaking: candidate.trendingScore > 5,
       })
       .select("id")
       .single();

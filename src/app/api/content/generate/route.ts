@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/ingest/service-client";
 import { runContentGeneration } from "@/lib/content/orchestrator";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120; // Content generation can take longer than ingestion
+export const maxDuration = 200; // Parallel generation: up to 3 topics with 90s per-topic timeout
 
 const MIN_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes between runs
 
