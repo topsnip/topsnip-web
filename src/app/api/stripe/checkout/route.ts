@@ -19,6 +19,10 @@ function createServiceClient() {
 import { checkoutLimiter } from "@/lib/ratelimit";
 
 export async function POST(req: NextRequest) {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
+  }
+
   // [M19 fix] CSRF Origin header check
   if (!checkOrigin(req)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

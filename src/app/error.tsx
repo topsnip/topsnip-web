@@ -7,6 +7,8 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  console.error("[GlobalError]", error.message, error.digest);
+
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4"
@@ -39,7 +41,7 @@ export default function GlobalError({
             className="text-sm leading-relaxed"
             style={{ color: "rgba(240,240,240,0.6)" }}
           >
-            {error.message || "An unexpected error occurred. Please try again."}
+            An unexpected error occurred. Please try again.
           </p>
         </div>
 

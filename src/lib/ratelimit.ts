@@ -43,6 +43,7 @@ export class RateLimiter {
     }
 
     // In-memory fallback
+    console.warn('[ratelimit] Redis unavailable, using in-memory fallback (ineffective on serverless)');
     const now = Date.now();
     const entry = this.log.get(key);
 

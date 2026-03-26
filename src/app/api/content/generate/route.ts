@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/ingest/service-client";
 import { runContentGeneration } from "@/lib/content/orchestrator";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 200; // Parallel generation: up to 3 topics with 90s per-topic timeout
+export const maxDuration = 120; // Must match vercel.json maxDuration
 
 const MIN_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes between runs
 
@@ -22,6 +22,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const supabase = createServiceClient();
+
+    // H1: Self-heal stuck topics — reset any that have been "generating" for >10 minutes
+    const { error: stuckErr } = await supabase
+      .from("topics")
+      .update({ enrichment_status: "pending" })
+      .eq("enrichment_status", "generating")
+      .lt("updated_at", new Date(Date.now() - 10 * 60 * 1000).toISOString());
+
+    if (stuckErr) {
+      console.warn("Failed to reset stuck topics:", stuckErr.message);
+    }
 
     // Rate limit: check most recent content generation timestamp
     const { data: recentContent } = await supabase

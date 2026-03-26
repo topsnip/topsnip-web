@@ -17,8 +17,8 @@ const STAGGER_DELAY_MS = 5_000;
 /** Per-topic timeout */
 const PER_TOPIC_TIMEOUT_MS = 90_000;
 
-/** Run-level timeout */
-const RUN_TIMEOUT_MS = 180_000;
+/** Run-level timeout — 110s to leave 10s buffer before Vercel's 120s maxDuration kills it */
+const RUN_TIMEOUT_MS = 110_000;
 
 /** Max Claude API calls per day (each topic = ~4 role calls + 1 quality check = ~5) */
 const MAX_DAILY_API_CALLS = 200;

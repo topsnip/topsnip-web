@@ -150,5 +150,11 @@ export async function POST(req: NextRequest) {
 
 // Support GET for Vercel Cron (sends GET requests)
 export async function GET(req: NextRequest) {
-  return POST(req);
+  // Vercel Cron calls GET — create a synthetic request with default type
+  const syntheticReq = new NextRequest(req.url, {
+    method: 'POST',
+    body: JSON.stringify({ type: 'daily' }),
+    headers: { ...Object.fromEntries(req.headers), 'content-type': 'application/json' },
+  });
+  return POST(syntheticReq);
 }
