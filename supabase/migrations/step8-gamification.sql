@@ -32,9 +32,9 @@ ALTER TABLE user_xp_events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users read own xp events" ON user_xp_events
   FOR SELECT USING (auth.uid() = user_id);
 
--- Service role can insert XP events (no user-side inserts)
-CREATE POLICY "Service role inserts xp events" ON user_xp_events
-  FOR INSERT WITH CHECK (true);
+-- Only authenticated users can insert their own XP events (via award_xp RPC)
+CREATE POLICY "Users insert own xp events" ON user_xp_events
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 
 -- ── D. RPC: award_xp ────────────────────────────────────────────────────────

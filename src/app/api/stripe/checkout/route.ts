@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Rate limit checkout creation to prevent Stripe API spam
-  if (checkoutLimiter.check(user.id)) {
+  if (await checkoutLimiter.check(user.id)) {
     return NextResponse.json(
       { error: "Too many checkout attempts. Please wait a moment." },
       { status: 429 }

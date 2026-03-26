@@ -349,17 +349,6 @@ export async function POST(req: NextRequest) {
       if (profile) {
         userPlan = profile.plan;
         userRole = (profile.role as Role) ?? "general";
-
-        // [C1 fix] Enforce daily search limit for free users BEFORE content generation
-        if (userPlan !== "pro") {
-          const today = new Date().toISOString().slice(0, 10);
-          if (profile.searches_date === today && (profile.searches_today ?? 0) >= 10) {
-            return NextResponse.json(
-              { error: "Daily search limit reached. Upgrade to Pro for unlimited searches.", code: "daily_limit" },
-              { status: 429 }
-            );
-          }
-        }
       }
     }
 
@@ -384,7 +373,7 @@ export async function POST(req: NextRequest) {
     // 3. Check rate limits (BEFORE expensive operations)
     if (user) {
       if (userPlan === "pro") {
-        if (proSearchLimiter.check(`pro:${userId}`)) {
+        if (await proSearchLimiter.check(`pro:${userId}`)) {
           return NextResponse.json(
             { error: "Too many requests. Please slow down.", code: "rate_limit" },
             { status: 429 }
@@ -392,7 +381,7 @@ export async function POST(req: NextRequest) {
         }
       } else {
         // [H3 fix] Burst rate limiter for free users
-        if (freeSearchLimiter.check(`free:${userId}`)) {
+        if (await freeSearchLimiter.check(`free:${userId}`)) {
           return NextResponse.json(
             { error: "Too many requests. Please slow down.", code: "rate_limit" },
             { status: 429 }
@@ -400,7 +389,7 @@ export async function POST(req: NextRequest) {
         }
       }
     } else {
-      if (anonymousSearchLimiter.check(`anon:${ip}`)) {
+      if (await anonymousSearchLimiter.check(`anon:${ip}`)) {
         return NextResponse.json(
           { error: "Too many requests. Please sign up for more searches.", code: "anon_rate_limit" },
           { status: 429 }
@@ -419,9 +408,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // [C1 fix] Claim search slot BEFORE content retrieval/generation
+    // [C1 fix] Atomically claim search slot — the RPC checks + increments in one transaction,
+    // eliminating the race condition from a separate check-then-act pattern.
     if (userId && userPlan !== "pro") {
-      await serviceClient.rpc("claim_search_slot", { p_user_id: userId, p_limit: 10 });
+      const { data: claimed } = await serviceClient.rpc("claim_search_slot", { p_user_id: userId, p_limit: 10 });
+      if (claimed === false) {
+        return NextResponse.json(
+          { error: "Daily search limit reached. Upgrade to Pro for unlimited searches.", code: "daily_limit" },
+          { status: 429 }
+        );
+      }
     }
 
     // 4. Check if we already have a published topic matching this query

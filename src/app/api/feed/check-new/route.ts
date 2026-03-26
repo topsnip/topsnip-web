@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Rate limiting
-    if (feedPollLimiter.check(user.id)) {
+    if (await feedPollLimiter.check(user.id)) {
       return NextResponse.json(
         { error: "Too many requests" },
         { status: 429, headers: { "Retry-After": "60" } }
@@ -46,10 +46,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Cap lookback to 24 hours
+    // Cap to 24h lookback and reject future dates
+    const now = new Date();
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const effectiveSince =
-      sinceDate < twentyFourHoursAgo ? twentyFourHoursAgo : sinceDate;
+      sinceDate > now
+        ? now
+        : sinceDate < twentyFourHoursAgo
+          ? twentyFourHoursAgo
+          : sinceDate;
 
     // Query new topics count
     const serviceClient = createServiceClient();

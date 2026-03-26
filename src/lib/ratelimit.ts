@@ -1,3 +1,13 @@
+import { Redis } from "@upstash/redis";
+
+// Initialize Redis if env vars are present
+const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+  ? new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+  : null;
+
 export class RateLimiter {
   private log = new Map<string, { count: number; resetAt: number }>();
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
@@ -8,17 +18,31 @@ export class RateLimiter {
     this.limit = limit;
     this.windowMs = windowMs;
 
-    // Periodic cleanup in warm instances
+    // Periodic cleanup in warm instances (for fallback map)
     if (typeof globalThis !== "undefined" && !this.cleanupInterval) {
       this.cleanupInterval = setInterval(() => this.cleanup(), 5 * 60_000);
     }
   }
 
   /**
-   * Evaluates if a key is rate limited.
+   * Evaluates if a key is rate limited backed by Redis (or in-memory fallback).
    * @returns true if limited (reject request), false if allowed (accept request).
    */
-  check(key: string): boolean {
+  async check(key: string): Promise<boolean> {
+    if (redis) {
+      try {
+        const redisKey = `rl:${key}`;
+        const count = await redis.incr(redisKey);
+        if (count === 1) {
+          await redis.pexpire(redisKey, this.windowMs);
+        }
+        return count > this.limit;
+      } catch (err) {
+        console.warn("Redis Ratelimit error, falling back to local Map:", err);
+      }
+    }
+
+    // In-memory fallback
     const now = Date.now();
     const entry = this.log.get(key);
 
@@ -34,12 +58,17 @@ export class RateLimiter {
   /**
    * Resets the limit for a key explicitly (useful for testing).
    */
-  reset(key: string) {
+  async reset(key: string) {
+    if (redis) {
+      try {
+        await redis.del(`rl:${key}`);
+      } catch (e) {}
+    }
     this.log.delete(key);
   }
 
   /**
-   * Cleans up expired entries to prevent memory leaks.
+   * Cleans up expired entries to prevent memory leaks in local map.
    */
   cleanup() {
     const now = Date.now();
@@ -56,10 +85,45 @@ export class RateLimiter {
   }
 }
 
+// ── Daily Quota Tracking (e.g., YouTube API) ────────────────────────────────
+
+const DAILY_YOUTUBE_QUOTA = 10000;
+
+export async function incrementYoutubeQuota(units: number): Promise<boolean> {
+  if (!redis) return true; // Fail open if no redis configured
+
+  try {
+    const dateStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const key = `quota:yt:${dateStr}`;
+    
+    // Check first to see if we're already over limit before incrementing
+    const currentStr = await redis.get<string | number | null>(key);
+    const current = typeof currentStr === "number" ? currentStr : parseInt(currentStr as string || "0", 10);
+    
+    if (current + units > DAILY_YOUTUBE_QUOTA) {
+      console.warn(`YouTube quota exhausted for ${dateStr} (${current}/${DAILY_YOUTUBE_QUOTA} units used)`);
+      return false; // Request rejected
+    }
+
+    const count = await redis.incrby(key, units);
+    if (count === units) {
+      // First setting of the key today, expire it in 48 hours to be safe
+      await redis.expire(key, 48 * 60 * 60);
+    }
+    return true; // Request allowed
+  } catch (err) {
+    console.warn("Redis quota tracking error, allowing request:", err);
+    return true; // Fail open
+  }
+}
+
 // Instantiate specific limiters (shared across module)
 export const anonymousSearchLimiter = new RateLimiter({ limit: 5, windowMs: 60_000 });
-export const freeSearchLimiter = new RateLimiter({ limit: 5, windowMs: 60_000 }); // [H3 fix] Burst protection for free users
+export const freeSearchLimiter = new RateLimiter({ limit: 5, windowMs: 60_000 });
 export const proSearchLimiter = new RateLimiter({ limit: 20, windowMs: 60_000 });
 export const checkoutLimiter = new RateLimiter({ limit: 3, windowMs: 60_000 });
 export const feedPollLimiter = new RateLimiter({ limit: 15, windowMs: 60_000 });
 export const feedStatsLimiter = new RateLimiter({ limit: 10, windowMs: 60_000 });
+export const deleteAccountLimiter = new RateLimiter({ limit: 2, windowMs: 60_000 });
+export const xpLimiter = new RateLimiter({ limit: 30, windowMs: 60_000 });
+export const portalLimiter = new RateLimiter({ limit: 5, windowMs: 60_000 });

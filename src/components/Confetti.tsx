@@ -42,19 +42,21 @@ function generateParticles(): Particle[] {
 }
 
 export default function Confetti({ show }: ConfettiProps) {
-  const [particles, setParticles] = useState<Particle[]>([]);
-  const [visible, setVisible] = useState(false);
+  const [burst, setBurst] = useState<{ visible: boolean; particles: Particle[] }>({
+    visible: false,
+    particles: [],
+  });
 
   useEffect(() => {
-    if (show) {
-      setParticles(generateParticles());
-      setVisible(true);
-      const timer = setTimeout(() => setVisible(false), 2500);
-      return () => clearTimeout(timer);
-    }
+    if (!show) return;
+    requestAnimationFrame(() => setBurst({ visible: true, particles: generateParticles() }));
+    const timer = setTimeout(() => setBurst(prev => ({ ...prev, visible: false })), 2500);
+    return () => clearTimeout(timer);
   }, [show]);
 
-  if (!visible) return null;
+  if (!burst.visible) return null;
+
+  const particles = burst.particles;
 
   return (
     <>

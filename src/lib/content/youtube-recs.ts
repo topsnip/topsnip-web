@@ -5,6 +5,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { YouTubeRecommendation } from "./types";
 import { buildYouTubeRecPrompt } from "./prompts";
+import { incrementYoutubeQuota } from "../ratelimit";
 
 const MODEL = "claude-haiku-4-5";
 
@@ -36,6 +37,11 @@ export async function findAndSaveYouTubeRecs(
   }
 
   try {
+    const allowed = await incrementYoutubeQuota(101); // 100 for search, 1 for details
+    if (!allowed) {
+      return { recs: [], error: "YouTube API daily quota exhausted" };
+    }
+
     // 1. Search YouTube for the topic
     const searchParams = new URLSearchParams({
       part: "snippet",

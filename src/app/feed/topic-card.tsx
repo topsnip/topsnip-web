@@ -40,9 +40,8 @@ function relativeTime(dateStr: string | null): string {
 
 function decodeHtml(text: string): string {
   if (typeof window === "undefined") return text;
-  const el = document.createElement("textarea");
-  el.innerHTML = text;
-  return el.value;
+  const doc = new DOMParser().parseFromString(text, "text/html");
+  return doc.body.textContent ?? text;
 }
 
 // ── Tilt detection: check for touch device + reduced motion ────────────

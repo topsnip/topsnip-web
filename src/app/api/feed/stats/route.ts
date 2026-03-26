@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Rate limiting
-    if (feedStatsLimiter.check(user.id)) {
+    if (await feedStatsLimiter.check(user.id)) {
       return NextResponse.json(
         { error: "Too many requests" },
         { status: 429, headers: { "Retry-After": "60" } }

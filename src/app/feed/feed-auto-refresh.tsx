@@ -18,7 +18,10 @@ const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 export function FeedAutoRefresh({ lastPublishedAt, onNewTopics }: FeedAutoRefreshProps) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onNewTopicsRef = useRef(onNewTopics);
-  onNewTopicsRef.current = onNewTopics;
+  // eslint-disable-next-line react-hooks/refs
+  useEffect(() => {
+    onNewTopicsRef.current = onNewTopics;
+  }, [onNewTopics]);
 
   const poll = useCallback(async () => {
     if (!lastPublishedAt) return;

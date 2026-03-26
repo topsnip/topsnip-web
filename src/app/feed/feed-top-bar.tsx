@@ -19,10 +19,7 @@ function useCountUp(target: number, duration = 600): number {
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (target <= 0) {
-      setValue(0);
-      return;
-    }
+    if (target <= 0) return;
 
     const start = performance.now();
 

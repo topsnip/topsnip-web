@@ -30,6 +30,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
+    // Authenticate FIRST, before touching request body fields
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { user_id, topic_id, time_spent_sec, scroll_pct } = body;
 
     // Basic validation
@@ -40,16 +51,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
-
     // Verify the authenticated user matches the user_id in the request
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user || user.id !== user_id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (user.id !== user_id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Clamp values

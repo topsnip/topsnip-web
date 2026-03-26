@@ -66,27 +66,29 @@ export function MarkUnderstood({ topicId }: MarkUnderstoodProps) {
 /**
  * CSS-only confetti burst — 24 particles that fall from center.
  */
+function generateConfettiParticles() {
+  return Array.from({ length: 24 }, (_, i) => ({
+    id: i,
+    // Random x offset: -120px to 120px
+    x: Math.round(Math.random() * 240 - 120),
+    // Random y travel: 60px to 140px
+    y: Math.round(Math.random() * 80 + 60),
+    // Random rotation
+    rotate: Math.round(Math.random() * 360),
+    // Random delay: 0ms to 200ms
+    delay: Math.round(Math.random() * 200),
+    // Random size: 4px to 8px
+    size: Math.round(Math.random() * 4 + 4),
+    // Alternate shapes
+    isCircle: i % 3 === 0,
+    // Color: coral or white
+    color: i % 2 === 0 ? "var(--ts-accent)" : "#ffffff",
+  }));
+}
+
 function ConfettiBurst() {
-  // Generate random particles once
-  const particles = useRef(
-    Array.from({ length: 24 }, (_, i) => ({
-      id: i,
-      // Random x offset: -120px to 120px
-      x: Math.round(Math.random() * 240 - 120),
-      // Random y travel: 60px to 140px
-      y: Math.round(Math.random() * 80 + 60),
-      // Random rotation
-      rotate: Math.round(Math.random() * 360),
-      // Random delay: 0ms to 200ms
-      delay: Math.round(Math.random() * 200),
-      // Random size: 4px to 8px
-      size: Math.round(Math.random() * 4 + 4),
-      // Alternate shapes
-      isCircle: i % 3 === 0,
-      // Color: coral or white
-      color: i % 2 === 0 ? "var(--ts-accent)" : "#ffffff",
-    })),
-  ).current;
+  // Generate random particles once via lazy initializer (avoids impure calls during render)
+  const [particles] = useState(generateConfettiParticles);
 
   return (
     <div

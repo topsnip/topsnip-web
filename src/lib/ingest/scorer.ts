@@ -198,7 +198,8 @@ export async function scoreAndDedup(
   }
 
   // Map DB rows to SourceItemWithPlatform
-  const mapped: SourceItemWithPlatform[] = items.map((item: any) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase .rpc() returns untyped rows
+  const mapped: SourceItemWithPlatform[] = items.map((item: Record<string, any>) => ({
     id: item.id,
     title: item.title,
     content_snippet: item.content_snippet || "",

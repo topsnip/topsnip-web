@@ -238,7 +238,7 @@ function LoginForm() {
                 className="text-xs text-center"
                 style={{ color: "var(--ts-muted)" }}
               >
-                No password needed. We'll send you a magic link.
+                No password needed. We&apos;ll send you a magic link.
               </p>
             </>
           )}

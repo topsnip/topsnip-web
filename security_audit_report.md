@@ -268,10 +268,10 @@ These items **cannot be verified from the codebase** — they require production
 
 | Priority | Improvement | Effort |
 |----------|-------------|--------|
-| HIGH | Replace in-memory rate limiter with Upstash Redis (resolves H1 context loss across Vercel isolates) | 1-2 hours |
-| HIGH | Add Sentry error tracking | 30 min |
-| MEDIUM | Implement daily budget caps on generation (resolves M12) | 1 hour |
-| MEDIUM | Implement YouTube Quota tracking (resolves M13) | 2 hours |
+| ✅ DONE | Replace in-memory rate limiter with Upstash Redis (resolves H1 context loss across Vercel isolates) | 1-2 hours |
+| ✅ DONE | Add Sentry error tracking | 30 min |
+| ✅ DONE | Implement daily budget caps on generation (resolves M12) | 1 hour |
+| ✅ DONE | Implement YouTube Quota tracking (resolves M13) | 2 hours |
 | MEDIUM | Add `npm audit` to CI pipeline | 15 min |
 | MEDIUM | Deploy transcript service replacement (serverless function) | 2-4 hours |
 | LOW | Add structured logging (JSON format for Vercel) | 1 hour |

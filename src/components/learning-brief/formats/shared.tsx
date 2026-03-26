@@ -233,7 +233,7 @@ export function CollapsibleContent({
 
   useEffect(() => {
     if (contentRef.current && contentRef.current.scrollHeight > maxHeight) {
-      setNeedsCollapse(true);
+      requestAnimationFrame(() => setNeedsCollapse(true));
     }
   }, [maxHeight]);
 

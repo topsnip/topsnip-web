@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/ingest/service-client";
 import { checkOrigin } from "@/lib/csrf";
+import { xpLimiter } from "@/lib/ratelimit";
 
 const VALID_EVENT_TYPES = [
   "topic_read",
@@ -72,6 +73,11 @@ export async function POST(req: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limit — prevent XP farming via rapid requests
+    if (await xpLimiter.check(user.id)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
     const serviceClient = createServiceClient();

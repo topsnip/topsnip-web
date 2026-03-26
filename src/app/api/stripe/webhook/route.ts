@@ -69,8 +69,22 @@ export async function POST(req: NextRequest) {
       if (session.mode !== "subscription") break;
 
       const userId = session.metadata?.supabase_user_id;
-      if (!userId) {
-        console.error("checkout.session.completed: no supabase_user_id in metadata");
+      if (!userId || typeof userId !== "string") {
+        console.error("CRITICAL: checkout.session.completed missing supabase_user_id", {
+          sessionId: session.id,
+          customer: session.customer,
+        });
+        break;
+      }
+
+      const customerId = session.customer;
+      const subscriptionId = session.subscription;
+      if (typeof customerId !== "string" || typeof subscriptionId !== "string") {
+        console.error("CRITICAL: checkout.session.completed invalid customer/subscription", {
+          sessionId: session.id,
+          customerId,
+          subscriptionId,
+        });
         break;
       }
 
@@ -78,8 +92,8 @@ export async function POST(req: NextRequest) {
         .from("profiles")
         .update({
           plan: "pro",
-          stripe_customer_id: session.customer as string,
-          stripe_subscription_id: session.subscription as string,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
           subscription_status: "active",
           updated_at: new Date().toISOString(),
         })
@@ -92,7 +106,11 @@ export async function POST(req: NextRequest) {
     // Subscription changed — renewal, upgrade, downgrade, payment failure
     case "customer.subscription.updated": {
       const sub = event.data.object as Stripe.Subscription;
-      const customerId = sub.customer as string;
+      const customerId = sub.customer;
+      if (typeof customerId !== "string") {
+        console.error("customer.subscription.updated: invalid customer ID", { customerId });
+        break;
+      }
 
       // past_due retains Pro access while Stripe retries payment
       const proStatuses = ["active", "trialing", "past_due"];
@@ -115,7 +133,11 @@ export async function POST(req: NextRequest) {
     // Subscription cancelled — downgrade to free
     case "customer.subscription.deleted": {
       const sub = event.data.object as Stripe.Subscription;
-      const customerId = sub.customer as string;
+      const customerId = sub.customer;
+      if (typeof customerId !== "string") {
+        console.error("customer.subscription.deleted: invalid customer ID", { customerId });
+        break;
+      }
 
       const { error } = await db
         .from("profiles")
@@ -136,7 +158,11 @@ export async function POST(req: NextRequest) {
     // Only downgrade when customer.subscription.deleted fires (all retries exhausted).
     case "invoice.payment_failed": {
       const invoice = event.data.object as Stripe.Invoice;
-      const customerId = invoice.customer as string;
+      const customerId = invoice.customer;
+      if (typeof customerId !== "string") {
+        console.error("invoice.payment_failed: invalid customer ID", { customerId });
+        break;
+      }
 
       const { error } = await db
         .from("profiles")

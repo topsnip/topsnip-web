@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { checkOrigin } from "@/lib/csrf";
+import { portalLimiter } from "@/lib/ratelimit";
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -29,6 +30,11 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    // Rate limit — prevent portal session abuse
+    if (await portalLimiter.check(user.id)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
     const db = createServiceClient();

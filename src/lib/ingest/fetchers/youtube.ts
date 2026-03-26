@@ -1,4 +1,5 @@
 import type { FetchResult, RawSourceItem } from "../types";
+import { incrementYoutubeQuota } from "../../ratelimit";
 
 const YOUTUBE_API_URL = "https://www.googleapis.com/youtube/v3";
 
@@ -72,6 +73,17 @@ export async function fetchYouTube(
     const startIdx = hour % SEARCH_QUERIES.length;
     const queries = SEARCH_QUERIES.slice(startIdx, startIdx + maxQueries);
 
+    const cost = queries.length * 101; // 100 for search, 1 for stats
+    const allowed = await incrementYoutubeQuota(cost);
+    if (!allowed) {
+      return {
+        sourceId,
+        items: [],
+        health: "degraded",
+        error: "YouTube API daily quota exhausted (tracked via Redis)",
+      };
+    }
+
     for (const query of queries) {
       const params = new URLSearchParams({
         part: "snippet",
@@ -103,7 +115,7 @@ export async function fetchYouTube(
 
       // Get view counts for engagement scoring
       const videoIds = data.items.map((i) => i.id.videoId).join(",");
-      let statsMap = new Map<string, number>();
+      const statsMap = new Map<string, number>();
 
       if (videoIds) {
         const statsRes = await fetch(

@@ -395,7 +395,7 @@ function CollapsibleContent({ children, maxHeight = 400, bgColor = "var(--ts-sur
 
   useEffect(() => {
     if (contentRef.current && contentRef.current.scrollHeight > maxHeight) {
-      setNeedsCollapse(true);
+      requestAnimationFrame(() => setNeedsCollapse(true));
     }
   }, [maxHeight]);
 

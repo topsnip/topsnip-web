@@ -27,13 +27,10 @@ export function LearningDebt({
   isPro: boolean;
 }) {
   const [topics, setTopics] = useState<UnreadTopic[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isPro);
 
   useEffect(() => {
-    if (!isPro) {
-      setLoading(false);
-      return;
-    }
+    if (!isPro) return;
 
     async function fetchDebt() {
       const supabase = createClient();
