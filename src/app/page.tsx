@@ -3,17 +3,14 @@
 import { useState, useEffect, useRef, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import {
-  Search,
-  ArrowRight,
-  Check,
-} from "lucide-react";
+import { Search, ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { SiteNav } from "@/components/SiteNav";
 import { SectionReveal } from "@/components/SectionReveal";
-import { InlinePreview } from "@/app/inline-preview";
 import { AnimatedCounter } from "@/app/animated-counter";
+import AnimatedTerminal from "@/components/AnimatedTerminal";
+import ScrollProgress from "@/components/ScrollProgress";
 import { headingFont } from "@/lib/constants";
 
 const ALL_SUGGESTIONS = [
@@ -27,64 +24,6 @@ const ALL_SUGGESTIONS = [
   "best AI tools 2026",
 ];
 
-const HERO_LINE_1 = "Stop scrolling.";
-const HERO_LINE_2 = "Start understanding.";
-
-/* ─── Hero word stagger ──────────────────────────────────────────────── */
-
-function HeroHeadline() {
-  const words1 = HERO_LINE_1.split(" ");
-  const words2 = HERO_LINE_2.split(" ");
-  const totalWords1 = words1.length;
-
-  return (
-    <h1
-      className="font-bold tracking-tight leading-[1.08] text-white text-center"
-      style={{
-        fontSize: "var(--text-4xl)",
-        fontFamily: headingFont,
-      }}
-    >
-      {/* Line 1 */}
-      <span className="block">
-        {words1.map((word, i) => (
-          <motion.span
-            key={`l1-${i}`}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.4,
-              delay: i * 0.1,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="inline-block mr-[0.3em]"
-          >
-            {word}
-          </motion.span>
-        ))}
-      </span>
-      {/* Line 2 */}
-      <span className="block">
-        {words2.map((word, i) => (
-          <motion.span
-            key={`l2-${i}`}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.4,
-              delay: (totalWords1 + i) * 0.1,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="inline-block mr-[0.3em]"
-          >
-            {word}
-          </motion.span>
-        ))}
-      </span>
-    </h1>
-  );
-}
-
 /* ─── Page ──────────────────────────────────────────────────────────────── */
 export default function Home() {
   const router = useRouter();
@@ -93,20 +32,10 @@ export default function Home() {
   const [bottomQuery, setBottomQuery] = useState("");
   const [bottomFocused, setBottomFocused] = useState(false);
 
-  // ── Parallax scroll tracking ──────────────────────────────────────
-  const heroRef = useRef<HTMLElement>(null);
+  // Parallax
   const { scrollY } = useScroll();
-
-  // Layer speeds (back to front): 0.3x, 0.5x, 0.7x, 0.85x
   const bgGlowY = useTransform(scrollY, [0, 800], [0, 800 * 0.3]);
-  const dotGridY = useTransform(scrollY, [0, 800], [0, 800 * 0.5]);
-  const headlineY = useTransform(scrollY, [0, 800], [0, 800 * 0.7]);
-  const searchBarY = useTransform(scrollY, [0, 800], [0, 800 * 0.85]);
-  // Mockup stays at 1x (stationary relative to scroll) but fades out
-  const mockupOpacity = useTransform(scrollY, [300, 600], [1, 0]);
-  // Hero overall opacity fade
   const heroOpacity = useTransform(scrollY, [300, 600], [1, 0]);
-  // Floating orbs: slight horizontal sway opposite to scroll
   const orbSwayX = useTransform(scrollY, [0, 600], [0, -30]);
 
   // Redirect logged-in users to /feed
@@ -119,7 +48,7 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Randomize 4 suggestions on mount (client-side only to avoid hydration mismatch)
+  // Randomize 4 suggestions on mount
   const [suggestions, setSuggestions] = useState<string[]>(() =>
     ALL_SUGGESTIONS.slice(0, 4),
   );
@@ -150,125 +79,130 @@ export default function Home() {
     navigateToSearch(bottomQuery);
   }
 
-  // Timing constants for hero stagger
-  const headlineComplete = (HERO_LINE_1.split(" ").length + HERO_LINE_2.split(" ").length) * 0.1 + 0.4;
-  const subtitleDelay = headlineComplete + 0.2;
-  const searchBarDelay = subtitleDelay + 0.5;
-  const chipsDelay = searchBarDelay + 0.3;
-
   return (
     <main className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* ── Background glow ─────────────────────────────────────────────── */}
+      <ScrollProgress />
+
+      {/* Background glow */}
       <div
         className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full bg-glow"
         style={{ background: "var(--ts-glow-radial)" }}
       />
 
-      {/* ── Floating Nav ──────────────────────────────────────────────── */}
       <SiteNav user={null} />
 
       {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 1 — Hero (Parallax Depth)
+          SECTION 1 — Hero (2-column: Brand + Terminal)
           ═══════════════════════════════════════════════════════════════════ */}
       <motion.section
-        ref={heroRef}
         style={{ opacity: heroOpacity }}
-        className="parallax-container flex flex-col items-center px-4 pt-28 pb-16 sm:pt-36 sm:pb-24 relative z-10"
+        className="flex items-center justify-center px-4 pt-24 pb-16 sm:pt-32 sm:pb-24 relative z-10 min-h-[90vh]"
       >
-        {/* Layer 1: Background glow orb — 0.3x speed (slowest) */}
+        {/* Pulsing background glow */}
         <motion.div
           className="absolute inset-0 overflow-hidden pointer-events-none"
           aria-hidden="true"
           style={{ y: bgGlowY }}
         >
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full animate-pulse-glow"
-            style={{ background: "radial-gradient(ellipse, var(--ts-accent) 0%, transparent 70%)", opacity: 0.2 }} />
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] rounded-full animate-pulse-glow"
+            style={{
+              background:
+                "radial-gradient(ellipse, rgba(232,115,74,0.25) 0%, transparent 70%)",
+              opacity: 0.4,
+            }}
+          />
         </motion.div>
 
-        {/* Layer 2: Dot grid pattern — 0.5x speed */}
-        <motion.div
-          className="absolute inset-0 dot-grid-bg pointer-events-none"
-          aria-hidden="true"
-          style={{ y: dotGridY }}
-        />
+        <div className="w-full max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10">
+          {/* LEFT: Brand + Search */}
+          <div className="flex flex-col gap-6 text-center lg:text-left">
+            {/* Live badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <span
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider"
+                style={{
+                  background: "rgba(232,115,74,0.12)",
+                  color: "var(--ts-accent)",
+                  border: "1px solid rgba(232,115,74,0.2)",
+                }}
+              >
+                <span className="pulse-dot w-1.5 h-1.5 rounded-full inline-block" style={{ background: "#27ca40" }} />
+                Live — TopSniping the web
+              </span>
+            </motion.div>
 
-        <div className="w-full max-w-3xl mx-auto flex flex-col items-center gap-8 relative z-10">
-          {/* Layer 3: Headline — 0.7x speed */}
-          <motion.div style={{ y: headlineY }}>
-            <HeroHeadline />
-          </motion.div>
+            {/* Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="font-bold tracking-tight leading-[1.05] text-white"
+              style={{
+                fontSize: "clamp(36px, 5vw, 64px)",
+                fontFamily: headingFont,
+                letterSpacing: "-2px",
+              }}
+            >
+              top<span style={{ color: "var(--ts-accent)" }}>snip</span>
+            </motion.h1>
 
-          {/* Subtitle — also at 0.7x speed (grouped with headline) */}
-          <motion.div style={{ y: headlineY }}>
+            {/* Subtitle */}
             <motion.p
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.5,
-                delay: subtitleDelay,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-              className="text-base sm:text-lg leading-relaxed max-w-lg mx-auto text-center"
-              style={{
-                color: "var(--ts-text-2)",
-                fontSize: "var(--text-lg)",
-              }}
+              transition={{ duration: 0.5, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="text-base sm:text-lg leading-relaxed max-w-lg mx-auto lg:mx-0"
+              style={{ color: "var(--ts-text-2)", fontSize: "var(--text-lg)" }}
             >
-              AI moves fast. TopSnip helps you keep up — in 3 minutes, not 3
-              hours.
+              Search any topic. We find the top YouTube videos, read every transcript,
+              and synthesize them into one structured result — in under 3 minutes.
             </motion.p>
-          </motion.div>
 
-          {/* Layer 4: Search bar + suggestions — 0.85x speed */}
-          <motion.div style={{ y: searchBarY }} className="w-full flex flex-col items-center gap-3">
+            {/* Search bar */}
             <motion.form
               onSubmit={handleSubmit}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.4,
-                delay: searchBarDelay,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-              className="w-full flex flex-col gap-3 max-w-2xl"
+              transition={{ duration: 0.4, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full flex flex-col gap-3 max-w-lg mx-auto lg:mx-0"
             >
-              <div
-                className={`flex gap-2 items-center rounded-2xl border px-5 py-4 transition-all duration-200 ${
-                  focused ? "accent-glow" : ""
-                }`}
-                style={{
-                  background: focused
-                    ? "rgba(12,12,14,0.6)"
-                    : "rgba(12,12,14,0.3)",
-                  backdropFilter: "blur(16px)",
-                  borderColor: focused
-                    ? "var(--ts-accent-50)"
-                    : "var(--border)",
-                  boxShadow: focused
-                    ? "0 0 0 3px var(--ts-glow), 0 8px 40px -8px var(--ts-glow)"
-                    : "inset 0 1px 0 0 rgba(255,255,255,0.03)",
-                }}
-              >
-                <Search
-                  size={18}
-                  style={{ color: "var(--ts-muted)", flexShrink: 0 }}
-                />
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onFocus={() => setFocused(true)}
-                  onBlur={() => setFocused(false)}
-                  placeholder="Search any AI topic..."
-                  className="flex-1 bg-transparent text-sm sm:text-base outline-none tracking-wide"
-                  style={{ color: "var(--foreground)" }}
-                  autoComplete="off"
-                  aria-label="Search any AI topic"
-                />
+              <div className="flex gap-3">
+                <div
+                  className={`flex-1 flex gap-2 items-center rounded-xl border px-4 py-3.5 transition-all duration-200 ${
+                    focused ? "accent-glow" : ""
+                  }`}
+                  style={{
+                    background: focused ? "rgba(12,12,14,0.6)" : "rgba(12,12,14,0.3)",
+                    backdropFilter: "blur(16px)",
+                    borderColor: focused ? "var(--ts-accent-50)" : "var(--border)",
+                    boxShadow: focused
+                      ? "0 0 0 3px var(--ts-glow), 0 8px 40px -8px var(--ts-glow)"
+                      : "inset 0 1px 0 0 rgba(255,255,255,0.03)",
+                  }}
+                >
+                  <Search size={18} style={{ color: "var(--ts-muted)", flexShrink: 0 }} />
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
+                    placeholder="Search any AI topic..."
+                    className="flex-1 bg-transparent text-sm sm:text-base outline-none tracking-wide"
+                    style={{ color: "var(--foreground)" }}
+                    autoComplete="off"
+                    aria-label="Search any AI topic"
+                  />
+                </div>
                 <button
                   type="submit"
                   disabled={!query.trim()}
-                  className="btn-primary flex items-center gap-1.5 rounded-xl px-5 py-2 text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="btn-primary flex items-center gap-1.5 rounded-xl px-6 py-3.5 text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   Learn
                   <ArrowRight size={14} />
@@ -276,8 +210,8 @@ export default function Home() {
               </div>
             </motion.form>
 
-            {/* Suggestion chips — stagger in */}
-            <div className="flex flex-wrap justify-center gap-2">
+            {/* Suggestion chips */}
+            <div className="flex flex-wrap justify-center lg:justify-start gap-2">
               {suggestions.map((s, i) => (
                 <motion.button
                   key={s}
@@ -285,7 +219,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{
                     duration: 0.3,
-                    delay: chipsDelay + i * 0.05,
+                    delay: 0.65 + i * 0.05,
                     ease: [0.16, 1, 0.3, 1],
                   }}
                   onClick={() => navigateToSearch(s)}
@@ -295,80 +229,33 @@ export default function Home() {
                 </motion.button>
               ))}
             </div>
-          </motion.div>
+          </div>
 
-          {/* Layer 5: Product mockup — 1x speed (stationary), fades out on scroll */}
+          {/* RIGHT: Animated Terminal */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: chipsDelay + 0.4, ease: [0.16, 1, 0.3, 1] }}
-            style={{ opacity: mockupOpacity }}
-            className="w-full max-w-3xl mx-auto mt-12 relative"
+            transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="relative"
           >
-            {/* Browser chrome */}
-            <div className="rounded-t-xl px-4 py-3 flex items-center gap-2" style={{ background: "var(--ts-surface)", borderBottom: "1px solid var(--border)" }}>
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full" style={{ background: "#ff5f56" }} />
-                <div className="w-3 h-3 rounded-full" style={{ background: "#ffbd2e" }} />
-                <div className="w-3 h-3 rounded-full" style={{ background: "#27ca40" }} />
-              </div>
-              <div className="flex-1 mx-8">
-                <div className="text-xs px-3 py-1 rounded-md text-center" style={{ background: "rgba(255,255,255,0.06)", color: "var(--ts-text-2)" }}>
-                  topsnip.co/topic/claude-4-release
-                </div>
-              </div>
-            </div>
-            {/* Mock brief content */}
-            <div className="rounded-b-xl p-6 sm:p-8" style={{ background: "var(--ts-surface)", border: "1px solid var(--border)", borderTop: "none" }}>
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "var(--ts-accent-12)", color: "var(--ts-accent)" }}>Models</span>
-                  <span className="text-xs" style={{ color: "var(--ts-text-2)" }}>3 min read &middot; 5 sources</span>
-                </div>
-                <h3 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Claude 4 Is Here: What Changed and Why It Matters</h3>
-                <div className="rounded-lg p-4" style={{ background: "rgba(232,115,74,0.06)", border: "1px solid rgba(232,115,74,0.12)" }}>
-                  <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--ts-accent)" }}>TL;DR</p>
-                  <p className="text-sm leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
-                    Anthropic released Claude 4, their most capable model yet. It scores 92% on graduate-level reasoning benchmarks and can now process entire codebases in a single context window.
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <div className="flex-1 h-2 rounded-full" style={{ background: "var(--ts-accent-12)" }}>
-                    <div className="h-full w-3/4 rounded-full" style={{ background: "var(--ts-accent)" }} />
-                  </div>
-                  <span className="text-xs" style={{ color: "var(--ts-text-2)" }}>75% read</span>
-                </div>
-              </div>
-            </div>
-            {/* Glow under mockup */}
-            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-3/4 h-16 rounded-full opacity-30 blur-2xl"
-              style={{ background: "var(--ts-accent)" }} />
+            <AnimatedTerminal />
           </motion.div>
         </div>
       </motion.section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 2 — Inline Topic Preview
-          ═══════════════════════════════════════════════════════════════════ */}
-      <section className="px-4 pb-16 sm:pb-24 relative z-10">
-        <SectionReveal>
-          <div className="w-full max-w-2xl mx-auto">
-            <InlinePreview />
-          </div>
-        </SectionReveal>
-      </section>
+      {/* Divider */}
+      <div className="w-full max-w-[1100px] mx-auto h-px" style={{ background: "var(--border)" }} />
 
       {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 3 — How It Works
+          SECTION 2 — How It Works
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="px-4 py-16 sm:py-24 relative z-10 overflow-hidden">
-        {/* Floating decorative orb — horizontal parallax sway */}
         <motion.div
           className="absolute right-0 top-0 w-64 h-64 rounded-full opacity-10 blur-3xl pointer-events-none animate-float"
           style={{ background: "var(--ts-accent)", x: orbSwayX }}
         />
 
-        <div className="content-container-wide flex flex-col items-center gap-12">
+        <div className="max-w-[1100px] mx-auto flex flex-col items-center gap-12">
           <SectionReveal>
             <div className="text-center flex flex-col gap-3">
               <p
@@ -379,164 +266,176 @@ export default function Home() {
               </p>
               <h2
                 className="font-bold tracking-tight text-white"
-                style={{
-                  fontSize: "clamp(1.5rem, 4vw, 2rem)",
-                  fontFamily: headingFont,
-                }}
+                style={{ fontSize: "clamp(1.5rem, 4vw, 2rem)", fontFamily: headingFont }}
               >
                 From question to answer in 30 seconds
               </h2>
             </div>
           </SectionReveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_auto_1fr] gap-5 sm:gap-3 w-full items-center">
-            {(() => {
-              const steps = [
-                {
-                  step: 1,
-                  title: "Search",
-                  desc: "Type any AI topic. That's it.",
-                  svg: (
-                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="22" cy="22" r="12" stroke="var(--ts-accent)" strokeWidth="2" />
-                      <line x1="30.5" y1="30.5" x2="40" y2="40" stroke="var(--ts-accent)" strokeWidth="2" strokeLinecap="round" />
-                      <circle cx="22" cy="22" r="6" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
-                      <line x1="22" y1="4" x2="22" y2="8" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
-                      <line x1="22" y1="36" x2="22" y2="40" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
-                      <line x1="4" y1="22" x2="8" y2="22" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
-                      <line x1="36" y1="22" x2="40" y2="22" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
-                    </svg>
-                  ),
-                },
-                {
-                  step: 2,
-                  title: "We Research",
-                  desc: "We scan 7+ platforms and distill the signal.",
-                  svg: (
-                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="4" y="4" width="14" height="18" rx="2" stroke="var(--ts-accent)" strokeWidth="1.5" opacity="0.5" />
-                      <rect x="17" y="2" width="14" height="18" rx="2" stroke="var(--ts-accent)" strokeWidth="1.5" opacity="0.7" />
-                      <rect x="30" y="4" width="14" height="18" rx="2" stroke="var(--ts-accent)" strokeWidth="1.5" opacity="0.5" />
-                      <line x1="7" y1="9" x2="15" y2="9" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
-                      <line x1="7" y1="13" x2="13" y2="13" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
-                      <line x1="20" y1="7" x2="28" y2="7" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
-                      <line x1="20" y1="11" x2="26" y2="11" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
-                      <line x1="33" y1="9" x2="41" y2="9" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
-                      <path d="M10 26 L24 36 L38 26" stroke="var(--ts-accent)" strokeWidth="1.5" fill="none" opacity="0.6" />
-                      <path d="M24 36 L24 44" stroke="var(--ts-accent)" strokeWidth="1.5" strokeLinecap="round" />
-                      <rect x="18" y="40" width="12" height="6" rx="1" stroke="var(--ts-accent)" strokeWidth="1.5" fill="rgba(232,115,74,0.1)" />
-                    </svg>
-                  ),
-                },
-                {
-                  step: 3,
-                  title: "You Learn",
-                  desc: "Get a structured brief in under 3 minutes.",
-                  svg: (
-                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="8" y="4" width="32" height="40" rx="3" stroke="var(--ts-accent)" strokeWidth="1.5" />
-                      <line x1="14" y1="12" x2="34" y2="12" stroke="var(--ts-accent)" strokeWidth="1.5" opacity="0.5" />
-                      <line x1="14" y1="18" x2="30" y2="18" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
-                      <line x1="14" y1="22" x2="32" y2="22" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
-                      <line x1="14" y1="26" x2="28" y2="26" stroke="var(--ts-accent)" strokeWidth="1" opacity="0.3" />
-                      <circle cx="34" cy="34" r="8" fill="var(--ts-accent)" opacity="0.15" />
-                      <circle cx="34" cy="34" r="8" stroke="var(--ts-accent)" strokeWidth="1.5" />
-                      <path d="M30 34 L33 37 L39 31" stroke="var(--ts-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  ),
-                },
-              ];
-
-              return steps.flatMap(({ step, title, desc, svg }, i) => {
-                const card = (
-                  <SectionReveal key={step} delay={i * 0.15}>
-                    <div
-                      className="rounded-xl p-5 flex flex-col gap-4 h-full border backdrop-blur-sm"
-                      style={{
-                        background: "var(--ts-surface)",
-                        borderColor: "var(--border)",
-                        borderRadius: "12px",
-                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
-                      }}
-                    >
-                      {/* Step number + SVG illustration */}
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold text-white"
-                          style={{
-                            background: "var(--ts-accent)",
-                          }}
-                        >
-                          {step}
-                        </div>
-                      </div>
-
-                      {/* SVG illustration */}
-                      <div className="flex items-center justify-center py-2">
-                        {svg}
-                      </div>
-
-                      <p
-                        className="text-base font-semibold text-white"
-                        style={{ fontFamily: headingFont }}
-                      >
-                        {title}
-                      </p>
-                      <p
-                        className="text-base leading-relaxed"
-                        style={{ color: "var(--ts-text-2)" }}
-                      >
-                        {desc}
-                      </p>
-                    </div>
-                  </SectionReveal>
-                );
-
-                if (i < 2) {
-                  const arrow = (
-                    <div key={`arrow-${step}`} className="hidden sm:flex items-center justify-center" aria-hidden="true">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--ts-muted)" }}>
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  );
-                  return [card, arrow];
-                }
-                return [card];
-              });
-            })()}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full">
+            {[
+              { step: 1, title: "Search", desc: "Type any topic — \"What is RAG?\", \"LangChain basics\", \"Claude Code tips\". That's it." },
+              { step: 2, title: "We Research", desc: "TopSnip finds the best YouTube videos, extracts every transcript, and feeds them to Claude AI for synthesis." },
+              { step: 3, title: "You Learn", desc: "Get a structured brief — TL;DR, key points, concepts, step-by-step guides, and source links. Done." },
+            ].map(({ step, title, desc }, i) => (
+              <SectionReveal key={step} delay={i * 0.12}>
+                <div
+                  className="rounded-2xl p-7 flex flex-col gap-4 h-full border transition-all duration-300 hover:-translate-y-1.5"
+                  style={{
+                    background: "var(--ts-surface)",
+                    borderColor: "var(--border)",
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(232,115,74,0.3)";
+                    e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "var(--border)";
+                    e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.05)";
+                  }}
+                >
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold text-white"
+                    style={{
+                      background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2, #f59e6c))",
+                    }}
+                  >
+                    {step}
+                  </div>
+                  <p className="text-lg font-semibold text-white" style={{ fontFamily: headingFont }}>
+                    {title}
+                  </p>
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
+                    {desc}
+                  </p>
+                </div>
+              </SectionReveal>
+            ))}
           </div>
         </div>
       </section>
 
+      {/* Divider */}
+      <div className="w-full max-w-[1100px] mx-auto h-px" style={{ background: "var(--border)" }} />
+
       {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 4 — Social Proof / Stats
+          SECTION 3 — Live Result Preview
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="px-4 py-16 sm:py-24 relative z-10">
-        <div className="relative" style={{ background: "linear-gradient(180deg, transparent, var(--ts-surface) 20%, var(--ts-surface) 80%, transparent)" }}>
-          <SectionReveal>
-            <div className="content-container-wide py-12">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 w-full">
-                <AnimatedCounter target={12000} suffix="+" label="Topics explained" />
-                <AnimatedCounter target={50} suffix="+" label="Sources scanned" />
-                <AnimatedCounter target={3} suffix=" min" label="Average read time" />
+      <section className="px-4 py-16 sm:py-24 relative z-10" style={{ background: "var(--ts-surface-2, #1a1a1c)" }}>
+        <div className="max-w-[1100px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <SectionReveal direction="left">
+            <div className="flex flex-col gap-5">
+              <p
+                className="text-xs font-semibold uppercase tracking-widest"
+                style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
+              >
+                See it in action
+              </p>
+              <h2
+                className="font-bold tracking-tight text-white leading-tight"
+                style={{ fontSize: "clamp(1.5rem, 4vw, 2.5rem)", fontFamily: headingFont }}
+              >
+                10 videos.<br />3 minutes.<br />Now you know.
+              </h2>
+              <p className="text-base leading-relaxed" style={{ color: "var(--ts-text-2)", maxWidth: 560 }}>
+                No tabs. No 20-minute intros. No sponsor reads. No watching the same
+                explanation five times. Just the signal.
+              </p>
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                className="btn-primary w-fit rounded-xl px-6 py-3 text-sm font-semibold"
+              >
+                Search Now →
+              </button>
+            </div>
+          </SectionReveal>
+
+          <SectionReveal direction="right">
+            <div className="rounded-2xl overflow-hidden" style={{ background: "var(--ts-surface)", border: "1px solid var(--border)" }}>
+              {/* Browser chrome */}
+              <div className="flex items-center gap-2 px-4 py-3" style={{ background: "var(--ts-surface-2, #18181c)", borderBottom: "1px solid var(--border)" }}>
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#ff5f56" }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#ffbd2e" }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#27ca40" }} />
+                </div>
+                <div className="flex-1 text-center text-xs px-3 py-1 rounded-md" style={{ background: "rgba(255,255,255,0.04)", color: "var(--ts-muted)", fontFamily: "'JetBrains Mono', monospace" }}>
+                  topsnip.co/s/what-is-mcp
+                </div>
+              </div>
+              {/* Mock brief */}
+              <div className="p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold" style={{ background: "rgba(232,115,74,0.12)", color: "var(--ts-accent)" }}>
+                    AI Concepts
+                  </span>
+                  <span className="text-xs" style={{ color: "var(--ts-muted)" }}>3 min read · 8 sources</span>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-4" style={{ fontFamily: headingFont }}>
+                  What is MCP? Model Context Protocol Explained
+                </h3>
+                <div className="rounded-lg p-4 mb-4" style={{ background: "rgba(232,115,74,0.06)", border: "1px solid rgba(232,115,74,0.12)" }}>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--ts-accent)" }}>TL;DR</p>
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--ts-text-2)" }}>
+                    MCP (Model Context Protocol) is an open standard by Anthropic that lets AI models
+                    connect to external tools and data sources. Think of it as USB-C for AI — one
+                    universal connector.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2.5 mb-4">
+                  {["Replaces custom integrations with a standardized protocol", "Enables AI to read databases, APIs, and file systems natively", "Already supported by Claude, Cursor, and Windsurf"].map((point) => (
+                    <div key={point} className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" style={{ background: "var(--ts-accent)" }} />
+                      <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>{point}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  {["Fireship", "AI Jason", "Anthropic", "+5 more"].map((src) => (
+                    <span key={src} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--ts-text-2)" }}>
+                      <span style={{ color: "#ff0000", fontSize: 12 }}>▶</span> {src}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </SectionReveal>
         </div>
       </section>
 
+      {/* Divider */}
+      <div className="w-full max-w-[1100px] mx-auto h-px" style={{ background: "var(--border)" }} />
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          SECTION 4 — Stats
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section className="px-4 py-16 sm:py-24 relative z-10">
+        <SectionReveal>
+          <div className="max-w-[1100px] mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 w-full">
+              <AnimatedCounter target={12000} suffix="+" label="Topics explained" />
+              <AnimatedCounter target={50} suffix="+" label="Sources scanned per query" />
+              <AnimatedCounter target={3} suffix=" min" label="Average read time" />
+            </div>
+          </div>
+        </SectionReveal>
+      </section>
+
+      {/* Divider */}
+      <div className="w-full max-w-[1100px] mx-auto h-px" style={{ background: "var(--border)" }} />
+
       {/* ═══════════════════════════════════════════════════════════════════
           SECTION 5 — Pricing
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="px-4 py-16 sm:py-24 relative z-10 overflow-hidden">
-        {/* Floating decorative orb — horizontal parallax sway */}
+      <section className="px-4 py-16 sm:py-24 relative z-10 overflow-hidden" style={{ background: "var(--ts-surface-2, #1a1a1c)" }}>
         <motion.div
           className="absolute left-0 bottom-0 w-48 h-48 rounded-full opacity-10 blur-3xl pointer-events-none"
           style={{ background: "var(--ts-accent)", x: orbSwayX }}
         />
 
-        <div className="content-container-wide flex flex-col items-center gap-12">
+        <div className="max-w-[1100px] mx-auto flex flex-col items-center gap-12">
           <SectionReveal>
             <div className="text-center flex flex-col gap-3">
               <p
@@ -547,10 +446,7 @@ export default function Home() {
               </p>
               <h2
                 className="font-bold tracking-tight text-white"
-                style={{
-                  fontSize: "clamp(1.5rem, 4vw, 2rem)",
-                  fontFamily: headingFont,
-                }}
+                style={{ fontSize: "clamp(1.5rem, 4vw, 2rem)", fontFamily: headingFont }}
               >
                 Start free. Upgrade when you need more.
               </h2>
@@ -558,77 +454,38 @@ export default function Home() {
           </SectionReveal>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-3xl">
-            {/* Free — Explore */}
+            {/* Free */}
             <SectionReveal delay={0}>
               <div className="glass-card backdrop-blur-sm rounded-xl p-8 flex flex-col gap-5 h-full" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)" }}>
                 <div className="flex flex-col gap-1">
-                  <p
-                    className="text-sm font-semibold text-white"
-                    style={{ fontFamily: headingFont }}
-                  >
-                    Explore
-                  </p>
+                  <p className="text-sm font-semibold text-white" style={{ fontFamily: headingFont }}>Explore</p>
                   <div className="flex items-baseline gap-1">
-                    <span
-                      className="text-3xl font-bold tracking-tight text-white"
-                      style={{ fontFamily: headingFont }}
-                    >
-                      $0
-                    </span>
-                    <span
-                      className="text-sm"
-                      style={{ color: "var(--ts-text-2)" }}
-                    >
-                      /month
-                    </span>
+                    <span className="text-3xl font-bold tracking-tight text-white" style={{ fontFamily: headingFont }}>$0</span>
+                    <span className="text-sm" style={{ color: "var(--ts-text-2)" }}>/month</span>
                   </div>
-                  <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
-                    No credit card required
-                  </p>
+                  <p className="text-xs" style={{ color: "var(--ts-muted)" }}>No credit card required</p>
                 </div>
                 <ul className="flex flex-col gap-2.5 flex-1">
-                  {[
-                    "3 searches/day (guest)",
-                    "10 searches/day (signed in)",
-                    "Plain-language explainers",
-                    "Trending AI topics daily",
-                    "YouTube recommendations",
-                  ].map((f) => (
-                    <li
-                      key={f}
-                      className="flex items-start gap-2 text-base"
-                      style={{ color: "var(--ts-text-2)" }}
-                    >
-                      <Check
-                        size={13}
-                        className="mt-0.5 flex-shrink-0"
-                        style={{ color: "var(--ts-muted)" }}
-                      />
+                  {["3 searches/day (guest)", "10 searches/day (signed in)", "Plain-language explainers", "Trending AI topics daily", "YouTube recommendations"].map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-base" style={{ color: "var(--ts-text-2)" }}>
+                      <Check size={13} className="mt-0.5 flex-shrink-0" style={{ color: "var(--ts-muted)" }} />
                       {f}
                     </li>
                   ))}
                 </ul>
-                <button
-                  onClick={() =>
-                    window.scrollTo({ top: 0, behavior: "smooth" })
-                  }
-                  className="btn-secondary w-full rounded-xl py-2.5 text-sm font-semibold"
-                  style={{ color: "var(--ts-text-2)" }}
-                >
+                <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="btn-secondary w-full rounded-xl py-2.5 text-sm font-semibold" style={{ color: "var(--ts-text-2)" }}>
                   Get Started
                 </button>
               </div>
             </SectionReveal>
 
-            {/* Pro — Learn (highlighted) */}
+            {/* Pro */}
             <SectionReveal delay={0.12}>
               <div className="pro-card-glow backdrop-blur-sm rounded-xl p-8 flex flex-col gap-5 relative h-full" style={{ boxShadow: "0 0 40px rgba(232,115,74,0.1), inset 0 1px 0 rgba(255,255,255,0.05)" }}>
-                {/* Most popular badge */}
                 <div
                   className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-semibold whitespace-nowrap"
                   style={{
-                    background:
-                      "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2))",
+                    background: "linear-gradient(135deg, var(--ts-accent), var(--ts-accent-2, #f59e6c))",
                     color: "#fff",
                     boxShadow: "0 0 12px var(--ts-accent-50)",
                     fontFamily: headingFont,
@@ -636,60 +493,24 @@ export default function Home() {
                 >
                   Most popular
                 </div>
-
                 <div className="flex flex-col gap-1">
-                  <p
-                    className="text-sm font-semibold"
-                    style={{ color: "var(--ts-accent)", fontFamily: headingFont }}
-                  >
-                    Learn
-                  </p>
+                  <p className="text-sm font-semibold" style={{ color: "var(--ts-accent)", fontFamily: headingFont }}>Learn</p>
                   <div className="flex items-baseline gap-1">
-                    <span
-                      className="text-3xl font-bold tracking-tight text-white"
-                      style={{ fontFamily: headingFont }}
-                    >
-                      $9.99
-                    </span>
-                    <span
-                      className="text-sm"
-                      style={{ color: "var(--ts-text-2)" }}
-                    >
-                      /mo
-                    </span>
+                    <span className="text-3xl font-bold tracking-tight text-white" style={{ fontFamily: headingFont }}>$9.99</span>
+                    <span className="text-sm" style={{ color: "var(--ts-text-2)" }}>/mo</span>
                   </div>
-                  <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
-                    Cancel anytime
-                  </p>
+                  <p className="text-xs" style={{ color: "var(--ts-muted)" }}>Cancel anytime</p>
                 </div>
                 <ul className="flex flex-col gap-2.5 flex-1">
-                  {[
-                    "Unlimited searches",
-                    "Role-specific depth (dev, PM, CTO)",
-                    '"So What" + "Now What" sections',
-                    "Personalized daily feed",
-                    "Knowledge tracking + learning history",
-                    "Priority processing",
-                  ].map((f) => (
-                    <li
-                      key={f}
-                      className="flex items-start gap-2 text-base"
-                      style={{ color: "var(--ts-text-2)" }}
-                    >
-                      <Check
-                        size={13}
-                        className="mt-0.5 flex-shrink-0"
-                        style={{ color: "var(--ts-accent)" }}
-                      />
+                  {["Unlimited searches", "Role-specific depth (dev, PM, CTO)", "\"So What\" + \"Now What\" sections", "Personalized daily feed", "Knowledge tracking + learning history", "Priority processing"].map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-base" style={{ color: "var(--ts-text-2)" }}>
+                      <Check size={13} className="mt-0.5 flex-shrink-0" style={{ color: "var(--ts-accent)" }} />
                       {f}
                     </li>
                   ))}
                 </ul>
-                <Link
-                  href="/upgrade"
-                  className="btn-primary w-full rounded-xl py-2.5 text-sm text-center block"
-                >
-                  Start Pro
+                <Link href="/upgrade" className="btn-primary w-full rounded-xl py-2.5 text-sm text-center block">
+                  Start Pro →
                 </Link>
               </div>
             </SectionReveal>
@@ -705,34 +526,21 @@ export default function Home() {
           <div className="w-full max-w-xl mx-auto text-center flex flex-col items-center gap-6">
             <h2
               className="font-bold tracking-tight text-white"
-              style={{
-                fontSize: "clamp(1.5rem, 4vw, 2rem)",
-                fontFamily: headingFont,
-              }}
+              style={{ fontSize: "clamp(1.5rem, 4vw, 2rem)", fontFamily: headingFont }}
             >
               Ready to understand AI?
             </h2>
 
-            <form
-              onSubmit={handleBottomSubmit}
-              className="w-full flex gap-2 max-w-md"
-            >
+            <form onSubmit={handleBottomSubmit} className="w-full flex gap-2 max-w-md">
               <div
-                className={`flex-1 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm transition-all duration-200 ${
-                  bottomFocused ? "accent-glow" : ""
-                }`}
+                className={`flex-1 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm transition-all duration-200 ${bottomFocused ? "accent-glow" : ""}`}
                 style={{
                   background: "var(--ts-surface)",
-                  borderColor: bottomFocused
-                    ? "var(--ts-accent-50)"
-                    : "var(--border)",
+                  borderColor: bottomFocused ? "var(--ts-accent-50)" : "var(--border)",
                   backdropFilter: "blur(12px)",
                 }}
               >
-                <Search
-                  size={15}
-                  style={{ color: "var(--ts-muted)", flexShrink: 0 }}
-                />
+                <Search size={15} style={{ color: "var(--ts-muted)", flexShrink: 0 }} />
                 <input
                   type="text"
                   value={bottomQuery}
@@ -750,8 +558,7 @@ export default function Home() {
                 disabled={!bottomQuery.trim()}
                 className="btn-primary flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm disabled:opacity-30"
               >
-                Go
-                <ArrowRight size={14} />
+                Go <ArrowRight size={14} />
               </button>
             </form>
 
@@ -763,42 +570,23 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 7 — Footer
+          Footer
           ═══════════════════════════════════════════════════════════════════ */}
-      <footer
-        className="px-6 py-8 relative z-10"
-        style={{ borderTop: "1px solid var(--border)" }}
-      >
-        <div className="content-container-wide flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="text-base font-bold tracking-tight text-white"
-            style={{ fontFamily: headingFont }}
-          >
+      <footer className="px-6 py-8 relative z-10" style={{ borderTop: "1px solid var(--border)" }}>
+        <div className="max-w-[1100px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Link href="/" className="text-base font-bold tracking-tight text-white" style={{ fontFamily: headingFont }}>
             top<span style={{ color: "var(--ts-accent)" }}>snip</span>
           </Link>
           <div className="flex items-center gap-6">
-            <Link
-              href="/about"
-              className="text-xs font-medium transition-colors hover:text-white"
-              style={{ color: "var(--ts-muted)" }}
-            >
-              About
-            </Link>
-            <Link
-              href="/upgrade"
-              className="text-xs font-medium transition-colors hover:text-white"
-              style={{ color: "var(--ts-muted)" }}
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/auth/login"
-              className="text-xs font-medium transition-colors hover:text-white"
-              style={{ color: "var(--ts-muted)" }}
-            >
-              Login
-            </Link>
+            {[
+              { href: "/about", label: "About" },
+              { href: "/upgrade", label: "Pricing" },
+              { href: "/auth/login", label: "Login" },
+            ].map(({ href, label }) => (
+              <Link key={href} href={href} className="text-xs font-medium transition-colors hover:text-white" style={{ color: "var(--ts-muted)" }}>
+                {label}
+              </Link>
+            ))}
           </div>
           <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
             &copy; {new Date().getFullYear()} TopSnip

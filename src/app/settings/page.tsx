@@ -267,6 +267,7 @@ export default function SettingsPage() {
           className="text-2xl font-bold tracking-tight text-white"
           style={{
             fontFamily: "var(--font-heading), 'Instrument Serif', serif",
+            animation: "fadeInUp 0.35s ease both",
           }}
         >
           Settings
@@ -289,7 +290,7 @@ export default function SettingsPage() {
         {/* ── Section: Profile ─────────────────────────────────────────────── */}
         <section
           className="glass-card rounded-xl p-8 flex flex-col gap-4"
-          style={{ cursor: "default" }}
+          style={{ cursor: "default", animation: "fadeInUp 0.35s ease 0.06s both" }}
         >
           <div className="flex items-center gap-2">
             <User size={16} style={{ color: "var(--ts-accent)" }} />
@@ -351,7 +352,7 @@ export default function SettingsPage() {
         {/* ── Section: Role ────────────────────────────────────────────────── */}
         <section
           className="glass-card rounded-xl p-8 flex flex-col gap-4"
-          style={{ cursor: "default" }}
+          style={{ cursor: "default", animation: "fadeInUp 0.35s ease 0.12s both" }}
         >
           <div className="flex items-center justify-between">
             <h2
@@ -437,7 +438,7 @@ export default function SettingsPage() {
         {/* ── Section: Interests ───────────────────────────────────────────── */}
         <section
           className="glass-card rounded-xl p-8 flex flex-col gap-4"
-          style={{ cursor: "default" }}
+          style={{ cursor: "default", animation: "fadeInUp 0.35s ease 0.18s both" }}
         >
           <div className="flex items-center justify-between">
             <h2
@@ -515,7 +516,7 @@ export default function SettingsPage() {
         {/* ── Section: Subscription ────────────────────────────────────────── */}
         <section
           className="glass-card rounded-xl p-8 flex flex-col gap-4"
-          style={{ cursor: "default" }}
+          style={{ cursor: "default", animation: "fadeInUp 0.35s ease 0.24s both" }}
         >
           <h2
             className="text-base font-semibold text-white"
@@ -569,7 +570,7 @@ export default function SettingsPage() {
         </section>
 
         {/* ── Sign out ─────────────────────────────────────────────────────── */}
-        <div className="pt-2">
+        <div className="pt-2" style={{ animation: "fadeInUp 0.35s ease 0.3s both" }}>
           <button
             onClick={handleSignOut}
             disabled={signingOut}

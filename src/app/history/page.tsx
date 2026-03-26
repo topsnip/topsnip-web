@@ -42,13 +42,14 @@ export default async function HistoryPage() {
           className="text-xl font-bold text-white"
           style={{
             fontFamily: "var(--font-heading), 'Instrument Serif', serif",
+            animation: "fadeInUp 0.35s ease both",
           }}
         >
           Search history
         </h1>
 
         {!history || history.length === 0 ? (
-          <div className="glass-card rounded-xl p-8 text-center flex flex-col items-center gap-3">
+          <div className="glass-card rounded-xl p-8 text-center flex flex-col items-center gap-3" style={{ animation: "fadeInUp 0.35s ease 0.06s both" }}>
             <Clock size={24} style={{ color: "var(--ts-muted)" }} />
             <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>
               No searches yet. Start by searching a topic.
@@ -62,7 +63,7 @@ export default async function HistoryPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {history.map((item) => (
+            {history.map((item, i) => (
               <Link
                 key={item.id}
                 href={`/s/${item.query_slug}?q=${encodeURIComponent(item.query)}`}
@@ -72,6 +73,7 @@ export default async function HistoryPage() {
                   borderColor: "var(--border)",
                   backdropFilter: "blur(8px)",
                   boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.03)",
+                  animation: `fadeInUp 0.35s ease ${0.06 + Math.min(i, 10) * 0.04}s both`,
                 }}
               >
                 <span className="text-sm font-medium text-white group-hover:text-[var(--ts-accent-2)] transition-colors">

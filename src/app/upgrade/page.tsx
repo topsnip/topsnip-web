@@ -185,7 +185,7 @@ function UpgradeContent() {
 
       <div className="w-full max-w-3xl mx-auto flex flex-col items-center gap-10 relative z-10 pt-20">
         {/* Heading */}
-        <div className="text-center flex flex-col gap-3">
+        <div className="text-center flex flex-col gap-3" style={{ animation: "fadeInUp 0.35s ease both" }}>
           <h1
             className="font-extrabold tracking-tight leading-tight text-white"
             style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)" }}
@@ -204,7 +204,7 @@ function UpgradeContent() {
         {/* Pricing cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
           {/* Monthly */}
-          <div className="glass-card rounded-2xl p-6 flex flex-col gap-5">
+          <div className="glass-card rounded-2xl p-6 flex flex-col gap-5" style={{ animation: "fadeInUp 0.35s ease 0.1s both" }}>
             <div className="flex flex-col gap-1">
               <p
                 className="text-xs font-semibold uppercase tracking-widest"
@@ -255,7 +255,7 @@ function UpgradeContent() {
           </div>
 
           {/* Yearly — highlighted */}
-          <div className="pro-card-glow rounded-2xl p-6 flex flex-col gap-5 relative">
+          <div className="pro-card-glow rounded-2xl p-6 flex flex-col gap-5 relative" style={{ animation: "fadeInUp 0.35s ease 0.16s both" }}>
             {/* Best value badge */}
             <div
               className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-semibold"
@@ -324,7 +324,7 @@ function UpgradeContent() {
         {/* Compare tiers — minimal reference */}
         <div
           className="w-full max-w-2xl rounded-xl border overflow-hidden"
-          style={{ borderColor: "var(--border)" }}
+          style={{ borderColor: "var(--border)", animation: "fadeInUp 0.35s ease 0.22s both" }}
         >
           <div
             className="grid grid-cols-2 md:grid-cols-4 px-4 py-2 text-xs font-semibold uppercase tracking-widest"
@@ -395,7 +395,7 @@ function UpgradeContent() {
         )}
 
         {/* Footer note */}
-        <p className="text-xs text-center" style={{ color: "var(--ts-muted)" }}>
+        <p className="text-xs text-center" style={{ color: "var(--ts-muted)", animation: "fadeInUp 0.35s ease 0.28s both" }}>
           No commitment. Cancel any time. Billed via Stripe.
         </p>
       </div>

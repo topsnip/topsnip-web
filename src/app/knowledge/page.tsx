@@ -259,7 +259,7 @@ export default async function KnowledgeDashboardPage() {
         </div>
 
         {/* ── 1. Gamification Stats Bar ────────────────────────────────────── */}
-        <div className="mb-4">
+        <div className="mb-4" style={{ animation: "fadeInUp 0.35s ease 0.06s both" }}>
           <StatsBar
             streak={stats.streak_count}
             xp={stats.xp}
@@ -270,7 +270,7 @@ export default async function KnowledgeDashboardPage() {
         </div>
 
         {/* ── 2. Level Progress Bar ───────────────────────────────────────── */}
-        <div className="mb-10">
+        <div className="mb-10" style={{ animation: "fadeInUp 0.35s ease 0.12s both" }}>
           <LevelBar level={stats.level} xp={stats.xp} />
         </div>
 

@@ -203,7 +203,10 @@ export default async function FeedPage() {
       <SiteNav user={{ id: user.id, plan: profile.plan ?? "free" }} />
 
       {/* ── Main Content ────────────────────────────────────────────────── */}
-      <div className="flex-1 w-full max-w-[900px] mx-auto px-[var(--space-page-x)] pt-28 pb-16 relative z-10">
+      <div
+        className="flex-1 w-full max-w-[900px] mx-auto px-[var(--space-page-x)] pt-28 pb-16 relative z-10"
+        style={{ animation: "fadeInUp 0.35s ease both" }}
+      >
         <FeedClient
           featuredTopic={featuredTopic}
           quickListTopics={quickListTopics}
@@ -218,7 +221,7 @@ export default async function FeedPage() {
       {/* ── Footer ──────────────────────────────────────────────────────── */}
       <footer
         className="px-6 py-8 relative z-10"
-        style={{ borderTop: "1px solid var(--border)" }}
+        style={{ borderTop: "1px solid var(--border)", animation: "fadeInUp 0.35s ease 0.12s both" }}
       >
         <div className="content-container flex flex-col sm:flex-row items-center justify-between gap-4">
           <Link
