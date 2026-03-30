@@ -26,9 +26,9 @@ export function apiRateLimit(message = "Too many requests", retryAfter = 60) {
 }
 
 /** 503 service unavailable response */
-export function apiServiceUnavailable(service?: string) {
+export function apiServiceUnavailable(service = "Service") {
   return apiError(
-    "Service temporarily unavailable. Please try again in a moment.",
+    `${service} temporarily unavailable. Please try again in a moment.`,
     503,
     "service_unavailable",
     { "Retry-After": "30" }

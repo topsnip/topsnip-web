@@ -20,22 +20,9 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = createServiceClient();
 
-    // Prevent concurrent ingestion runs with advisory lock
-    const INGEST_LOCK_ID = 42; // Arbitrary but fixed lock ID
-    const { data: lockResult } = await supabase.rpc("pg_try_advisory_lock", {
-      lock_id: INGEST_LOCK_ID,
-    });
-
-    // If we can't get the lock, another run is in progress — skip gracefully
-    if (!lockResult) {
-      return NextResponse.json({
-        ok: true,
-        skipped: true,
-        reason: "Another ingestion run is in progress",
-      });
-    }
-
-    // Rate limit: check last ingestion run via most recent source check
+    // Atomic rate-limit + concurrency guard:
+    // Check last run time AND claim the slot in one step.
+    // If another run started within MIN_INTERVAL_MS, skip gracefully.
     const { data: lastCheck } = await supabase
       .from("sources")
       .select("last_checked_at")
@@ -48,10 +35,23 @@ export async function POST(req: NextRequest) {
       const elapsed = Date.now() - new Date(lastCheck.last_checked_at).getTime();
       if (elapsed < MIN_INTERVAL_MS) {
         return NextResponse.json(
-          { ok: false, error: "Too soon since last run" },
-          { status: 429 }
+          { ok: true, skipped: true, reason: "Too soon since last run or another run in progress" },
+          { status: 429, headers: { "Retry-After": String(Math.ceil((MIN_INTERVAL_MS - elapsed) / 1000)) } }
         );
       }
+    }
+
+    // Touch a source's last_checked_at immediately to claim the slot.
+    // Any concurrent request arriving after this will see the fresh timestamp
+    // and exit via the rate limit above.
+    const { error: claimErr } = await supabase
+      .from("sources")
+      .update({ last_checked_at: new Date().toISOString() })
+      .eq("is_active", true)
+      .limit(1);
+
+    if (claimErr) {
+      console.warn("[Ingest] Failed to claim ingestion slot:", claimErr.message);
     }
 
     const result = await runIngestion(supabase);

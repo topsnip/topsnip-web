@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { apiServiceUnavailable } from "@/lib/api-response";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/ingest/service-client"; // [M1 fix] use shared client with env validation
@@ -544,10 +545,7 @@ export async function POST(req: NextRequest) {
       msg.includes("overloaded");
 
     if (isServiceOutage) {
-      return NextResponse.json(
-        { error: "Service temporarily unavailable. Please try again in a moment." },
-        { status: 503, headers: { "Retry-After": "30" } }
-      );
+      return apiServiceUnavailable("Search");
     }
 
     return NextResponse.json(
