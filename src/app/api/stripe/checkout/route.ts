@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/ingest/service-client";
 import { checkOrigin } from "@/lib/csrf";
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!);
-}
-
-function createServiceClient() {
-  return createSupabaseAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
 }
 
 // ── Rate limiting (prevent Stripe API spam) ────────────────────────────────
@@ -64,14 +57,14 @@ export async function POST(req: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Rate limit checkout creation to prevent Stripe API spam
   if (await checkoutLimiter.check(user.id)) {
     return NextResponse.json(
       { error: "Too many checkout attempts. Please wait a moment." },
-      { status: 429 }
+      { status: 429, headers: { "Retry-After": "60" } }
     );
   }
 

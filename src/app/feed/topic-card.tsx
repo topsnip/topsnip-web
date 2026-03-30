@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback, memo } from "react";
 import Link from "next/link";
 import { getCategoryColor } from "@/lib/utils/category-colors";
 import { headingFont } from "@/lib/constants";
@@ -62,10 +62,11 @@ interface TopicCardProps {
   topic: TopicCardData;
 }
 
-export function TopicCard({ topic }: TopicCardProps) {
+export const TopicCard = memo(function TopicCard({ topic }: TopicCardProps) {
   const categoryColor = getCategoryColor(topic.category);
   const cardRef = useRef<HTMLAnchorElement>(null);
-  const [spotlightPos, setSpotlightPos] = useState({ x: 50, y: 50 });
+  const spotlightRef = useRef({ x: 50, y: 50 });
+  const spotlightElRef = useRef<HTMLDivElement>(null);
 
   const MAX_TILT = 4; // degrees
 
@@ -91,8 +92,13 @@ export function TopicCard({ topic }: TopicCardProps) {
       el.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
       el.style.willChange = "transform";
 
-      // Update spotlight position (percentage)
-      setSpotlightPos({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 });
+      // Update spotlight position via direct DOM manipulation (no re-render)
+      const pctX = (x / rect.width) * 100;
+      const pctY = (y / rect.height) * 100;
+      spotlightRef.current = { x: pctX, y: pctY };
+      if (spotlightElRef.current) {
+        spotlightElRef.current.style.background = `radial-gradient(circle at ${pctX}% ${pctY}%, rgba(255,255,255,0.06), transparent 60%)`;
+      }
     },
     [],
   );
@@ -141,11 +147,12 @@ export function TopicCard({ topic }: TopicCardProps) {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Spotlight overlay — follows cursor */}
+      {/* Spotlight overlay — follows cursor (updated via ref, no re-renders) */}
       <div
+        ref={spotlightElRef}
         className="tilt-spotlight absolute inset-0 rounded-xl pointer-events-none"
         style={{
-          background: `radial-gradient(circle at ${spotlightPos.x}% ${spotlightPos.y}%, rgba(255,255,255,0.06), transparent 60%)`,
+          background: `radial-gradient(circle at ${spotlightRef.current.x}% ${spotlightRef.current.y}%, rgba(255,255,255,0.06), transparent 60%)`,
         }}
       />
 
@@ -251,4 +258,4 @@ export function TopicCard({ topic }: TopicCardProps) {
       </div>
     </Link>
   );
-}
+});

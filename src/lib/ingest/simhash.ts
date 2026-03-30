@@ -35,14 +35,36 @@ function fnv1a64(token: string): bigint {
 }
 
 /**
- * Tokenize text into lowercase alphanumeric words (length >= 2).
+ * Tokenize text into lowercase words, preserving hyphenated compound terms
+ * (e.g., "gpt-4", "claude-3.5") as single tokens so version numbers survive.
  */
 function tokenize(text: string): string[] {
-  return text
-    .toLowerCase()
+  const lower = text.toLowerCase();
+
+  // 1. Extract compound terms with hyphens/dots between alphanumeric parts
+  //    e.g., "gpt-4", "claude-3.5", "llama-3-70b"
+  const compoundPattern = /[a-z0-9]+(?:[-\.][a-z0-9]+)+/g;
+  const compounds: string[] = [];
+  let match: RegExpExecArray | null;
+
+  // Clone string for compound extraction
+  let remaining = lower;
+  while ((match = compoundPattern.exec(lower)) !== null) {
+    compounds.push(match[0]);
+    // Replace matched compound with spaces so it's not double-counted
+    remaining =
+      remaining.slice(0, match.index) +
+      " ".repeat(match[0].length) +
+      remaining.slice(match.index + match[0].length);
+  }
+
+  // 2. Tokenize the rest normally (strip non-alphanumeric, split on spaces)
+  const rest = remaining
     .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
-    .filter((w) => w.length >= 2);
+    .filter((w) => w.length >= 1);
+
+  return [...compounds, ...rest];
 }
 
 /**

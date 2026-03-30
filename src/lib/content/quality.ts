@@ -8,6 +8,7 @@ import type {
   GeneratedContent,
   TopicType,
 } from "./types";
+import { callClaudeWithRetry } from "./retry";
 
 const QUALITY_CHECK_MODEL = "claude-haiku-4-5";
 
@@ -109,35 +110,6 @@ Respond with ONLY valid JSON (no markdown fences, no explanation):
 }`;
 }
 
-// ── Retry logic (duplicated from generator to keep quality.ts self-contained) ─
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function callClaudeWithRetry<T>(
-  fn: () => Promise<T>,
-  maxRetries = 3
-): Promise<T> {
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (err: unknown) {
-      const status = (err as { status?: number }).status;
-      if (status === 429 && attempt < maxRetries - 1) {
-        const delay = 1000 * Math.pow(2, attempt);
-        console.warn(
-          `Quality check rate limited (429), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`
-        );
-        await sleep(delay);
-        continue;
-      }
-      throw err;
-    }
-  }
-  throw new Error("callClaudeWithRetry: exhausted retries");
-}
-
 // ── Main quality check function ─────────────────────────────────────────────
 
 export async function checkQualityV2(
@@ -162,6 +134,7 @@ export async function checkQualityV2(
         {
           model: QUALITY_CHECK_MODEL,
           max_tokens: 500,
+          temperature: 0,
           messages: [{ role: "user", content: prompt }],
         },
         { signal: AbortSignal.timeout(30_000) }

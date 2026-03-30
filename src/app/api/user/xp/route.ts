@@ -77,7 +77,10 @@ export async function POST(req: NextRequest) {
 
     // Rate limit — prevent XP farming via rapid requests
     if (await xpLimiter.check(user.id)) {
-      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: { "Retry-After": "60" } }
+      );
     }
 
     const serviceClient = createServiceClient();

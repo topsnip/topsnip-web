@@ -73,24 +73,36 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── Fetch subscribed users ─────────────────────────────────────────────
+    // ── Fetch subscribed users (paginated in batches of 50) ────────────────
     // Send to all users who have completed onboarding (have a verified email).
     // Future enhancement: add email_preferences column for opt-in/opt-out.
-    const { data: users, error: usersError } = await supabase
-      .from("profiles")
-      .select("email")
-      .eq("onboarding_complete", true)
-      .not("email", "is", null);
+    const USER_BATCH_SIZE = 50;
+    let userOffset = 0;
+    let users: { email: string | null }[] = [];
 
-    if (usersError) {
-      console.error("[Digest] Failed to fetch users:", usersError.message);
-      return NextResponse.json(
-        { ok: false, error: "Failed to fetch users" },
-        { status: 500 }
-      );
+    while (true) {
+      const { data: batch, error: batchError } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("onboarding_complete", true)
+        .not("email", "is", null)
+        .range(userOffset, userOffset + USER_BATCH_SIZE - 1);
+
+      if (batchError) {
+        console.error("[Digest] Failed to fetch users:", batchError.message);
+        return NextResponse.json(
+          { ok: false, error: "Failed to fetch users" },
+          { status: 500 }
+        );
+      }
+
+      if (!batch || batch.length === 0) break;
+      users = users.concat(batch);
+      userOffset += USER_BATCH_SIZE;
+      if (batch.length < USER_BATCH_SIZE) break; // Last page
     }
 
-    if (!users || users.length === 0) {
+    if (users.length === 0) {
       return NextResponse.json({
         ok: true,
         sent: 0,

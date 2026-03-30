@@ -20,6 +20,21 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = createServiceClient();
 
+    // Prevent concurrent ingestion runs with advisory lock
+    const INGEST_LOCK_ID = 42; // Arbitrary but fixed lock ID
+    const { data: lockResult } = await supabase.rpc("pg_try_advisory_lock", {
+      lock_id: INGEST_LOCK_ID,
+    });
+
+    // If we can't get the lock, another run is in progress — skip gracefully
+    if (!lockResult) {
+      return NextResponse.json({
+        ok: true,
+        skipped: true,
+        reason: "Another ingestion run is in progress",
+      });
+    }
+
     // Rate limit: check last ingestion run via most recent source check
     const { data: lastCheck } = await supabase
       .from("sources")

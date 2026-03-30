@@ -25,8 +25,12 @@ function getAnthropic(): Anthropic {
 function toSlug(query: string): string {
   return query
     .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
+    .trim()
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^\p{L}\p{N}-]/gu, "") // Keep Unicode letters and numbers
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 100) || "search"; // Fallback slug if empty after processing
 }
 
 // ── Input sanitization ──────────────────────────────────────────────────────
@@ -145,7 +149,7 @@ async function findRelevantSources(
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
-    .filter((w) => w.length > 3);
+    .filter((w) => w.length > 1);
 
   if (keywords.length === 0) return [];
 
@@ -376,7 +380,7 @@ export async function POST(req: NextRequest) {
         if (await proSearchLimiter.check(`pro:${userId}`)) {
           return NextResponse.json(
             { error: "Too many requests. Please slow down.", code: "rate_limit" },
-            { status: 429 }
+            { status: 429, headers: { "Retry-After": "60" } }
           );
         }
       } else {
@@ -384,7 +388,7 @@ export async function POST(req: NextRequest) {
         if (await freeSearchLimiter.check(`free:${userId}`)) {
           return NextResponse.json(
             { error: "Too many requests. Please slow down.", code: "rate_limit" },
-            { status: 429 }
+            { status: 429, headers: { "Retry-After": "60" } }
           );
         }
       }
@@ -392,7 +396,7 @@ export async function POST(req: NextRequest) {
       if (await anonymousSearchLimiter.check(`anon:${ip}`)) {
         return NextResponse.json(
           { error: "Too many requests. Please sign up for more searches.", code: "anon_rate_limit" },
-          { status: 429 }
+          { status: 429, headers: { "Retry-After": "60" } }
         );
       }
 
@@ -403,7 +407,7 @@ export async function POST(req: NextRequest) {
       if (canSearch === false) {
         return NextResponse.json(
           { error: "Daily guest limit reached. Sign up for 10 free searches/day.", code: "guest_limit" },
-          { status: 429 }
+          { status: 429, headers: { "Retry-After": "60" } }
         );
       }
     }
@@ -415,7 +419,7 @@ export async function POST(req: NextRequest) {
       if (claimed === false) {
         return NextResponse.json(
           { error: "Daily search limit reached. Upgrade to Pro for unlimited searches.", code: "daily_limit" },
-          { status: 429 }
+          { status: 429, headers: { "Retry-After": "60" } }
         );
       }
     }
@@ -528,10 +532,24 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (err) {
-    console.error(
-      "[/api/search]",
-      err instanceof Error ? err.message : "Unknown error"
-    );
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[Search] Error: ${msg}`);
+
+    // Classify service-specific outages as 503
+    const isServiceOutage =
+      msg.includes("ECONNREFUSED") ||
+      msg.includes("ENOTFOUND") ||
+      msg.includes("timeout") ||
+      msg.includes("503") ||
+      msg.includes("overloaded");
+
+    if (isServiceOutage) {
+      return NextResponse.json(
+        { error: "Service temporarily unavailable. Please try again in a moment." },
+        { status: 503, headers: { "Retry-After": "30" } }
+      );
+    }
+
     return NextResponse.json(
       { error: "Something went wrong. Please try again." },
       { status: 500 }

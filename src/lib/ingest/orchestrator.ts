@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Source, FetchResult, IngestRunResult } from "./types";
 import { fetchHN, fetchRSS, fetchReddit, fetchYouTube, fetchArxiv, fetchGitHub } from "./fetchers";
 import { scoreAndDedup } from "./scorer";
-import { sanitizeText, sanitizeUrl } from "./safe-fetch";
+import { sanitizeText, sanitizeUrl, isSafeUrl } from "./safe-fetch";
 import { classifyTopicSmart } from "../content/topic-classifier";
 
 /** Max items to store per source per run */
@@ -57,24 +57,29 @@ async function snapshotEngagement(
     return;
   }
 
-  // Update each item with new snapshot
-  for (const item of items) {
-    const history: Array<{ score: number; timestamp: string }> =
-      Array.isArray(item.engagement_history) ? item.engagement_history : [];
+  // Run engagement updates concurrently instead of sequentially
+  const updateResults = await Promise.all(
+    items.map((item) => {
+      const history: Array<{ score: number; timestamp: string }> =
+        Array.isArray(item.engagement_history) ? item.engagement_history : [];
 
-    // Add new snapshot
-    history.push({ score: item.engagement_score || 0, timestamp: now });
+      // Add new snapshot
+      history.push({ score: item.engagement_score || 0, timestamp: now });
 
-    // Prune to last N entries
-    const pruned = history.slice(-MAX_ENGAGEMENT_SNAPSHOTS);
+      // Prune to last N entries
+      const pruned = history.slice(-MAX_ENGAGEMENT_SNAPSHOTS);
 
-    const { error: updateErr } = await supabase
-      .from("source_items")
-      .update({ engagement_history: pruned })
-      .eq("id", item.id);
+      return supabase
+        .from("source_items")
+        .update({ engagement_history: pruned })
+        .eq("id", item.id);
+    })
+  );
 
+  for (let i = 0; i < updateResults.length; i++) {
+    const { error: updateErr } = updateResults[i];
     if (updateErr) {
-      errors.push(`Engagement snapshot update failed for ${item.id}: ${updateErr.message}`);
+      errors.push(`Engagement snapshot update failed for ${items[i].id}: ${updateErr.message}`);
     }
   }
 }
@@ -153,16 +158,20 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
     const cappedItems = fetchResult.items.slice(0, MAX_ITEMS_PER_SOURCE);
 
     if (cappedItems.length > 0) {
-      const rows = cappedItems.map((item) => ({
-        source_id: item.sourceId,
-        external_id: item.externalId,
-        title: sanitizeText(item.title),
-        url: sanitizeUrl(item.url),
-        content_snippet: sanitizeText(item.contentSnippet),
-        engagement_score: item.engagementScore,
-        published_at: item.publishedAt,
-        ingested_at: new Date().toISOString(),
-      }));
+      const rows = cappedItems.map((item) => {
+        // Defense-in-depth: validate stored URLs against SSRF
+        const safeUrl = isSafeUrl(item.url) ? item.url : "";
+        return {
+          source_id: item.sourceId,
+          external_id: item.externalId,
+          title: sanitizeText(item.title),
+          url: sanitizeUrl(safeUrl),
+          content_snippet: sanitizeText(item.contentSnippet),
+          engagement_score: item.engagementScore,
+          published_at: item.publishedAt,
+          ingested_at: new Date().toISOString(),
+        };
+      });
 
       const { data: upserted, error: upsertErr } = await supabase
         .from("source_items")
@@ -187,24 +196,25 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
 
   // 6. Insert new topics with topic_type and enrichment fields
   for (const candidate of candidates.slice(0, 10)) {
-    // Check if topic already exists — append date suffix on collision instead of dropping
-    let slug = candidate.slug;
-    const { data: existing } = await supabase
-      .from("topics")
-      .select("id")
-      .eq("slug", slug)
-      .maybeSingle();
-
-    if (existing) {
-      slug = `${slug}-${new Date().toISOString().split("T")[0]}`;
-      // If even the date-suffixed slug exists, skip this topic
-      const { data: existingWithDate } = await supabase
+    // Find unique slug with counter fallback
+    const slug = candidate.slug;
+    let finalSlug = slug;
+    let suffix = 2;
+    while (true) {
+      const { data: existing } = await supabase
         .from("topics")
         .select("id")
-        .eq("slug", slug)
+        .eq("slug", finalSlug)
         .maybeSingle();
-      if (existingWithDate) continue;
+      if (!existing) break;
+      finalSlug = `${slug}-${suffix}`;
+      suffix++;
+      if (suffix > 10) {
+        console.warn(`[Ingest] Slug collision limit reached for "${slug}", skipping`);
+        break; // Safety valve
+      }
     }
+    if (suffix > 10) continue; // Skip this topic
 
     // Classify topic type using smart classifier (keyword-first, LLM fallback)
     const topicType = await classifyTopicSmart(
@@ -217,7 +227,7 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
     const { data: topic, error: topicErr } = await supabase
       .from("topics")
       .insert({
-        slug: slug,
+        slug: finalSlug,
         title: sanitizeText(candidate.title),
         status: "detected",
         trending_score: candidate.trendingScore,

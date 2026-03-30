@@ -3,6 +3,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { callClaudeWithRetry } from "./retry";
 import type {
   Role,
   TopicType,
@@ -33,34 +34,6 @@ function getAnthropic(): Anthropic {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("Missing ANTHROPIC_API_KEY");
   return new Anthropic({ apiKey });
-}
-
-// ── Retry logic with exponential backoff ──────────────────────────────────
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function callClaudeWithRetry<T>(
-  fn: () => Promise<T>,
-  maxRetries = 3
-): Promise<T> {
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (err: unknown) {
-      const status = (err as { status?: number }).status;
-      if (status === 429 && attempt < maxRetries - 1) {
-        const delay = 1000 * Math.pow(2, attempt); // 1s, 2s, 4s
-        console.warn(`Rate limited (429), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
-        await sleep(delay);
-        continue;
-      }
-      throw err;
-    }
-  }
-  // Unreachable but satisfies TypeScript
-  throw new Error("callClaudeWithRetry: exhausted retries");
 }
 
 // ── Content JSON validation ───────────────────────────────────────────────
@@ -431,6 +404,25 @@ export async function generateForTopic(
         so_what: content.soWhat,
         now_what: content.nowWhat,
       };
+    }
+
+    // Validate field lengths to catch malformed Claude responses
+    const MAX_FIELD_LENGTHS = { tldr: 500, what_happened: 10000, so_what: 8000, now_what: 5000 };
+    if (typeof upsertPayload.tldr === 'string' && upsertPayload.tldr.length > MAX_FIELD_LENGTHS.tldr) {
+      console.warn(`[Content] tldr exceeds ${MAX_FIELD_LENGTHS.tldr} chars for topic ${content.topicId} role=${content.role}, truncating`);
+      upsertPayload.tldr = (upsertPayload.tldr as string).slice(0, MAX_FIELD_LENGTHS.tldr);
+    }
+    if (typeof upsertPayload.what_happened === 'string' && upsertPayload.what_happened.length > MAX_FIELD_LENGTHS.what_happened) {
+      console.warn(`[Content] what_happened exceeds ${MAX_FIELD_LENGTHS.what_happened} chars, truncating`);
+      upsertPayload.what_happened = (upsertPayload.what_happened as string).slice(0, MAX_FIELD_LENGTHS.what_happened);
+    }
+    if (typeof upsertPayload.so_what === 'string' && upsertPayload.so_what.length > MAX_FIELD_LENGTHS.so_what) {
+      console.warn(`[Content] so_what exceeds ${MAX_FIELD_LENGTHS.so_what} chars, truncating`);
+      upsertPayload.so_what = (upsertPayload.so_what as string).slice(0, MAX_FIELD_LENGTHS.so_what);
+    }
+    if (typeof upsertPayload.now_what === 'string' && upsertPayload.now_what.length > MAX_FIELD_LENGTHS.now_what) {
+      console.warn(`[Content] now_what exceeds ${MAX_FIELD_LENGTHS.now_what} chars, truncating`);
+      upsertPayload.now_what = (upsertPayload.now_what as string).slice(0, MAX_FIELD_LENGTHS.now_what);
     }
 
     const { error: insertErr } = await supabase

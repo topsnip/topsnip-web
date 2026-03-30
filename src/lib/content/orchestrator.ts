@@ -7,6 +7,7 @@ import type { ContentGenerationRunResult, TopicGenerationResult } from "./types"
 import { generateForTopic } from "./generator";
 import { findAndSaveYouTubeRecs } from "./youtube-recs";
 import { buildDailyDigests } from "./quiet-day";
+import { sleep } from "./retry";
 
 /** Max topics to process per run — now supports parallel generation */
 const MAX_TOPICS_PER_RUN = 3;
@@ -27,10 +28,6 @@ const MAX_DAILY_API_CALLS = 200;
 const CALLS_PER_TOPIC = 5;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 /** Wrap a promise with a timeout */
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
