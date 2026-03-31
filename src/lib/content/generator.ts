@@ -10,6 +10,8 @@ import type {
   TopicSourceMaterial,
   GeneratedContent,
   SourceAttribution,
+  KeyTakeaway,
+  ContentComplexity,
   TopicGenerationResult,
   QualityScoreBreakdown,
 } from "./types";
@@ -22,8 +24,6 @@ import {
 } from "./prompts";
 import { getFormatDefinition, getJsonSchemaString } from "./formats";
 import { checkQualityV2, isQualityAcceptable, MIN_QUALITY_SCORE } from "./quality";
-import { featureFlags } from "../feature-flags";
-
 const ALL_ROLES: Role[] = ["general", "developer", "pm", "cto"];
 
 // Sonnet for quality content generation — upgraded from Haiku in v1.1
@@ -136,7 +136,7 @@ async function generateForRole(
   thinSourceWarning?: string
 ): Promise<GeneratedContent> {
   const topicType = material.topicType ?? "industry_news";
-  const isNonLegacy = topicType !== "industry_news" && featureFlags.USE_V2_PROMPTS;
+  const isNonLegacy = topicType !== "industry_news";
 
   // Build prompts — use format-specific schema for non-legacy types (if v2 prompts enabled)
   let systemPrompt = buildExplainerSystemPrompt(role);
@@ -244,6 +244,23 @@ ${format.fewShotBad}`;
         publishedAt: item.publishedAt,
       }));
 
+  // Parse new enrichment fields with backward-compatible defaults
+  const keyTakeaways: KeyTakeaway[] = Array.isArray(parsed.key_takeaways)
+    ? parsed.key_takeaways.map((kt: Record<string, string>) => ({
+        label: kt.label ?? "",
+        text: kt.text ?? "",
+      }))
+    : [];
+
+  const readingTimeSeconds: number =
+    typeof parsed.reading_time_seconds === "number" ? parsed.reading_time_seconds : 0;
+
+  const complexity: ContentComplexity =
+    typeof parsed.complexity === "string" &&
+    ["beginner", "intermediate", "advanced"].includes(parsed.complexity)
+      ? (parsed.complexity as ContentComplexity)
+      : "intermediate";
+
   // For non-legacy formats, store the full parsed JSON as contentJson
   const contentJson = isNonLegacy ? (parsed as Record<string, unknown>) : undefined;
 
@@ -251,9 +268,12 @@ ${format.fewShotBad}`;
     topicId: material.topicId,
     role,
     tldr: typeof parsed.tldr === "string" ? parsed.tldr : "",
+    keyTakeaways,
     whatHappened: typeof parsed.what_happened === "string" ? parsed.what_happened : "",
     soWhat: typeof parsed.so_what === "string" ? parsed.so_what : "",
     nowWhat: typeof parsed.now_what === "string" ? parsed.now_what : "",
+    readingTimeSeconds,
+    complexity,
     sourcesJson: sources,
     qualityScore: null,
     contentJson,
@@ -384,9 +404,19 @@ export async function generateForTopic(
       generated_at: new Date().toISOString(),
     };
 
+    // New enrichment fields — always stored in content_json for both paths
+    const enrichmentFields = {
+      key_takeaways: content.keyTakeaways,
+      reading_time_seconds: content.readingTimeSeconds,
+      complexity: content.complexity,
+    };
+
     if (isNonLegacy) {
       // Non-legacy formats: store full JSON in content_json, extract tldr to legacy column
-      upsertPayload.content_json = content.contentJson ?? null;
+      upsertPayload.content_json = {
+        ...(content.contentJson ?? {}),
+        ...enrichmentFields,
+      };
       upsertPayload.tldr = content.tldr; // tldr exists in all formats
       upsertPayload.what_happened = null;
       upsertPayload.so_what = null;
@@ -403,6 +433,7 @@ export async function generateForTopic(
         what_happened: content.whatHappened,
         so_what: content.soWhat,
         now_what: content.nowWhat,
+        ...enrichmentFields,
       };
     }
 

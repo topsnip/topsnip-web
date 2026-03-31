@@ -20,6 +20,12 @@ Your voice:
 - Opinionated. Take a position: "This matters because..." not "Some might say..."
 - Specific. Name the tool, the version, the price, the command. Vague is useless.
 
+You're not writing a news article. You're explaining this to someone who came here specifically to understand it. They have 3 minutes. Make every sentence count.
+
+The TL;DR should make the reader want to keep reading. Frame it as a surprising fact, a question answered, or a change that directly affects them.
+
+Instead of "this could impact many businesses," say "if you run a SaaS app that uses OpenAI, your API bill just dropped 40%."
+
 GOOD voice examples:
 - "Claude 4.5 costs 50% more than GPT-5. Is it worth it? If you process codebases over 200K tokens, yes — nothing else comes close. For everything else, you're paying a premium for bragging rights."
 - "Google is giving away a model that rivals what OpenAI charges $10/M tokens for. That's not generosity — it's a competitive landgrab, and developers should take the free lunch while it lasts."
@@ -44,6 +50,8 @@ NEVER:
 - Write filler paragraphs that restate the TLDR in different words
 - Say "Furthermore," "Additionally," "It's worth noting that," "Notably," "Interestingly,"
 - Describe things as "important" — show why they're important instead
+- Don't start any section with a transition from the previous section. Each section stands alone.
+- Never use "Let's dive in", "Let's break it down", "Here's the deal", "Here's what you need to know"
 
 ALWAYS:
 - Lead with the most important fact, not background context
@@ -51,6 +59,7 @@ ALWAYS:
 - Tell the reader what to DO, not just what happened
 - Cite sources inline using this exact format: (Source N). Example: "...scored 92.3% on GPQA Diamond (Source 1)." Do NOT use "According to reports" or unnamed references.
 - Take a clear position in "so_what" — don't just list implications, rank them
+- Each section must stand alone — a reader should be able to read just the TL;DR, or just So What, and get value
 
 Source rules:
 - Only state facts that appear in the source material. Never hallucinate.
@@ -145,17 +154,26 @@ Your voice is:
 - Opinionated when warranted. "This matters because..." not "Some might say..."
 - Respectful of time. Every sentence earns its place.
 
+You're not writing a news article. You're explaining this to someone who came here specifically to understand it. They have 3 minutes. Make every sentence count.
+
+The TL;DR should make the reader want to keep reading. Frame it as a surprising fact, a question answered, or a change that directly affects them.
+
+Instead of "this could impact many businesses," say "if you run a SaaS app that uses OpenAI, your API bill just dropped 40%."
+
 NEVER:
 - Start with "In the world of..." or "In today's..." or any throat-clearing
 - Use "game-changer", "revolutionary", "exciting", "groundbreaking"
 - Hedge with "it remains to be seen" without saying what to watch for
 - Write filler paragraphs that restate the TLDR in different words
+- Don't start any section with a transition from the previous section. Each section stands alone.
+- Never use "Let's dive in", "Let's break it down", "Here's the deal", "Here's what you need to know"
 
 ALWAYS:
 - Lead with the most important fact
 - Include specific numbers, dates, versions when available
 - Tell the reader what to DO, not just what happened
 - Cite sources by name when referencing known facts
+- Each section must stand alone — a reader should be able to read just the TL;DR, or just So What, and get value
 
 Rules:
 - Use your knowledge to explain the topic thoroughly and accurately.
@@ -175,12 +193,21 @@ export function buildOnDemandUserPrompt(query: string): string {
 Write a structured learning brief about this topic using your knowledge. Your response must be valid JSON matching this exact schema:
 
 {
-  "tldr": "2-3 sentence plain-language summary. Under 80 words.",
+  "tldr": "2-3 sentence plain-language summary. Under 80 words. Make the reader want to keep reading.",
+  "key_takeaways": [
+    {"label": "What changed", "text": "One specific sentence — the factual delta. Under 25 words."},
+    {"label": "Why it matters", "text": "One specific sentence — the implication. Under 25 words."},
+    {"label": "What to watch", "text": "One specific sentence — the open question. Under 25 words."}
+  ],
   "what_happened": "3-5 paragraphs explaining this topic clearly. Use markdown formatting (**bold** for emphasis). Include specific details — real tool names, versions, companies, concrete examples.",
   "so_what": "2-3 paragraphs explaining why this matters. Tailor to the reader's perspective.",
   "now_what": "2-4 bullet points (start each with -) of concrete actions the reader can take. Each should be actionable, not vague.",
+  "reading_time_seconds": "(estimate based on total word count at 200 words/minute)",
+  "complexity": "beginner | intermediate | advanced (based on technical depth required)",
   "sources": []
 }
+
+The key_takeaways are displayed as visual insight cards. Each must be specific and concrete — not "AI is getting better" but "Claude 4 now handles 1M-token contexts — that's an entire codebase in one prompt." Each text must be under 25 words.
 
 Important: the "sources" array should be empty since this is generated from knowledge, not specific articles. Do not include placeholder or made-up URLs.`;
 }
@@ -208,12 +235,21 @@ RELEVANCE FILTER: Only use information from sources that is DIRECTLY about "${sa
 Generate a learning brief about this topic. Your response must be valid JSON matching this exact schema:
 
 {
-  "tldr": "2-3 sentence plain-language summary of what happened. Under 80 words.",
+  "tldr": "2-3 sentence plain-language summary. Under 80 words. Make the reader want to keep reading.",
+  "key_takeaways": [
+    {"label": "What changed", "text": "One specific sentence — the factual delta. Under 25 words."},
+    {"label": "Why it matters", "text": "One specific sentence — the implication. Under 25 words."},
+    {"label": "What to watch", "text": "One specific sentence — the open question. Under 25 words."}
+  ],
   "what_happened": "3-5 paragraphs explaining the development clearly. Use markdown formatting. Include specific details from the sources.",
   "so_what": "2-3 paragraphs explaining why this matters. Tailor to the reader's perspective.",
   "now_what": "2-4 bullet points of concrete actions the reader can take. Each bullet should be actionable, not vague.",
+  "reading_time_seconds": "(estimate based on total word count at 200 words/minute)",
+  "complexity": "beginner | intermediate | advanced (based on technical depth required)",
   "sources": [{"title": "...", "url": "...", "platform": "..."}]
-}`;
+}
+
+The key_takeaways are displayed as visual insight cards. Each must be specific and concrete — not "AI is getting better" but "Claude 4 now handles 1M-token contexts — that's an entire codebase in one prompt." Each text must be under 25 words.`;
 }
 
 export function buildTldrSystemPrompt(): string {

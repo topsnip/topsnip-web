@@ -28,14 +28,25 @@ export interface SourceItemSummary {
   publishedAt: string;
 }
 
+/** A single key takeaway card — displayed as visual insight cards */
+export interface KeyTakeaway {
+  label: "What changed" | "Why it matters" | "What to watch";
+  text: string;
+}
+
+export type ContentComplexity = "beginner" | "intermediate" | "advanced";
+
 /** Generated content for one topic × one role */
 export interface GeneratedContent {
   topicId: string;
   role: Role;
   tldr: string;
+  keyTakeaways: KeyTakeaway[];
   whatHappened: string;
   soWhat: string;
   nowWhat: string;
+  readingTimeSeconds: number;
+  complexity: ContentComplexity;
   sourcesJson: SourceAttribution[];
   qualityScore: number | null;
   contentJson?: Record<string, unknown>;  // Flexible format-specific content

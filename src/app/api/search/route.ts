@@ -127,6 +127,9 @@ interface GeneratedBrief {
   what_happened: string;
   so_what: string;
   now_what: string;
+  key_takeaways: Array<{ label: string; text: string }>;
+  reading_time_seconds: number;
+  complexity: "beginner" | "intermediate" | "advanced";
   sources: Array<{ title: string; url: string; platform: string }>;
 }
 
@@ -281,11 +284,31 @@ async function generateOnDemandBrief(
       : [];
   }
 
+  // Parse new enrichment fields with backward-compatible defaults
+  const keyTakeaways = Array.isArray(parsed.key_takeaways)
+    ? parsed.key_takeaways.map((kt: Record<string, string>) => ({
+        label: kt.label ?? "",
+        text: kt.text ?? "",
+      }))
+    : [];
+
+  const readingTimeSeconds =
+    typeof parsed.reading_time_seconds === "number" ? parsed.reading_time_seconds : 0;
+
+  const complexity =
+    typeof parsed.complexity === "string" &&
+    ["beginner", "intermediate", "advanced"].includes(parsed.complexity)
+      ? (parsed.complexity as "beginner" | "intermediate" | "advanced")
+      : "intermediate";
+
   return {
     tldr: typeof parsed.tldr === "string" ? parsed.tldr : "",
     what_happened: typeof parsed.what_happened === "string" ? parsed.what_happened : "",
     so_what: typeof parsed.so_what === "string" ? parsed.so_what : "",
     now_what: typeof parsed.now_what === "string" ? parsed.now_what : "",
+    key_takeaways: keyTakeaways,
+    reading_time_seconds: readingTimeSeconds,
+    complexity,
     sources,
   };
 }
@@ -437,7 +460,7 @@ export async function POST(req: NextRequest) {
     if (existingTopic) {
       const { data: topicContent } = await serviceClient
         .from("topic_content")
-        .select("id, tldr, what_happened, so_what, now_what, sources_json")
+        .select("id, tldr, what_happened, so_what, now_what, sources_json, content_json")
         .eq("topic_id", existingTopic.id)
         .eq("role", contentRole)
         .maybeSingle();
@@ -446,7 +469,7 @@ export async function POST(req: NextRequest) {
       const content = topicContent
         ?? (await serviceClient
             .from("topic_content")
-            .select("id, tldr, what_happened, so_what, now_what, sources_json")
+            .select("id, tldr, what_happened, so_what, now_what, sources_json, content_json")
             .eq("topic_id", existingTopic.id)
             .eq("role", "general")
             .maybeSingle()
@@ -460,12 +483,18 @@ export async function POST(req: NextRequest) {
           .eq("topic_content_id", content.id)
           .order("position", { ascending: true });
 
+        // Extract new fields from content_json with backward-compatible defaults
+        const contentJson = (content.content_json ?? {}) as Record<string, unknown>;
+
         const result = {
           query: q,
           tldr: content.tldr,
           what_happened: content.what_happened,
           so_what: content.so_what,
           now_what: content.now_what,
+          key_takeaways: Array.isArray(contentJson.key_takeaways) ? contentJson.key_takeaways : [],
+          reading_time_seconds: typeof contentJson.reading_time_seconds === "number" ? contentJson.reading_time_seconds : 0,
+          complexity: typeof contentJson.complexity === "string" && ["beginner", "intermediate", "advanced"].includes(contentJson.complexity) ? contentJson.complexity : "intermediate",
           sources: content.sources_json ?? [],
           youtube_recs: (ytRecs ?? []).map((r) => ({
             video_id: r.video_id,
@@ -508,6 +537,9 @@ export async function POST(req: NextRequest) {
       what_happened: brief.what_happened,
       so_what: brief.so_what,
       now_what: brief.now_what,
+      key_takeaways: brief.key_takeaways,
+      reading_time_seconds: brief.reading_time_seconds,
+      complexity: brief.complexity,
       sources: brief.sources,
       youtube_recs: ytVideos.slice(0, 3).map((v) => ({
         ...v,
