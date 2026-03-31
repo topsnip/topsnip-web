@@ -2,7 +2,7 @@
  * HTML email templates for TopSnip transactional emails.
  *
  * Uses inline styles + table-based layout for maximum email client compatibility.
- * Brand: dark background (#0C0C0E), purple accent (#7C6AF7), light text (#F0F0F0).
+ * Brand: dark background (#0C0C0E), coral accent (#E8734A), light text (#F0F0F0).
  */
 
 // ── Brand constants ──────────────────────────────────────────────────────────
@@ -10,8 +10,8 @@
 const BRAND = {
   bg: "#0C0C0E",
   card: "#141418",
-  accent: "#7C6AF7",
-  accentHover: "#9B8DFF",
+  accent: "#E8734A",
+  accentHover: "#F59E6C",
   text: "#F0F0F0",
   muted: "#A0A0A0",
   border: "#2A2A2E",

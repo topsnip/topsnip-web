@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>Search any topic. Skip the noise.</strong>
+  <strong>Come learn something. Leave knowing it.</strong>
 </p>
 
 <p align="center">
@@ -25,11 +25,11 @@
 
 ## What is topsnip?
 
-You search a topic. We find the top YouTube videos on it, read every transcript, and synthesize them into one structured result — TL;DR, key points, concepts, step-by-step guides, and source links.
+TopSnip is an **AI Learning Intelligence Platform**. We monitor 7+ sources — YouTube, Hacker News, Reddit, arXiv, GitHub, official blogs, and more — then use Claude to synthesize everything into clear, structured learning briefs: TL;DR, key points, role-specific insights, and source links.
 
-**10 videos. 3 minutes. Now you know.**
+**5 topics. 3 minutes. Now you know.**
 
-No tabs. No 20-minute intros. No sponsor reads. No watching the same explanation five times. Just the signal.
+No tabs. No noise. No scrolling through 10 articles. Just the signal — personalized to your role.
 
 ---
 
@@ -37,25 +37,16 @@ No tabs. No 20-minute intros. No sponsor reads. No watching the same explanation
 
 ```
 ┌──────────────┐     ┌──────────────────┐     ┌───────────────────┐     ┌──────────────────┐
-│  You search  │ ──▶ │  YouTube API      │ ──▶ │  Transcript       │ ──▶ │  Claude Haiku    │
-│  a topic     │     │  finds top videos │     │  service fetches  │     │  synthesizes     │
-│              │     │  (8 results)      │     │  all transcripts  │     │  into structure  │
+│  You search  │ ──▶ │  7+ platforms     │ ──▶ │  Claude reads &   │ ──▶ │  Structured      │
+│  a topic     │     │  scanned (YT, HN, │     │  cross-references │     │  learning brief  │
+│              │     │  arXiv, Reddit…)  │     │  all sources      │     │  personalized    │
 └──────────────┘     └──────────────────┘     └───────────────────┘     └──────────────────┘
-                                                                              │
-                                                                              ▼
-                                                                    ┌──────────────────┐
-                                                                    │  Structured page │
-                                                                    │  TL;DR + points  │
-                                                                    │  + concepts      │
-                                                                    │  + steps + links │
-                                                                    └──────────────────┘
 ```
 
-1. **Search** — Type any topic into the search bar
-2. **Discover** — YouTube API finds the most relevant recent videos
-3. **Extract** — FastAPI service pulls transcripts from each video
-4. **Synthesize** — Claude Haiku distills transcripts into a structured, readable result
-5. **Learn** — You get TL;DR, key points, concepts, steps, and source video links
+1. **Search** — Type any AI topic into the search bar
+2. **We scan everything** — YouTube, Hacker News, Reddit, arXiv, GitHub, official blogs
+3. **AI distills it** — Claude reads, cross-references, and synthesizes into a clear explainer
+4. **You get it your way** — TL;DR, key points, role-specific insights, and source links
 
 Results are cached for 48 hours so repeat searches are instant.
 

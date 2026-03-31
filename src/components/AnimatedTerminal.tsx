@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 interface SearchTopic {
   query: string;
-  videos: number;
+  sourceCount: number;
   sources: string[];
   extra: string;
   tldr: string[];
@@ -25,13 +25,13 @@ interface TerminalLine {
 const SEARCH_TOPICS: SearchTopic[] = [
   {
     query: "latest AI news 2026",
-    videos: 8,
+    sourceCount: 12,
     sources: [
-      'The AI Advantage — "AI News This Week"',
-      'Matt Wolfe — "Top AI Tools June 2026"',
-      'Two Minute Papers — "New Breakthroughs"',
+      "Hacker News — 3 trending threads",
+      "arXiv — 2 new papers",
+      "YouTube — The AI Advantage, Matt Wolfe",
     ],
-    extra: "+5 more transcripts extracted",
+    extra: "+7 more sources across Reddit, GitHub",
     tldr: [
       "Google unveiled Gemini 3 Ultra with",
       "native tool-use. OpenAI shipped GPT-5",
@@ -41,13 +41,13 @@ const SEARCH_TOPICS: SearchTopic[] = [
   },
   {
     query: "What is MCP?",
-    videos: 8,
+    sourceCount: 9,
     sources: [
-      'Fireship — "MCP in 100 Seconds"',
-      'AI Jason — "MCP: USB-C for AI"',
-      'Anthropic — "Introducing MCP"',
+      "Anthropic Blog — official announcement",
+      "GitHub — modelcontextprotocol/spec",
+      "YouTube — Fireship, AI Jason",
     ],
-    extra: "+5 more transcripts extracted",
+    extra: "+6 more from Reddit, HN, arXiv",
     tldr: [
       "MCP (Model Context Protocol) is an",
       "open standard by Anthropic connecting",
@@ -57,13 +57,13 @@ const SEARCH_TOPICS: SearchTopic[] = [
   },
   {
     query: "Claude Code tips",
-    videos: 6,
+    sourceCount: 8,
     sources: [
-      'Cursor Team — "Claude in Cursor"',
-      'Theo — "Claude Code Is Insane"',
-      'Primeagen — "Coding with Claude"',
+      "Anthropic Docs — official guide",
+      "Reddit r/ClaudeAI — top posts",
+      "YouTube — Theo, Primeagen",
     ],
-    extra: "+3 more transcripts extracted",
+    extra: "+5 more from GitHub, HN",
     tldr: [
       "Use /compact to save context. Let",
       "Claude plan before coding. Break tasks",
@@ -73,13 +73,13 @@ const SEARCH_TOPICS: SearchTopic[] = [
   },
   {
     query: "RAG vs fine-tuning",
-    videos: 7,
+    sourceCount: 11,
     sources: [
-      'IBM Technology — "RAG Explained"',
-      'Sam Witteveen — "When to Fine-Tune"',
-      'Weights & Biases — "RAG at Scale"',
+      "arXiv — 3 benchmark papers",
+      "Hacker News — 2 discussion threads",
+      "YouTube — IBM Technology, Weights & Biases",
     ],
-    extra: "+4 more transcripts extracted",
+    extra: "+6 more from blogs, GitHub, Reddit",
     tldr: [
       "Use RAG for dynamic knowledge that",
       "changes often. Fine-tune for style and",
@@ -109,11 +109,11 @@ function buildLines(topic: SearchTopic): TerminalLine[] {
   const lines: TerminalLine[] = [];
 
   // Search line
-  lines.push({ text: `\u{1F50D} Searching YouTube for top results...`, color: C.muted });
+  lines.push({ text: `\u{1F50D} Scanning 7+ platforms...`, color: C.muted });
   // Found line
-  lines.push({ text: `\u2713 Found ${topic.videos} relevant videos`, color: C.green, bold: true });
-  // Extracting
-  lines.push({ text: `\u{1F4C4} Extracting transcripts...`, color: C.yellow });
+  lines.push({ text: `\u2713 Found ${topic.sourceCount} relevant sources`, color: C.green, bold: true });
+  // Reading
+  lines.push({ text: `\u{1F4C4} Reading and cross-referencing...`, color: C.yellow });
   // Sources
   for (const src of topic.sources) {
     lines.push({ text: `   \u2192 ${src}`, color: C.white, indent: 1 });

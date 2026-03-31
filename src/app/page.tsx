@@ -159,8 +159,8 @@ export default function Home() {
               className="text-base sm:text-lg leading-relaxed max-w-lg mx-auto lg:mx-0"
               style={{ color: "var(--ts-text-2)", fontSize: "var(--text-lg)" }}
             >
-              Search any topic. We find the top YouTube videos, read every transcript,
-              and synthesize them into one structured result — in under 3 minutes.
+              5 topics. 3 minutes. Just snip it — now you know what happened in AI today,
+              and what it means for your work.
             </motion.p>
 
             {/* Search bar */}
@@ -276,7 +276,7 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full">
             {[
               { step: 1, title: "Search", desc: "Type any topic — \"What is RAG?\", \"LangChain basics\", \"Claude Code tips\". That's it." },
-              { step: 2, title: "We Research", desc: "TopSnip finds the best YouTube videos, extracts every transcript, and feeds them to Claude AI for synthesis." },
+              { step: 2, title: "AI Distills It", desc: "We monitor YouTube, blogs, arXiv, Reddit, and more — then Claude reads, cross-references, and synthesizes everything into a clear explainer." },
               { step: 3, title: "You Learn", desc: "Get a structured brief — TL;DR, key points, concepts, step-by-step guides, and source links. Done." },
             ].map(({ step, title, desc }, i) => (
               <SectionReveal key={step} delay={i * 0.12}>

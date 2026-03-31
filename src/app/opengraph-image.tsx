@@ -99,7 +99,7 @@ export default async function Image() {
 
       {/* Sub-copy */}
       <div style={{ fontSize: "20px", color: "#555555" }}>
-        AI &amp; automation · YouTube distilled · No tabs required
+        AI learning intelligence · 7+ sources · 3 minutes
       </div>
 
       {/* URL — bottom right */}

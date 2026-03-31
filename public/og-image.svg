@@ -4,25 +4,25 @@
 
   <!-- Subtle purple glow (center-left area) -->
   <radialGradient id="glow" cx="35%" cy="50%" r="45%">
-    <stop offset="0%" stop-color="#7C6AF7" stop-opacity="0.08"/>
-    <stop offset="100%" stop-color="#7C6AF7" stop-opacity="0"/>
+    <stop offset="0%" stop-color="#E8734A" stop-opacity="0.08"/>
+    <stop offset="100%" stop-color="#E8734A" stop-opacity="0"/>
   </radialGradient>
   <rect width="1200" height="630" fill="url(#glow)"/>
 
   <!-- Signal mark (large, background decoration — top right, ghosted) -->
   <g opacity="0.06" transform="translate(820, 80)">
-    <rect x="0" y="100" width="40" height="130" rx="8" fill="#7C6AF7"/>
-    <rect x="55" y="60" width="40" height="170" rx="8" fill="#7C6AF7"/>
-    <rect x="110" y="20" width="40" height="210" rx="8" fill="#7C6AF7"/>
-    <rect x="165" y="70" width="40" height="160" rx="8" fill="#7C6AF7"/>
-    <rect x="220" y="110" width="40" height="120" rx="8" fill="#7C6AF7"/>
+    <rect x="0" y="100" width="40" height="130" rx="8" fill="#E8734A"/>
+    <rect x="55" y="60" width="40" height="170" rx="8" fill="#E8734A"/>
+    <rect x="110" y="20" width="40" height="210" rx="8" fill="#E8734A"/>
+    <rect x="165" y="70" width="40" height="160" rx="8" fill="#E8734A"/>
+    <rect x="220" y="110" width="40" height="120" rx="8" fill="#E8734A"/>
     <!-- Cut line -->
     <line x1="-10" y1="185" x2="270" y2="185" stroke="#080808" stroke-width="14" stroke-linecap="round"/>
   </g>
 
   <!-- Wordmark -->
   <text x="80" y="290" font-family="Inter, -apple-system, sans-serif" font-weight="800" font-size="88" letter-spacing="-3" fill="#F0F0F0">top</text>
-  <text x="268" y="290" font-family="Inter, -apple-system, sans-serif" font-weight="800" font-size="88" letter-spacing="-3" fill="#7C6AF7">snip</text>
+  <text x="268" y="290" font-family="Inter, -apple-system, sans-serif" font-weight="800" font-size="88" letter-spacing="-3" fill="#E8734A">snip</text>
 
   <!-- Tagline -->
   <text x="80" y="356" font-family="Inter, -apple-system, sans-serif" font-weight="400" font-size="28" fill="#A0A0A0" letter-spacing="-0.5">Search any topic. Skip the noise.</text>
@@ -31,7 +31,7 @@
   <line x1="80" y1="400" x2="400" y2="400" stroke="#202020" stroke-width="1"/>
 
   <!-- Sub-copy -->
-  <text x="80" y="436" font-family="Inter, -apple-system, sans-serif" font-weight="400" font-size="20" fill="#555555">AI &amp; automation · YouTube distilled · No tabs required</text>
+  <text x="80" y="436" font-family="Inter, -apple-system, sans-serif" font-weight="400" font-size="20" fill="#555555">AI learning intelligence · 7+ sources · 3 minutes</text>
 
   <!-- URL bottom right -->
   <text x="1120" y="590" font-family="Inter, -apple-system, sans-serif" font-weight="500" font-size="18" fill="#383838" text-anchor="end">topsnip.co</text>

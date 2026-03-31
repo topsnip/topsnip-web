@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     "MCP",
     "RAG",
     "AI trends",
-    "YouTube AI summary",
+    "AI learning platform",
   ],
   icons: {
     icon: "/favicon.svg",
