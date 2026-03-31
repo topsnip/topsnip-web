@@ -85,6 +85,7 @@ function ResultContent() {
   const [followUp, setFollowUp] = useState("");
   const [searchInput, setSearchInput] = useState(query);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
   const stageInterval = useRef<NodeJS.Timeout | null>(null);
 
@@ -109,11 +110,18 @@ function ResultContent() {
   }, [query]);
 
   useEffect(() => {
-    createClient()
-      .auth.getUser()
-      .then(({ data }) => {
-        setIsLoggedIn(!!data.user);
-      });
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data }) => {
+      setIsLoggedIn(!!data.user);
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("plan")
+          .eq("id", data.user.id)
+          .single();
+        setIsPro(profile?.plan === "pro");
+      }
+    });
   }, []);
 
   async function fetchResult(q: string) {
@@ -353,6 +361,9 @@ function ResultContent() {
                     platform: s.platform,
                   }))}
                   animated={true}
+                  isBlurred={!isLoggedIn}
+                  isPro={isPro}
+                  redirectPath={currentPath}
                 />
 
                 {/* Back link */}

@@ -147,9 +147,10 @@ export default async function TopicDetailPage({
 
   const isAuthenticated = !!user;
 
-  // ── Determine content role ───────────────────────────────────────────────
+  // ── Determine content role + Pro status ────────────────────────────────
 
   let contentRole = "general";
+  let isPro = false;
 
   if (user) {
     const { data: profile } = await supabase
@@ -158,7 +159,9 @@ export default async function TopicDetailPage({
       .eq("id", user.id)
       .single();
 
-    if (profile?.plan === "pro" && profile.role && profile.role !== "general") {
+    isPro = profile?.plan === "pro";
+
+    if (isPro && profile?.role && profile.role !== "general") {
       contentRole = profile.role;
     }
   }
@@ -449,6 +452,7 @@ export default async function TopicDetailPage({
               youtubeRecs={[]} /* YouTube recs moved to sidebar on desktop */
               animated={true}
               isBlurred={!isAuthenticated}
+              isPro={isPro}
               redirectPath={`/topic/${slug}`}
               onMarkUnderstood={undefined} /* Mark understood is in sidebar */
             />

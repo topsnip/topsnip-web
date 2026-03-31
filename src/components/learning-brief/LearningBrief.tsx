@@ -47,6 +47,8 @@ export interface LearningBriefProps {
   sources?: LearningBriefSource[];
   youtubeRecs?: LearningBriefYouTubeRec[];
   isBlurred?: boolean;
+  /** Pro-tier gating — when false, So What/Now What are replaced with upgrade CTA */
+  isPro?: boolean;
   onMarkUnderstood?: () => void;
   animated?: boolean;
   /** Redirect path for sign-up CTA when isBlurred (e.g. /topic/my-slug) */
@@ -78,6 +80,7 @@ export function LearningBrief({
   sources = [],
   youtubeRecs = [],
   isBlurred = false,
+  isPro = true,
   onMarkUnderstood,
   animated = false,
   redirectPath,
@@ -85,7 +88,7 @@ export function LearningBrief({
   // Route to v2 format renderer if contentJson + known topicType exist
   const useV2 = contentJson && topicType && KNOWN_TYPES.has(topicType);
 
-  // Blurred overlay wraps whatever format is selected
+  // Blurred overlay wraps whatever format is selected (anonymous users)
   if (isBlurred) {
     return (
       <div className="flex flex-col" style={{ gap: "2rem" }}>
@@ -170,6 +173,7 @@ export function LearningBrief({
         sources={sources}
         youtubeRecs={youtubeRecs}
         isBlurred={false}
+        isPro={isPro}
         onMarkUnderstood={onMarkUnderstood}
         animated={animated}
         redirectPath={redirectPath}
@@ -186,6 +190,7 @@ export function LearningBrief({
       nowWhat={nowWhat || ""}
       sources={sources}
       youtubeRecs={youtubeRecs}
+      isPro={isPro}
       onMarkUnderstood={onMarkUnderstood}
       animated={animated}
     />
@@ -513,6 +518,52 @@ function Section({
   );
 }
 
+// ── Pro Upgrade Gate ────────────────────────────────────────────────────────
+
+function ProUpgradeGate() {
+  return (
+    <div
+      className="rounded-xl p-6 text-center flex flex-col items-center gap-4"
+      style={{
+        background: "var(--ts-surface)",
+        border: "1px solid var(--ts-accent-12)",
+        borderRadius: "12px",
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <AlertCircle size={16} style={{ color: "var(--ts-accent)" }} />
+        <p
+          className="text-sm font-semibold uppercase tracking-widest"
+          style={{
+            color: "var(--ts-accent)",
+            fontFamily: headingFont,
+            fontVariant: "small-caps",
+          }}
+        >
+          Keep going with Pro
+        </p>
+      </div>
+      <p
+        className="text-sm max-w-md"
+        style={{ color: "var(--ts-text-2)", lineHeight: 1.6 }}
+      >
+        Unlock <strong className="text-white">So What?</strong> and{" "}
+        <strong className="text-white">Now What?</strong> — role-specific insights
+        and action items written for how you work.
+      </p>
+      <Link
+        href="/upgrade"
+        className="btn-primary rounded-xl px-6 py-2.5 text-sm font-medium"
+      >
+        Start Pro — $9.99/mo
+      </Link>
+      <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
+        Cancel anytime. No lock-in.
+      </p>
+    </div>
+  );
+}
+
 // ── Legacy Brief (pre-v2 content) ───────────────────────────────────────────
 
 function LegacyBrief({
@@ -522,6 +573,7 @@ function LegacyBrief({
   nowWhat,
   sources = [],
   youtubeRecs = [],
+  isPro = true,
   onMarkUnderstood,
   animated = false,
 }: {
@@ -531,6 +583,7 @@ function LegacyBrief({
   nowWhat: string;
   sources?: LearningBriefSource[];
   youtubeRecs?: LearningBriefYouTubeRec[];
+  isPro?: boolean;
   onMarkUnderstood?: () => void;
   animated?: boolean;
 }) {
@@ -611,8 +664,8 @@ function LegacyBrief({
         </Section>
       )}
 
-      {/* So What? */}
-      {soWhat && (
+      {/* So What? — Pro only */}
+      {soWhat && isPro && (
         <Section delay={animated ? 0.2 : 0} animated={animated} sectionId="so-what">
           <div
             className="rounded-xl"
@@ -648,8 +701,8 @@ function LegacyBrief({
         </Section>
       )}
 
-      {/* Now What? */}
-      {nowWhatItems.length > 0 && (
+      {/* Now What? — Pro only */}
+      {nowWhatItems.length > 0 && isPro && (
         <Section delay={animated ? 0.3 : 0} animated={animated} sectionId="now-what">
           <div
             className="rounded-xl"
@@ -674,6 +727,13 @@ function LegacyBrief({
             </p>
             <NowWhatChecklist items={nowWhatItems} />
           </div>
+        </Section>
+      )}
+
+      {/* Pro upgrade gate — shown when So What/Now What are gated */}
+      {!isPro && (soWhat || nowWhatItems.length > 0) && (
+        <Section delay={animated ? 0.2 : 0} animated={animated}>
+          <ProUpgradeGate />
         </Section>
       )}
 

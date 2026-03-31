@@ -11,6 +11,8 @@ export interface FormatRendererProps {
   sources?: LearningBriefSource[];
   youtubeRecs?: LearningBriefYouTubeRec[];
   isBlurred?: boolean;
+  /** Pro-tier gating — when false, role-specific sections are replaced with upgrade CTA */
+  isPro?: boolean;
   onMarkUnderstood?: () => void;
   animated?: boolean;
   redirectPath?: string;
