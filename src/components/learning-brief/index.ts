@@ -26,3 +26,7 @@ export {
   OpinionDebateBrief,
 } from "./formats";
 export type { FormatRendererProps } from "./formats";
+
+export { KeyTakeawayCards } from "./KeyTakeawayCards";
+export { ReadingMeta } from "./ReadingMeta";
+export { CompletionBar } from "./CompletionBar";

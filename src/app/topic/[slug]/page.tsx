@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { decodeHtml } from "@/lib/utils/decode-html";
 import { SiteNav } from "@/components/SiteNav";
+import { Footer } from "@/components/Footer";
 import Link from "next/link";
 import { ArrowLeft, Clock, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -171,7 +172,7 @@ export default async function TopicDetailPage({
   let { data: content } = await supabase
     .from("topic_content")
     .select(
-      "id, topic_id, role, tldr, what_happened, so_what, now_what, sources_json",
+      "id, topic_id, role, tldr, what_happened, so_what, now_what, sources_json, content_json",
     )
     .eq("topic_id", topic.id)
     .eq("role", contentRole)
@@ -182,7 +183,7 @@ export default async function TopicDetailPage({
     const { data: fallback } = await supabase
       .from("topic_content")
       .select(
-        "id, topic_id, role, tldr, what_happened, so_what, now_what, sources_json",
+        "id, topic_id, role, tldr, what_happened, so_what, now_what, sources_json, content_json",
       )
       .eq("topic_id", topic.id)
       .eq("role", "general")
@@ -455,6 +456,16 @@ export default async function TopicDetailPage({
               isPro={isPro}
               redirectPath={`/topic/${slug}`}
               onMarkUnderstood={undefined} /* Mark understood is in sidebar */
+              keyTakeaways={(content as Record<string, unknown>).content_json
+                ? ((content as Record<string, unknown>).content_json as Record<string, unknown>)?.key_takeaways as Array<{label: string, text: string}> ?? []
+                : []}
+              readingTimeSeconds={
+                ((content as Record<string, unknown>).content_json as Record<string, unknown>)?.reading_time_seconds as number ?? 0
+              }
+              complexity={
+                ((content as Record<string, unknown>).content_json as Record<string, unknown>)?.complexity as "beginner" | "intermediate" | "advanced" | undefined
+              }
+              sourceCount={briefSources.length}
             />
 
             {/* Mobile-only: YouTube recs inline (hidden on desktop) */}
@@ -701,6 +712,8 @@ export default async function TopicDetailPage({
           </Link>
         </div>
       </main>
+
+      <Footer />
 
       {/* Badge pulse animation */}
       <style

@@ -41,6 +41,9 @@ interface SearchResult {
   what_happened: string;
   so_what: string;
   now_what: string;
+  key_takeaways?: Array<{label: string, text: string}>;
+  reading_time_seconds?: number;
+  complexity?: "beginner" | "intermediate" | "advanced";
   sources: SourceAttribution[];
   youtube_recs: YouTubeRec[];
   source_type: "pre_generated" | "on_demand";
@@ -364,6 +367,10 @@ function ResultContent() {
                   isBlurred={!isLoggedIn}
                   isPro={isPro}
                   redirectPath={currentPath}
+                  keyTakeaways={result.key_takeaways ?? []}
+                  readingTimeSeconds={result.reading_time_seconds ?? 0}
+                  complexity={result.complexity}
+                  sourceCount={result.sources.length}
                 />
 
                 {/* Back link */}

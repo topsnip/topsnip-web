@@ -7,6 +7,9 @@ import { Zap, Newspaper, AlertCircle, ListChecks, ExternalLink } from "lucide-re
 import { SourceCitation } from "./SourceCitation";
 import { NowWhatChecklist } from "./NowWhatChecklist";
 import { YouTubeRecs } from "./YouTubeRecs";
+import { KeyTakeawayCards } from "./KeyTakeawayCards";
+import { ReadingMeta } from "./ReadingMeta";
+import { CompletionBar } from "./CompletionBar";
 import { headingFont } from "@/lib/constants";
 import type { TopicType } from "@/lib/content/types";
 import {
@@ -53,6 +56,10 @@ export interface LearningBriefProps {
   animated?: boolean;
   /** Redirect path for sign-up CTA when isBlurred (e.g. /topic/my-slug) */
   redirectPath?: string;
+  keyTakeaways?: Array<{label: string, text: string}>;
+  readingTimeSeconds?: number;
+  complexity?: "beginner" | "intermediate" | "advanced";
+  sourceCount?: number;
 }
 
 // ── Format renderer map ─────────────────────────────────────────────────────
@@ -84,6 +91,10 @@ export function LearningBrief({
   onMarkUnderstood,
   animated = false,
   redirectPath,
+  keyTakeaways = [],
+  readingTimeSeconds = 0,
+  complexity,
+  sourceCount,
 }: LearningBriefProps) {
   // Route to v2 format renderer if contentJson + known topicType exist
   const useV2 = contentJson && topicType && KNOWN_TYPES.has(topicType);
@@ -92,11 +103,25 @@ export function LearningBrief({
   if (isBlurred) {
     return (
       <div className="flex flex-col" style={{ gap: "2rem" }}>
+        {/* Reading meta bar */}
+        {readingTimeSeconds > 0 && (
+          <ReadingMeta
+            readingTimeSeconds={readingTimeSeconds}
+            complexity={complexity}
+            sourceCount={sourceCount}
+          />
+        )}
+
         {/* Show TL;DR unblurred (from contentJson or legacy) */}
         <TldrSection
           tldr={useV2 ? (typeof contentJson?.tldr === "string" ? contentJson.tldr : tldr) : tldr}
           animated={animated}
         />
+
+        {/* Key takeaway cards — shown unblurred as a hook */}
+        {keyTakeaways.length > 0 && (
+          <KeyTakeawayCards takeaways={keyTakeaways} />
+        )}
 
         {/* Blurred content + CTA overlay */}
         <div className="relative">
@@ -193,6 +218,10 @@ export function LearningBrief({
       isPro={isPro}
       onMarkUnderstood={onMarkUnderstood}
       animated={animated}
+      keyTakeaways={keyTakeaways}
+      readingTimeSeconds={readingTimeSeconds}
+      complexity={complexity}
+      sourceCount={sourceCount}
     />
   );
 }
@@ -576,6 +605,10 @@ function LegacyBrief({
   isPro = true,
   onMarkUnderstood,
   animated = false,
+  keyTakeaways = [],
+  readingTimeSeconds = 0,
+  complexity,
+  sourceCount,
 }: {
   tldr: string;
   whatHappened: string;
@@ -586,6 +619,10 @@ function LegacyBrief({
   isPro?: boolean;
   onMarkUnderstood?: () => void;
   animated?: boolean;
+  keyTakeaways?: Array<{label: string, text: string}>;
+  readingTimeSeconds?: number;
+  complexity?: string;
+  sourceCount?: number;
 }) {
   const [understood, setUnderstood] = useState(false);
   const nowWhatItems = parseNowWhatItems(nowWhat);
@@ -597,6 +634,15 @@ function LegacyBrief({
 
   return (
     <div className="flex flex-col" style={{ gap: "2rem" }}>
+      {/* Reading Meta */}
+      {readingTimeSeconds > 0 && (
+        <ReadingMeta
+          readingTimeSeconds={readingTimeSeconds}
+          complexity={complexity as "beginner" | "intermediate" | "advanced" | undefined}
+          sourceCount={sourceCount}
+        />
+      )}
+
       {/* TL;DR */}
       <Section delay={0} animated={animated} sectionId="tldr">
         <div
@@ -628,6 +674,13 @@ function LegacyBrief({
         </div>
       </Section>
 
+      {/* Key Takeaway Cards */}
+      {keyTakeaways.length > 0 && (
+        <Section delay={animated ? 0.05 : 0} animated={animated}>
+          <KeyTakeawayCards takeaways={keyTakeaways} />
+        </Section>
+      )}
+
       {/* What Happened */}
       {whatHappened && (
         <Section delay={animated ? 0.1 : 0} animated={animated} sectionId="what-happened">
@@ -652,7 +705,7 @@ function LegacyBrief({
               <Newspaper size={12} className="inline mr-1.5" />
               What Happened
             </p>
-            <CollapsibleContent maxHeight={400}>
+            <CollapsibleContent maxHeight={250}>
               <div
                 className="text-base leading-relaxed"
                 style={{ color: "var(--foreground)", lineHeight: 1.7 }}
@@ -803,22 +856,10 @@ function LegacyBrief({
         </Section>
       )}
 
-      {/* Mark as Understood */}
-      {onMarkUnderstood && (
+      {/* Completion Bar */}
+      {onMarkUnderstood && !understood && (
         <Section delay={animated ? 0.6 : 0} animated={animated}>
-          <button
-            onClick={handleMarkUnderstood}
-            disabled={understood}
-            className="btn-primary w-full rounded-xl px-8 py-3.5 text-base font-medium disabled:cursor-default"
-            style={{
-              background: understood
-                ? "var(--success)"
-                : undefined,
-              boxShadow: understood ? "none" : undefined,
-            }}
-          >
-            {understood ? "Understood!" : "I understand this \u2713"}
-          </button>
+          <CompletionBar onMarkUnderstood={handleMarkUnderstood} />
         </Section>
       )}
     </div>
