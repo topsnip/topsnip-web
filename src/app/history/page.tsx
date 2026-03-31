@@ -15,6 +15,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Clock } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
+import { Footer } from "@/components/Footer";
 
 export default async function HistoryPage() {
   const supabase = await createClient();
@@ -90,6 +91,8 @@ export default async function HistoryPage() {
           </div>
         )}
       </div>
+
+      <Footer />
     </main>
   );
 }

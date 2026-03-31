@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
+import { Footer } from "@/components/Footer";
 
 export const metadata = {
   title: "About — TopSnip",
@@ -194,6 +195,8 @@ export default function AboutPage() {
           </p>
         </div>
       </div>
+
+      <Footer />
     </main>
   );
 }

@@ -56,13 +56,35 @@ export function FeedClient({
     setNewTopicCount(0);
   }, []);
 
+  const isEmpty = !featuredTopic && quickListTopics.length === 0 && gridTopics.length === 0;
+
   return (
     <>
       {/* Top bar with search + stats */}
       <FeedTopBar />
 
+      {/* First-visit welcome state */}
+      {isEmpty && (
+        <div className="flex flex-col gap-6 py-8">
+          <div className="flex flex-col gap-2">
+            <h2
+              className="text-lg font-bold text-white"
+              style={{ fontFamily: "var(--font-heading), 'Instrument Serif', serif" }}
+            >
+              Welcome to TopSnip.
+            </h2>
+            <p className="text-sm" style={{ color: "var(--ts-text-2)" }}>
+              Here are some fundamentals to get started.
+            </p>
+          </div>
+          {evergreenTopics.length > 0 && (
+            <EvergreenStrip topics={evergreenTopics} />
+          )}
+        </div>
+      )}
+
       {/* Featured section */}
-      {featuredTopic && (
+      {!isEmpty && featuredTopic && (
         <FeaturedSection
           featuredTopic={featuredTopic}
           quickListTopics={quickListTopics}
@@ -70,13 +92,13 @@ export function FeedClient({
       )}
 
       {/* Category filter tabs */}
-      <CategoryTabs onCategoryChange={handleCategoryChange} />
+      {!isEmpty && <CategoryTabs onCategoryChange={handleCategoryChange} />}
 
       {/* Topic card grid */}
-      <TopicCardGrid topics={gridTopics} activeCategory={activeCategory} />
+      {!isEmpty && <TopicCardGrid topics={gridTopics} activeCategory={activeCategory} />}
 
       {/* Evergreen strip */}
-      {evergreenTopics.length > 0 && (
+      {!isEmpty && evergreenTopics.length > 0 && (
         <div className="mt-10">
           <EvergreenStrip topics={evergreenTopics} />
         </div>

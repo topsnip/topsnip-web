@@ -6,6 +6,8 @@ import { ArrowLeft, Check, LogOut, Crown, User } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { SiteNav } from "@/components/SiteNav";
+import { Footer } from "@/components/Footer";
+import { SkeletonLine, SkeletonCard } from "@/components/Skeleton";
 
 /* ─── Types ────────────────────────────────────────────────────────────────── */
 
@@ -205,18 +207,14 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
-            style={{
-              borderColor: "var(--ts-accent)",
-              borderTopColor: "transparent",
-            }}
-          />
-          <p className="text-sm" style={{ color: "var(--ts-muted)" }}>
-            Loading settings...
-          </p>
+      <main className="min-h-screen flex flex-col relative overflow-hidden">
+        <SiteNav user={null} />
+        <div className="w-full max-w-3xl mx-auto px-4 pt-28 pb-16 flex flex-col gap-8">
+          <SkeletonLine width="160px" height={28} />
+          <SkeletonCard height={100} />
+          <SkeletonCard height={200} />
+          <SkeletonCard height={160} />
+          <SkeletonCard height={100} />
         </div>
       </main>
     );
@@ -582,6 +580,8 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+
+      <Footer />
     </main>
   );
 }

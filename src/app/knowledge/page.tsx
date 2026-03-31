@@ -15,6 +15,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { SiteNav } from "@/components/SiteNav";
+import { Footer } from "@/components/Footer";
 import StatsBar from "./stats-bar";
 import LevelBar from "./level-bar";
 import ActivityTimeline from "./activity-timeline";
@@ -188,6 +189,7 @@ export default async function KnowledgeDashboardPage() {
             Upgrade to Pro
           </Link>
         </div>
+        <Footer />
       </main>
     );
   }
@@ -411,6 +413,8 @@ export default async function KnowledgeDashboardPage() {
           </section>
         )}
       </main>
+
+      <Footer />
     </div>
   );
 }

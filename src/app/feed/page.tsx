@@ -12,11 +12,10 @@ export const metadata = {
 };
 
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { SiteNav } from "@/components/SiteNav";
+import { Footer } from "@/components/Footer";
 import { mapTopicToCategory } from "@/lib/utils/category-mapper";
-import { headingFont } from "@/lib/constants";
 import type { TopicCardData } from "./topic-card";
 import { FeedClient } from "./feed-client";
 
@@ -219,39 +218,7 @@ export default async function FeedPage() {
       </div>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <footer
-        className="px-6 py-8 relative z-10"
-        style={{ borderTop: "1px solid var(--border)", animation: "fadeInUp 0.35s ease 0.12s both" }}
-      >
-        <div className="content-container flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Link
-            href="/feed"
-            className="text-base font-bold tracking-tight text-white"
-            style={{ fontFamily: headingFont }}
-          >
-            top<span style={{ color: "var(--ts-accent)" }}>snip</span>
-          </Link>
-          <div className="flex items-center gap-6">
-            <Link
-              href="/about"
-              className="text-xs font-medium transition-colors hover:text-white"
-              style={{ color: "var(--ts-muted)" }}
-            >
-              About
-            </Link>
-            <Link
-              href="/upgrade"
-              className="text-xs font-medium transition-colors hover:text-white"
-              style={{ color: "var(--ts-muted)" }}
-            >
-              Pricing
-            </Link>
-          </div>
-          <p className="text-xs" style={{ color: "var(--ts-muted)" }}>
-            &copy; {new Date().getFullYear()} Topsnip
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

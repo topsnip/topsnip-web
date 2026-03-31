@@ -282,14 +282,8 @@
 }
 
 .mobile-tab-icon {
-  width: 20px;
-  height: 20px;
-}
-
-.mobile-tab-label {
-  font-size: 10px;
-  font-weight: 500;
-  line-height: 1;
+  width: 22px;
+  height: 22px;
 }
 
 /* Accent glow utility */

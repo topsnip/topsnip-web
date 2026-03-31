@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TopicCandidate, Platform } from "./types";
 import { clusterItems, type SourceItemWithPlatform } from "./clusterer";
-import { featureFlags } from "../feature-flags";
+
 
 /**
  * Slugify a title for URL-friendly topic identifiers.
@@ -86,95 +86,15 @@ function computeTrendingScore(
   return velocity * sourceDiversity * recency;
 }
 
-/**
- * Legacy title-similarity clustering fallback.
- * Groups items whose normalized titles share >= 60% of words.
- * Used when USE_CLUSTERING feature flag is disabled.
- */
-function clusterByTitleSimilarity(
-  items: SourceItemWithPlatform[]
-): Array<{
-  items: SourceItemWithPlatform[];
-  platforms: Set<string>;
-  bestTitle: string;
-  earliestDate: Date;
-}> {
-  const clusters: Array<{
-    items: SourceItemWithPlatform[];
-    platforms: Set<string>;
-    bestTitle: string;
-    earliestDate: Date;
-    words: Set<string>;
-  }> = [];
-
-  for (const item of items) {
-    const normalized = normalizeTitle(item.title);
-    const words = new Set(normalized.split(" ").filter((w) => w.length > 2));
-
-    let matched = false;
-    for (const cluster of clusters) {
-      // Check word overlap
-      let overlap = 0;
-      for (const w of words) {
-        if (cluster.words.has(w)) overlap++;
-      }
-      const similarity =
-        words.size === 0 ? 0 : overlap / Math.max(words.size, cluster.words.size);
-
-      if (similarity >= 0.6) {
-        cluster.items.push(item);
-        cluster.platforms.add(item.platform);
-        for (const w of words) cluster.words.add(w);
-        // Pick best title by engagement
-        if (item.engagement_score > (cluster.items[0]?.engagement_score ?? 0)) {
-          cluster.bestTitle = item.title;
-        }
-        const itemDate = new Date(item.published_at ?? item.ingested_at);
-        if (itemDate < cluster.earliestDate) cluster.earliestDate = itemDate;
-        matched = true;
-        break;
-      }
-    }
-
-    if (!matched) {
-      clusters.push({
-        items: [item],
-        platforms: new Set([item.platform]),
-        bestTitle: item.title,
-        earliestDate: new Date(item.published_at ?? item.ingested_at),
-        words,
-      });
-    }
-  }
-
-  return clusters;
-}
-
-/**
- * Legacy volume-based trending score (no velocity).
- * trending_score = log(total_engagement) × platform_diversity × recency
- */
-function computeVolumeTrendingScore(
-  totalEngagement: number,
-  platformCount: number,
-  earliestDate: Date
-): number {
-  const hoursAge = (Date.now() - earliestDate.getTime()) / (1000 * 60 * 60);
-  const recency = Math.exp(-hoursAge / 12);
-  const sourceDiversity = 1 + Math.log2(Math.max(platformCount, 1));
-  const volume = Math.log10(Math.max(totalEngagement, 1) + 1);
-
-  return volume * sourceDiversity * recency;
-}
 
 /**
  * Score and deduplicate source items into topic candidates.
  *
- * Three-tier system:
+ * Pipeline:
  * 1. Fetch recent source_items (last 48 hours) with platform info
- * 2. Compute engagement velocity from snapshots (or volume if flag off)
- * 3. Cluster items via SimHash + entity Jaccard (or title similarity if flag off)
- * 4. Score each cluster using velocity × source_diversity × recency
+ * 2. Compute engagement velocity from snapshots
+ * 3. Cluster items via SimHash + entity Jaccard
+ * 4. Score each cluster using velocity x source_diversity x recency
  * 5. Return TopicCandidate[] sorted by trending_score descending
  */
 export async function scoreAndDedup(
@@ -211,43 +131,26 @@ export async function scoreAndDedup(
     engagement_history: item.engagement_history || undefined,
   }));
 
-  // Cluster items — use SimHash+entity Jaccard or legacy title similarity
-  const clusters = featureFlags.USE_CLUSTERING
-    ? clusterItems(mapped)
-    : clusterByTitleSimilarity(mapped);
+  // Cluster items via SimHash + entity Jaccard
+  const clusters = clusterItems(mapped);
 
   // Score each cluster and convert to TopicCandidate
   const candidates: TopicCandidate[] = clusters
     .filter((c) => c.platforms.size >= minPlatforms)
     .map((cluster) => {
-      let trendingScore: number;
-
-      if (featureFlags.USE_VELOCITY_SCORING) {
-        // Velocity-based scoring
-        let totalVelocity = 0;
-        for (const item of cluster.items) {
-          totalVelocity += computeVelocity(
-            item.engagement_history,
-            item.engagement_score
-          );
-        }
-        trendingScore = computeTrendingScore(
-          totalVelocity,
-          cluster.platforms.size,
-          cluster.earliestDate
-        );
-      } else {
-        // Legacy volume-based scoring
-        const totalEngagement = cluster.items.reduce(
-          (sum, item) => sum + item.engagement_score,
-          0
-        );
-        trendingScore = computeVolumeTrendingScore(
-          totalEngagement,
-          cluster.platforms.size,
-          cluster.earliestDate
+      // Velocity-based scoring
+      let totalVelocity = 0;
+      for (const item of cluster.items) {
+        totalVelocity += computeVelocity(
+          item.engagement_history,
+          item.engagement_score
         );
       }
+      const trendingScore = computeTrendingScore(
+        totalVelocity,
+        cluster.platforms.size,
+        cluster.earliestDate
+      );
 
       return {
         title: cluster.bestTitle,

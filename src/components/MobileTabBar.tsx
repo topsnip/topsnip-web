@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Newspaper, Search, Brain, User } from "lucide-react";
+import { LayoutGrid, Search, BookOpen, Settings } from "lucide-react";
 
 const TABS = [
   {
-    icon: Newspaper,
+    icon: LayoutGrid,
     label: "Feed",
     href: "/feed",
     activeWhen: (p: string) => p === "/feed" || p.startsWith("/topic/"),
@@ -18,14 +18,14 @@ const TABS = [
     activeWhen: (p: string) => p === "/",
   },
   {
-    icon: Brain,
-    label: "Learn",
+    icon: BookOpen,
+    label: "Knowledge",
     href: "/knowledge",
     activeWhen: (p: string) => p === "/knowledge" || p.startsWith("/knowledge/"),
   },
   {
-    icon: User,
-    label: "Profile",
+    icon: Settings,
+    label: "Settings",
     href: "/settings",
     activeWhen: (p: string) =>
       p === "/settings" || p.startsWith("/settings/") || p === "/history" || p.startsWith("/history/"),
@@ -48,10 +48,11 @@ export function MobileTabBar() {
             key={href}
             href={href}
             className="mobile-tab-item"
+            aria-label={label}
             aria-current={active ? "page" : undefined}
           >
             <Icon
-              size={20}
+              size={22}
               className="mobile-tab-icon"
               style={{
                 color: active ? "var(--ts-accent)" : "var(--ts-muted)",
@@ -59,15 +60,7 @@ export function MobileTabBar() {
                 transition: "color 0.15s ease, transform 0.15s ease",
               }}
             />
-            <span
-              className="mobile-tab-label"
-              style={{
-                color: active ? "var(--ts-accent)" : "var(--ts-muted)",
-                transition: "color 0.15s ease",
-              }}
-            >
-              {label}
-            </span>
+            <span className="sr-only">{label}</span>
           </Link>
         );
       })}
