@@ -8,6 +8,7 @@ import { Footer } from "@/components/Footer";
 import Link from "next/link";
 import { ArrowLeft, Clock, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/ingest/service-client";
 import { ReadTracker } from "./read-tracker";
 import { ScrollProgress } from "./scroll-progress";
 import { MarkUnderstood } from "./mark-understood";
@@ -54,18 +55,19 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await createClient();
+  const serviceClient = createServiceClient();
 
-  const { data: topic } = await supabase
+  const { data: topic } = await serviceClient
     .from("topics")
     .select("id, title, slug")
     .eq("slug", slug)
+    .eq("status", "published")
     .single();
 
   if (!topic) return { title: "Topic Not Found — TopSnip" };
 
   // Fetch TL;DR for description
-  const { data: content } = await supabase
+  const { data: content } = await serviceClient
     .from("topic_content")
     .select("tldr")
     .eq("topic_id", topic.id)
@@ -126,10 +128,11 @@ export default async function TopicDetailPage({
 }) {
   const { slug } = await params;
   const supabase = await createClient();
+  const serviceClient = createServiceClient(); // Bypasses RLS for public content
 
-  // ── Fetch topic by slug ──────────────────────────────────────────────────
+  // ── Fetch topic by slug (service client — allows anonymous reads) ──────
 
-  const { data: topic } = await supabase
+  const { data: topic } = await serviceClient
     .from("topics")
     .select(
       "id, slug, title, status, trending_score, is_breaking, published_at, topic_type",
@@ -169,7 +172,7 @@ export default async function TopicDetailPage({
 
   // ── Fetch topic content (role-specific for auth, general for anon) ──────
 
-  let { data: content } = await supabase
+  let { data: content } = await serviceClient
     .from("topic_content")
     .select(
       "id, topic_id, role, tldr, what_happened, so_what, now_what, sources_json, content_json",
@@ -180,7 +183,7 @@ export default async function TopicDetailPage({
 
   // Fall back to general if role-specific content not found
   if (!content && contentRole !== "general") {
-    const { data: fallback } = await supabase
+    const { data: fallback } = await serviceClient
       .from("topic_content")
       .select(
         "id, topic_id, role, tldr, what_happened, so_what, now_what, sources_json, content_json",
