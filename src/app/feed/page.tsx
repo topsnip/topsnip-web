@@ -8,9 +8,11 @@ export const metadata = {
 
 export default async function FeedPage() {
   const supabase = createServiceClient();
-  const today = new Date().toISOString().slice(0, 10);
 
-  const { data: topics } = await supabase
+  // Show all recent published topics (last 7 days), not just today
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: topics, error } = await supabase
     .from('topics')
     .select(`
       slug,
@@ -26,9 +28,13 @@ export default async function FeedPage() {
       )
     `)
     .eq('status', 'published')
-    .gte('published_at', `${today}T00:00:00Z`)
+    .gte('published_at', weekAgo)
     .order('trending_score', { ascending: false })
     .limit(30);
+
+  if (error) {
+    console.error('[feed] Query error:', error.message);
+  }
 
   const formatted = (topics || [])
     .filter((t: any) => t.topic_cards?.length > 0)

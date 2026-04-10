@@ -3,14 +3,15 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
-  const dateParam = url.searchParams.get('date') || new Date().toISOString().slice(0, 10);
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : new Date().toISOString().slice(0, 10);
   const limit = Math.max(1, Math.min(parseInt(url.searchParams.get('limit') || '20') || 20, 50));
   const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0') || 0);
+  // Default: last 7 days. Optional ?days=N to customize window.
+  const days = Math.max(1, Math.min(parseInt(url.searchParams.get('days') || '7') || 7, 30));
 
   const supabase = createServiceClient();
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-  const { data: topics, error, count } = await supabase
+  const { data: topics, error } = await supabase
     .from('topics')
     .select(`
       slug,
@@ -25,10 +26,9 @@ export async function GET(request: NextRequest) {
         category_tag,
         image_url
       )
-    `, { count: 'exact' })
+    `)
     .eq('status', 'published')
-    .gte('published_at', `${date}T00:00:00Z`)
-    .lte('published_at', `${date}T23:59:59Z`)
+    .gte('published_at', since)
     .order('trending_score', { ascending: false })
     .range(offset, offset + limit - 1);
 
