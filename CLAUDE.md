@@ -1,112 +1,108 @@
-# TopSnip v2 — Claude Code Instructions
+# TopSnip v3 — Claude Code Instructions
 
 ## What This Is
 
-TopSnip is an **AI Learning Intelligence Platform** — a learning destination for anyone curious about AI.
+TopSnip is a **Personal AI Intelligence Dashboard** — keeps one user current on everything happening in AI.
 
-**Two modes:** Passive feed (3-5 trending topics/day) + Active search (on-demand explainers).
-**Two tiers:** Free (General, 3 searches/day) + Pro ($9.99/mo — role-specific, unlimited, knowledge tracking).
+**Two pages:** Feed (InShorts-style cards) + Learn (visual deep-dive per topic).
+**No auth, no tiers, no multi-user.** Personal tool first.
 
-**One-liner:** "Come learn something. Leave knowing it. In 3 minutes, not 3 hours."
+**One-liner:** "Your AI intelligence feed. No noise, just signal."
 
 ## Tech Stack
 
 | Layer | Tool |
 |-------|------|
 | Frontend + API | Next.js 16 (App Router) on Vercel |
-| Styling | Tailwind CSS 4 + shadcn/ui |
-| Database + Auth | Supabase (Postgres + RLS + Auth) |
-| LLM | Claude (Anthropic API) — streaming via Vercel AI SDK |
-| Payments | Stripe ($9.99/mo or $79/year) |
-| Source Monitoring | HN Algolia, Reddit PRAW, RSS, YouTube Data API, arXiv, GitHub |
+| Styling | Tailwind CSS 4 |
+| Database | Supabase (Postgres + RLS) |
+| LLM | Claude Sonnet 4.5 (card generation) + Haiku 4.5 (YouTube recs) |
+| Images | DALL-E 3 (illustrations) via OpenAI API |
+| Payments | Stripe (dormant — kept for future) |
+| Sources | HN Algolia, Reddit, RSS, YouTube Data API, arXiv, GitHub |
 
 ## Project Context
 
 | Doc | Location |
 |-----|----------|
-| Product Spec | `Projects/Topsnip/product-spec-v1.md` (in Nikunj's Vault) |
-| Execution Plan | `Projects/Topsnip/execution-plan-v2.md` |
-| Brand Guide | `Projects/Topsnip/brand-style-guide.md` |
-| Research | `Projects/Topsnip/research-*.md` |
-| Memory | `C:\Users\surya\.claude\projects\c--Users-surya\memory\project_topsnip.md` |
+| v3 Spec | `docs/superpowers/specs/2026-04-09-topsnip-v3-personal-dashboard-design.md` |
+| Implementation Plan | `docs/superpowers/plans/2026-04-09-topsnip-v3-implementation.md` |
+| Legal Review | `.claude/research/topsnip-v3/legal-review.md` |
+| Brainstorm Note | Vault: `Projects/Brainstorms/2026-04-09 topsnip-v3-personal-dashboard.md` |
+| v2 Archive | Vault: `Projects/TopSnip-v2-archive/` |
+| Memory | `.claude/projects/c--Users-surya-topsnip-web/memory/` |
 
 ## Database
 
-- **Schema**: `supabase/schema-v2.sql` (complete, standalone)
-- **Migration**: `supabase/migration-v2.sql` (from old schema → new)
-- **Old schema**: `supabase/schema.sql` (DEPRECATED — kept for reference only)
+- **Schema**: `supabase/schema-v2.sql` (base schema)
+- **v3 Migration**: `supabase/migration-v3.sql` (topic_cards, RLS updates, youtube_recs FK)
 
 ### Key Tables
 
 | Table | Purpose |
 |-------|---------|
-| `profiles` | User accounts + role + interests + billing |
 | `sources` | RSS feeds, APIs we monitor |
 | `source_items` | Individual ingested posts/articles |
 | `topics` | AI topics detected across sources |
-| `topic_content` | Generated explainers (one per topic × role) |
-| `youtube_recommendations` | "Go Deeper" video links |
-| `user_reads` | Knowledge tracking (what user has read) |
-| `user_searches` | Search history |
-| `daily_digests` | Pre-computed feed per role per day |
-| `tags` | Topic categories (for interests + filtering) |
-| `anonymous_searches` | IP-based tracking for 1 free search on landing |
+| `topic_cards` | v3 card + learn brief (one per topic) |
+| `youtube_recommendations` | Curated video links (via topic_id) |
+| `tags` + `topic_tags` | Topic categorization |
+
+### Deprecated Tables (still in DB, not used by v3)
+- `topic_content` — replaced by `topic_cards`
+- `profiles`, `user_reads`, `user_searches`, `daily_digests` — no auth in v3
 
 ## API Routes
 
-### Content
-- `GET /api/feed` — Today's trending topics for user's role
-- `GET /api/topic/[slug]` — Full topic detail (role-specific)
-- `POST /api/search` — On-demand search (streaming, anonymous allowed 1/day)
-- `GET /api/topics/recent` — Recent topics
+### Feed + Learn
+- `GET /api/feed` — Today's published cards (paginated, by date)
+- `GET /api/learn/[slug]` — Full card + learn brief + YouTube recs + sources
 
-### User
-- `GET/PATCH /api/user/profile` — Profile + preferences
-- `POST /api/user/onboarding` — Complete onboarding
-- `POST /api/user/read` — Mark topic as read
-- `GET /api/user/knowledge` — Knowledge summary (Pro)
+### Ingestion (cron-triggered, CRON_SECRET required)
+- `POST /api/ingest/run` — Full ingestion cycle (fetch → cluster → score)
+- `POST /api/content/generate` — Generate cards for detected topics
+- `GET /api/ingest/health` — Source health status
 
-### Billing (existing)
+### Billing (dormant)
 - `POST /api/stripe/checkout` — Create checkout session
 - `POST /api/stripe/webhook` — Stripe webhook handler
 - `POST /api/stripe/portal` — Customer billing portal
-
-### Ingestion (internal, cron-triggered)
-- `POST /api/ingest/run` — Full ingestion cycle
-- `POST /api/ingest/generate` — Content generation for detected topics
-- `POST /api/ingest/digest` — Build daily digest per role
-- `GET /api/ingest/health` — Source health status
 
 ## Pages
 
 | Route | Purpose |
 |-------|---------|
-| `/` | Landing page (value prop + anonymous search) |
-| `/auth` | Sign up / sign in |
-| `/onboarding` | Role + interest picker |
-| `/feed` | Daily trending topics |
-| `/topic/[slug]` | Full topic explainer |
-| `/search?q=` | On-demand search results |
-| `/settings` | Role, interests, billing |
-| `/upgrade` | Pro pricing + checkout |
+| `/` | Redirect to `/feed` |
+| `/feed` | InShorts-style card feed |
+| `/learn/[slug]` | Visual deep-dive with illustration + YouTube recs |
+
+## Content Pipeline
+
+1. **Ingest** — Fetch from 6 sources → upsert to `source_items`
+2. **Cluster** — SimHash + Jaccard dedup → detect `topics`
+3. **Generate** — Claude Sonnet produces card (60-word summary) + learn brief + illustration prompt
+4. **Illustrate** — DALL-E 3 generates diagram, uploaded to Supabase Storage
+5. **Quality Check** — 4-dimension scorer (factual, voice, completeness, brevity), min 50/100
+6. **YouTube Recs** — YouTube Data API search → Claude Haiku picks top 2-3
+7. **Publish** — Topic status → "published", appears in feed
 
 ## Conventions
 
-- Dark mode only — no light mode
-- Inter font family (400-800) + Geist Mono for code
-- Brand: #080808 background, #7C6AF7 accent, #F0F0F0 text
-- All API routes in `src/app/api/`
-- Supabase server client via cookies (`@supabase/ssr`)
-- Service-role client for writes that bypass RLS (webhooks, ingestion)
-- RLS on every table — users only see their own data
-- Source citations on every piece of generated content
-- Streaming responses for on-demand search (Vercel AI SDK)
+- Dark mode only — #080808 background, #7C6AF7 accent, #F0F0F0 text
+- Inter font (400-800) + Geist Mono for code
+- All content rewritten in TopSnip voice (legal protection + brand identity)
+- Always link to source articles
+- YouTube attribution on all video recommendations
+- No auth required — all pages are public
+- RLS: public read for published content, service-role write for pipelines
 
 ## What NOT to Do
 
-- Do NOT use YouTube transcript scraping — deprecated
-- Do NOT reference `services/transcripts/` — deleted
-- Do NOT reference `search_cache` or `search_history` tables — dropped
+- Do NOT add auth, onboarding, or user accounts (personal tool)
+- Do NOT add role-based content (no roles in v3)
+- Do NOT scrape YouTube transcripts (legal risk)
+- Do NOT reproduce source article narrative/phrasing (copyright risk — synthesize facts only)
 - Do NOT build a light mode
-- Do NOT add a second accent color
-- Do NOT gate content quality by tier — only gate volume
+- Do NOT add search functionality (not in v3 scope)
+- Do NOT reference `topic_content`, `profiles`, `user_reads`, `daily_digests` (deprecated)
+- Do NOT reference `src/lib/content/generator.ts`, `enricher.ts`, `quality.ts`, `formats/` (deleted, archived in vault)

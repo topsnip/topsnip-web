@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     // Rate limit: check most recent content generation timestamp
     const { data: recentContent } = await supabase
-      .from("topic_content")
+      .from("topic_cards")
       .select("generated_at")
       .order("generated_at", { ascending: false })
       .limit(1)

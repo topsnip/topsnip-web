@@ -150,36 +150,27 @@ export async function findAndSaveYouTubeRecs(
         };
       });
 
-    // 5. Save to DB — need topic_content_id for the general role
-    const { data: generalContent } = await supabase
-      .from("topic_content")
-      .select("id")
-      .eq("topic_id", topicId)
-      .eq("role", "general")
-      .maybeSingle();
+    // 5. Save to DB — v3: write directly via topic_id
+    // Delete old recs for this topic
+    await supabase
+      .from("youtube_recommendations")
+      .delete()
+      .eq("topic_id", topicId);
 
-    if (generalContent) {
-      // Delete old recs for this content
-      await supabase
-        .from("youtube_recommendations")
-        .delete()
-        .eq("topic_content_id", generalContent.id);
+    // Insert new recs
+    const rows = recs.map((rec) => ({
+      topic_id: topicId,
+      video_id: rec.videoId,
+      title: rec.title,
+      channel_name: rec.channelName,
+      thumbnail_url: rec.thumbnailUrl,
+      duration: rec.duration,
+      reason: rec.reason,
+      position: rec.position,
+    }));
 
-      // Insert new recs
-      const rows = recs.map((rec) => ({
-        topic_content_id: generalContent.id,
-        video_id: rec.videoId,
-        title: rec.title,
-        channel_name: rec.channelName,
-        thumbnail_url: rec.thumbnailUrl,
-        duration: rec.duration,
-        reason: rec.reason,
-        position: rec.position,
-      }));
-
-      if (rows.length > 0) {
-        await supabase.from("youtube_recommendations").insert(rows);
-      }
+    if (rows.length > 0) {
+      await supabase.from("youtube_recommendations").insert(rows);
     }
 
     return { recs };

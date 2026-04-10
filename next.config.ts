@@ -4,10 +4,9 @@ import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "i.ytimg.com",
-      },
+      { protocol: "https", hostname: "i.ytimg.com" },
+      { protocol: "https", hostname: "img.youtube.com" },
+      { protocol: "https", hostname: "*.supabase.co" },
     ],
   },
   async headers() {
@@ -43,7 +42,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://us-assets.i.posthog.com",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' https://i.ytimg.com data: https: blob:",
+              "img-src 'self' https://i.ytimg.com https://img.youtube.com https://*.supabase.co data: https: blob:",
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://*.supabase.co https://api.stripe.com https://checkout.stripe.com https://api.anthropic.com https://us.i.posthog.com https://*.ingest.sentry.io",
               "frame-src 'self' https://checkout.stripe.com https://js.stripe.com https://hooks.stripe.com",

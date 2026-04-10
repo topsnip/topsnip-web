@@ -1,224 +1,56 @@
-export const dynamic = "force-dynamic";
+import { createClient } from '@/lib/supabase/server';
+import { CardStack } from '@/components/feed/CardStack';
 
 export const metadata = {
-  title: "Your Feed — TopSnip",
-  description:
-    "Today's trending AI topics, curated and explained for you. Updated daily from 7+ platforms.",
-  openGraph: {
-    title: "Your Feed — TopSnip",
-    description:
-      "Today's trending AI topics, curated and explained for you. Updated daily from 7+ platforms.",
-  },
+  title: 'TopSnip — AI Intelligence Feed',
+  description: 'Your personal AI news dashboard',
 };
-
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { SiteNav } from "@/components/SiteNav";
-import { Footer } from "@/components/Footer";
-import { mapTopicToCategory } from "@/lib/utils/category-mapper";
-import type { TopicCardData } from "./topic-card";
-import { FeedClient } from "./feed-client";
-
-// ── Types ────────────────────────────────────────────────────────────────────
-
-interface Topic {
-  id: string;
-  slug: string;
-  title: string;
-  trending_score: number;
-  is_breaking: boolean;
-  is_evergreen: boolean;
-  platform_count: number;
-  published_at: string | null;
-}
-
-interface TopicContent {
-  topic_id: string;
-  tldr: string;
-}
-
-interface FeedRow {
-  topic_id: string;
-  is_read: boolean;
-  is_new: boolean;
-  featured: boolean;
-  personal_score: number;
-}
-
-// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function FeedPage() {
   const supabase = await createClient();
+  const today = new Date().toISOString().slice(0, 10);
 
-  // Auth check
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: topics } = await supabase
+    .from('topics')
+    .select(`
+      slug,
+      trending_score,
+      platform_count,
+      published_at,
+      topic_cards (
+        headline,
+        summary,
+        key_fact,
+        category_tag,
+        image_url
+      )
+    `)
+    .eq('status', 'published')
+    .gte('published_at', `${today}T00:00:00Z`)
+    .order('trending_score', { ascending: false })
+    .limit(30);
 
-  if (!user) {
-    redirect("/auth/login");
-  }
-
-  // Profile check — onboarding gate
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, plan, onboarding_complete")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile?.onboarding_complete) {
-    redirect("/onboarding");
-  }
-
-  const isPro = profile.plan === "pro";
-
-  // Fetch feed via v2 RPC + update last_seen_at in parallel
-  const [feedResult] = await Promise.all([
-    supabase.rpc("get_user_feed_v2", { p_user_id: user.id }),
-    supabase
-      .from("profiles")
-      .update({ last_seen_at: new Date().toISOString() })
-      .eq("id", user.id),
-  ]);
-
-  const feedRows: FeedRow[] = feedResult.data ?? [];
-  const topicIds = feedRows.map((row) => row.topic_id);
-  const readSet = new Set(
-    feedRows.filter((row) => row.is_read).map((row) => row.topic_id),
-  );
-  const newSet = new Set(
-    feedRows.filter((row) => row.is_new).map((row) => row.topic_id),
-  );
-  const featuredId = feedRows.find((row) => row.featured)?.topic_id ?? null;
-
-  // Fetch topics + content in parallel
-  let allTopicCards: TopicCardData[] = [];
-  let lastPublishedAt: string | null = null;
-  const evergreenTopicIds = new Set<string>();
-
-  if (topicIds.length > 0) {
-    const [topicsResult, contentResult] = await Promise.all([
-      supabase
-        .from("topics")
-        .select(
-          "id, slug, title, trending_score, is_breaking, is_evergreen, platform_count, published_at",
-        )
-        .in("id", topicIds),
-      supabase
-        .from("topic_content")
-        .select("topic_id, tldr")
-        .in("topic_id", topicIds)
-        .eq("role", isPro ? profile.role : "general"),
-    ]);
-
-    const topics: Topic[] = topicsResult.data ?? [];
-    const content: TopicContent[] = contentResult.data ?? [];
-    const contentMap = new Map(content.map((c) => [c.topic_id, c.tldr]));
-
-    // Track evergreen topics from already-fetched data (no extra DB query)
-    for (const t of topics) {
-      if (t.is_evergreen) evergreenTopicIds.add(t.id);
-    }
-
-    // Fall back to general content for any topics missing role-specific content
-    const missingTopicIds = topicIds.filter((id) => !contentMap.has(id));
-    if (missingTopicIds.length > 0 && profile.role !== "general") {
-      const { data: generalContent } = await supabase
-        .from("topic_content")
-        .select("topic_id, tldr")
-        .in("topic_id", missingTopicIds)
-        .eq("role", "general");
-
-      (generalContent ?? []).forEach((c: TopicContent) => {
-        contentMap.set(c.topic_id, c.tldr);
-      });
-    }
-
-    // Merge topics, preserving the personalized order from the RPC
-    const topicMap = new Map(topics.map((t) => [t.id, t]));
-    allTopicCards = topicIds
-      .filter((id) => topicMap.has(id))
-      .map((id) => {
-        const t = topicMap.get(id)!;
-        return {
-          id: t.id,
-          slug: t.slug,
-          title: t.title,
-          tldr: contentMap.get(t.id) ?? "",
-          trending_score: t.trending_score,
-          is_breaking: t.is_breaking,
-          platform_count: t.platform_count,
-          published_at: t.published_at,
-          is_read: readSet.has(t.id),
-          is_new: newSet.has(t.id),
-          category: mapTopicToCategory(t.title),
-        };
-      });
-
-    // Determine last published_at for auto-refresh polling
-    const publishedDates = topics
-      .map((t) => t.published_at)
-      .filter((d): d is string => d !== null)
-      .sort()
-      .reverse();
-    lastPublishedAt = publishedDates[0] ?? null;
-  }
-
-  // Separate daily vs evergreen first, then split daily into featured/quick/grid
-  const dailyTopics = allTopicCards.filter((t) => !evergreenTopicIds.has(t.id));
-  const featuredTopic = dailyTopics.find((t) => t.id === featuredId) ?? dailyTopics[0] ?? null;
-  const nonFeaturedTopics = dailyTopics.filter((t) => t.id !== featuredTopic?.id);
-  const quickListTopics = nonFeaturedTopics.slice(0, 3);
-  const regularGridTopics = nonFeaturedTopics.slice(3);
-
-  // Evergreen topics for the strip (use data already fetched — no extra query)
-  const evergreenTopics = allTopicCards
-    .filter((t) => evergreenTopicIds.has(t.id))
-    .map((t) => ({
-      id: t.id,
+  const formatted = (topics || [])
+    .filter((t: any) => t.topic_cards?.length > 0)
+    .map((t: any) => ({
       slug: t.slug,
-      title: t.title,
-      subtitle: t.tldr ? t.tldr.slice(0, 60) + (t.tldr.length > 60 ? "..." : "") : "",
+      headline: t.topic_cards[0].headline,
+      summary: t.topic_cards[0].summary,
+      key_fact: t.topic_cards[0].key_fact,
+      category_tag: t.topic_cards[0].category_tag,
+      image_url: t.topic_cards[0].image_url,
+      platform_count: t.platform_count,
+      published_at: t.published_at,
     }));
 
   return (
-    <div
-      className="min-h-screen flex flex-col relative"
-      style={{ background: "var(--background)" }}
-    >
-      {/* ── Background glow ─────────────────────────────────────────────── */}
-      <div
-        className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full bg-glow"
-        style={{
-          background: "var(--ts-glow-radial)",
-        }}
-      />
-
-      {/* Background gradient for depth */}
-      <div className="absolute top-0 left-0 right-0 h-96 pointer-events-none" aria-hidden="true"
-        style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(232,115,74,0.06) 0%, transparent 70%)" }} />
-
-      {/* ── Nav ─────────────────────────────────────────────────────────── */}
-      <SiteNav user={{ id: user.id, plan: profile.plan ?? "free" }} />
-
-      {/* ── Main Content ────────────────────────────────────────────────── */}
-      <div
-        className="flex-1 w-full max-w-[900px] mx-auto px-[var(--space-page-x)] pt-28 pb-16 relative z-10"
-        style={{ animation: "fadeInUp 0.35s ease both" }}
-      >
-        <FeedClient
-          featuredTopic={featuredTopic}
-          quickListTopics={quickListTopics}
-          gridTopics={regularGridTopics}
-          evergreenTopics={evergreenTopics}
-          lastPublishedAt={lastPublishedAt}
-          userId={user.id}
-          isPro={isPro}
-        />
-      </div>
-
-      {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <Footer />
-    </div>
+    <main className="min-h-screen bg-[#080808]">
+      <header className="sticky top-0 z-10 bg-[#080808]/95 backdrop-blur-sm border-b border-white/5 px-4 py-3">
+        <h1 className="text-lg font-bold text-[#F0F0F0]">
+          Top<span className="text-[#7C6AF7]">Snip</span>
+        </h1>
+      </header>
+      <CardStack topics={formatted} />
+    </main>
   );
 }

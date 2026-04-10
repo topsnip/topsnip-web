@@ -23,36 +23,34 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.topsnip.co"),
-  title: "TopSnip — Understand AI in 3 minutes, not 3 hours",
+  title: "TopSnip — Your AI Intelligence Feed",
   description:
-    "Search any AI topic and get a clear, structured explainer with sources. TopSnip monitors 7+ platforms so you don't have to.",
+    "Stay current on everything happening in AI. InShorts-style cards, visual explainers, and curated videos — no noise, just signal.",
   keywords: [
-    "AI learning",
+    "AI news",
     "AI tools",
-    "AI explainers",
-    "Claude",
-    "MCP",
-    "RAG",
+    "AI updates",
+    "AI dashboard",
+    "AI intelligence",
     "AI trends",
-    "AI learning platform",
   ],
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
   },
   openGraph: {
-    title: "TopSnip — Understand AI in 3 minutes, not 3 hours",
+    title: "TopSnip — Your AI Intelligence Feed",
     description:
-      "Search any AI topic and get a clear, structured explainer with sources. No noise, just signal.",
+      "Stay current on everything happening in AI. No noise, just signal.",
     type: "website",
     siteName: "TopSnip",
     url: "https://www.topsnip.co",
   },
   twitter: {
     card: "summary_large_image",
-    title: "TopSnip — Understand AI in 3 minutes, not 3 hours",
+    title: "TopSnip — Your AI Intelligence Feed",
     description:
-      "Search any AI topic and get a clear, structured explainer with sources. No noise, just signal.",
+      "Stay current on everything happening in AI. No noise, just signal.",
   },
 };
 

@@ -1,8 +1,5 @@
 {
   "functions": {
-    "src/app/api/search/route.ts": {
-      "maxDuration": 60
-    },
     "src/app/api/ingest/run/route.ts": {
       "maxDuration": 60
     },
