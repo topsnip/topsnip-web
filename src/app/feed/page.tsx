@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/ingest/service-client';
 import { CardStack } from '@/components/feed/CardStack';
 
 export const metadata = {
@@ -7,7 +7,7 @@ export const metadata = {
 };
 
 export default async function FeedPage() {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const today = new Date().toISOString().slice(0, 10);
 
   const { data: topics } = await supabase

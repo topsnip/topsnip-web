@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/ingest/service-client';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const limit = Math.max(1, Math.min(parseInt(url.searchParams.get('limit') || '20') || 20, 50));
   const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0') || 0);
 
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data: topics, error, count } = await supabase
     .from('topics')
