@@ -2,9 +2,9 @@
 -- Run in Supabase SQL Editor to remove non-AI junk topics
 -- These got through before the relevance filter was added
 
--- 1. Archive junk topics (set status to 'rejected' instead of deleting)
+-- 1. Archive junk topics (set status to 'archived' instead of deleting)
 UPDATE topics
-SET status = 'rejected'
+SET status = 'archived'
 WHERE id IN (
   SELECT t.id FROM topics t
   WHERE t.status = 'published'
@@ -28,5 +28,5 @@ WHERE id IN (
 
 -- 2. Check what was cleaned up
 SELECT slug, title, status FROM topics
-WHERE status = 'rejected'
+WHERE status = 'archived'
 ORDER BY published_at DESC;

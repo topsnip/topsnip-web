@@ -164,7 +164,7 @@ export async function runContentGeneration(
         if (!isAIRelevant(topic.title, sourceSnippets)) {
           await supabase
             .from("topics")
-            .update({ status: "rejected" })
+            .update({ status: "archived" })
             .eq("id", topic.id);
           return null;
         }
