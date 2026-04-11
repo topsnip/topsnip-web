@@ -12,15 +12,16 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const supabase = createServiceClient();
-  const { data } = await supabase
-    .from('topics')
-    .select('title, topic_cards(headline)')
-    .eq('slug', slug)
+
+  // Query card directly, join to topic
+  const { data: card } = await supabase
+    .from('topic_cards')
+    .select('headline, topics!inner(slug, title)')
+    .eq('topics.slug', slug)
     .single();
 
-  const card = (data?.topic_cards as any[])?.[0];
   return {
-    title: card?.headline || data?.title || 'TopSnip',
+    title: card?.headline || (card?.topics as any)?.title || 'TopSnip',
   };
 }
 
@@ -28,18 +29,31 @@ export default async function LearnPage({ params }: Props) {
   const { slug } = await params;
   const supabase = createServiceClient();
 
+  // Fetch topic
   const { data: topic } = await supabase
     .from('topics')
-    .select(`
-      id, slug, title, topic_type, platform_count, published_at,
-      topic_cards (headline, summary, image_url, learn_brief, quality_score, category_tag),
-      youtube_recommendations (video_id, title, channel_name, duration, reason, position)
-    `)
+    .select('id, slug, title, topic_type, platform_count, published_at')
     .eq('slug', slug)
     .eq('status', 'published')
     .single();
 
-  if (!topic || !(topic.topic_cards as any[])?.length) notFound();
+  if (!topic) notFound();
+
+  // Fetch card separately
+  const { data: card } = await supabase
+    .from('topic_cards')
+    .select('headline, summary, image_url, learn_brief, quality_score, category_tag')
+    .eq('topic_id', topic.id)
+    .single();
+
+  if (!card) notFound();
+
+  // Fetch YouTube recs separately
+  const { data: youtubeRecs } = await supabase
+    .from('youtube_recommendations')
+    .select('video_id, title, channel_name, duration, reason, position')
+    .eq('topic_id', topic.id)
+    .order('position', { ascending: true });
 
   // Fetch sources
   const { data: topicSources } = await supabase
@@ -52,10 +66,6 @@ export default async function LearnPage({ params }: Props) {
     url: ts.source_items?.url || '',
     platform: ts.source_items?.sources?.platform || 'web',
   }));
-
-  const card = (topic.topic_cards as any[])[0];
-  const youtubeRecs = ((topic.youtube_recommendations as any[]) || [])
-    .sort((a: any, b: any) => a.position - b.position);
 
   return (
     <main className="min-h-screen bg-[#080808]">
@@ -72,7 +82,7 @@ export default async function LearnPage({ params }: Props) {
         publishedAt={topic.published_at}
         imageUrl={card.image_url}
         brief={card.learn_brief as any}
-        youtubeRecs={youtubeRecs.map((r: any) => ({
+        youtubeRecs={(youtubeRecs || []).map((r: any) => ({
           video_id: r.video_id,
           title: r.title,
           channel_name: r.channel_name,

@@ -9,45 +9,44 @@ export const metadata = {
 export default async function FeedPage() {
   const supabase = createServiceClient();
 
-  // Show all recent published topics (last 7 days), not just today
+  // Query topic_cards directly and join to topics
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  const { data: topics, error } = await supabase
-    .from('topics')
+  const { data: cards, error } = await supabase
+    .from('topic_cards')
     .select(`
-      slug,
-      trending_score,
-      platform_count,
-      published_at,
-      topic_cards (
-        headline,
-        summary,
-        key_fact,
-        category_tag,
-        image_url
+      headline,
+      summary,
+      key_fact,
+      category_tag,
+      image_url,
+      topics!inner (
+        slug,
+        trending_score,
+        platform_count,
+        published_at,
+        status
       )
     `)
-    .eq('status', 'published')
-    .gte('published_at', weekAgo)
-    .order('trending_score', { ascending: false })
+    .eq('topics.status', 'published')
+    .gte('topics.published_at', weekAgo)
+    .order('generated_at', { ascending: false })
     .limit(30);
 
   if (error) {
     console.error('[feed] Query error:', error.message);
   }
 
-  const formatted = (topics || [])
-    .filter((t: any) => t.topic_cards?.length > 0)
-    .map((t: any) => ({
-      slug: t.slug,
-      headline: t.topic_cards[0].headline,
-      summary: t.topic_cards[0].summary,
-      key_fact: t.topic_cards[0].key_fact,
-      category_tag: t.topic_cards[0].category_tag,
-      image_url: t.topic_cards[0].image_url,
-      platform_count: t.platform_count,
-      published_at: t.published_at,
-    }));
+  const formatted = (cards || []).map((c: any) => ({
+    slug: c.topics.slug,
+    headline: c.headline,
+    summary: c.summary,
+    key_fact: c.key_fact,
+    category_tag: c.category_tag,
+    image_url: c.image_url,
+    platform_count: c.topics.platform_count,
+    published_at: c.topics.published_at,
+  }));
 
   return (
     <main className="min-h-screen bg-[#080808]">

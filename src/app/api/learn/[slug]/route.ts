@@ -8,41 +8,37 @@ export async function GET(
   const { slug } = await params;
   const supabase = createServiceClient();
 
+  // Fetch topic
   const { data: topic } = await supabase
     .from('topics')
-    .select(`
-      id,
-      slug,
-      title,
-      topic_type,
-      platform_count,
-      published_at,
-      topic_cards (
-        headline,
-        summary,
-        image_url,
-        learn_brief,
-        quality_score,
-        category_tag
-      ),
-      youtube_recommendations (
-        video_id,
-        title,
-        channel_name,
-        duration,
-        reason,
-        position
-      )
-    `)
+    .select('id, slug, title, topic_type, platform_count, published_at')
     .eq('slug', slug)
     .eq('status', 'published')
     .single();
 
-  if (!topic || !(topic.topic_cards as any[])?.length) {
+  if (!topic) {
     return NextResponse.json({ error: 'Topic not found' }, { status: 404 });
   }
 
-  // Fetch source articles
+  // Fetch card
+  const { data: card } = await supabase
+    .from('topic_cards')
+    .select('headline, summary, image_url, learn_brief, quality_score, category_tag')
+    .eq('topic_id', topic.id)
+    .single();
+
+  if (!card) {
+    return NextResponse.json({ error: 'Topic not found' }, { status: 404 });
+  }
+
+  // Fetch YouTube recs
+  const { data: youtubeRecs } = await supabase
+    .from('youtube_recommendations')
+    .select('video_id, title, channel_name, duration, reason, position')
+    .eq('topic_id', topic.id)
+    .order('position', { ascending: true });
+
+  // Fetch sources
   const { data: topicSources } = await supabase
     .from('topic_sources')
     .select('source_items(title, url, sources(platform))')
@@ -53,10 +49,6 @@ export async function GET(
     url: ts.source_items?.url || '',
     platform: ts.source_items?.sources?.platform || 'web',
   }));
-
-  const card = (topic.topic_cards as any[])[0];
-  const youtubeRecs = ((topic.youtube_recommendations as any[]) || [])
-    .sort((a: any, b: any) => a.position - b.position);
 
   return NextResponse.json({
     topic: {
@@ -73,7 +65,7 @@ export async function GET(
       learn_brief: card.learn_brief,
       quality_score: card.quality_score,
     },
-    youtube_recs: youtubeRecs.map((r: any) => ({
+    youtube_recs: (youtubeRecs || []).map((r: any) => ({
       video_id: r.video_id,
       title: r.title,
       channel_name: r.channel_name,
