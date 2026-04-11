@@ -9,8 +9,8 @@ export const metadata = {
 export default async function FeedPage() {
   const supabase = createServiceClient();
 
-  // Query topic_cards directly and join to topics
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  // Show last 3 days of topics
+  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
 
   const { data: cards, error } = await supabase
     .from('topic_cards')
@@ -29,7 +29,7 @@ export default async function FeedPage() {
       )
     `)
     .eq('topics.status', 'published')
-    .gte('topics.published_at', weekAgo)
+    .gte('topics.published_at', threeDaysAgo)
     .order('generated_at', { ascending: false })
     .limit(30);
 

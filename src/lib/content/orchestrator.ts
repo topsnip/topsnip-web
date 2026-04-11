@@ -7,6 +7,7 @@ import type { ContentGenerationRunResult } from "./types";
 import type { TopicType } from "./types";
 import { generateCard } from "./card-generator";
 import { findAndSaveYouTubeRecs } from "./youtube-recs";
+import { isAIRelevant } from "./relevance-filter";
 import { sleep } from "./retry";
 
 /** Max topics to process per run */
@@ -158,6 +159,15 @@ export async function runContentGeneration(
           const item = ts.source_items;
           return `${item?.title ?? ""}: ${item?.content_snippet ?? ""} (${item?.url ?? ""})`;
         }).filter(Boolean);
+
+        // AI relevance check — reject non-AI content before wasting Claude API calls
+        if (!isAIRelevant(topic.title, sourceSnippets)) {
+          await supabase
+            .from("topics")
+            .update({ status: "rejected" })
+            .eq("id", topic.id);
+          return null;
+        }
 
         const result = await withTimeout(
           generateCard(

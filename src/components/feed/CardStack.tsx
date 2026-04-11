@@ -26,21 +26,59 @@ export function CardStack({ topics }: { topics: Topic[] }) {
     );
   }
 
+  // Split into featured (top 3) and rest
+  const featured = topics.slice(0, 3);
+  const rest = topics.slice(3);
+
   return (
-    <div className="space-y-4 px-4 py-6 max-w-lg mx-auto">
-      {topics.map((topic) => (
-        <FeedCard
-          key={topic.slug}
-          slug={topic.slug}
-          headline={topic.headline}
-          summary={topic.summary}
-          keyFact={topic.key_fact}
-          categoryTag={topic.category_tag}
-          imageUrl={topic.image_url}
-          sourceCount={topic.platform_count}
-          publishedAt={topic.published_at}
-        />
-      ))}
+    <div className="py-6 space-y-8">
+      {/* Featured — large horizontal scroll */}
+      <section>
+        <h2 className="text-sm font-semibold text-[#7C6AF7] uppercase tracking-wider px-4 mb-3">
+          Trending Now
+        </h2>
+        <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory scrollbar-hide"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          {featured.map((topic) => (
+            <FeedCard
+              key={topic.slug}
+              slug={topic.slug}
+              headline={topic.headline}
+              summary={topic.summary}
+              keyFact={topic.key_fact}
+              categoryTag={topic.category_tag}
+              imageUrl={topic.image_url}
+              sourceCount={topic.platform_count}
+              publishedAt={topic.published_at}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Rest — compact horizontal scroll rows, grouped by category */}
+      {rest.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold text-[#7C6AF7] uppercase tracking-wider px-4 mb-3">
+            More Stories
+          </h2>
+          <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory scrollbar-hide flex-wrap"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {rest.map((topic) => (
+              <FeedCard
+                key={topic.slug}
+                slug={topic.slug}
+                headline={topic.headline}
+                summary={topic.summary}
+                keyFact={topic.key_fact}
+                categoryTag={topic.category_tag}
+                imageUrl={topic.image_url}
+                sourceCount={topic.platform_count}
+                publishedAt={topic.published_at}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
