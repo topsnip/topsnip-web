@@ -1,7 +1,12 @@
 // src/lib/content/card-types.ts
-// v3 card types — separate from v2 role-based types
+// v3 card + pipeline types
 
-import type { SourceAttribution } from './types';
+export interface SourceAttribution {
+  title: string;
+  url: string;
+  platform: string;
+  publishedAt: string;
+}
 
 /** v3 Card — InShorts-style feed card */
 export interface TopicCard {
@@ -28,4 +33,25 @@ export interface CardGenerationResult {
   illustration_prompt: string;
   image_url: string | null;
   quality_score: number;
+}
+
+/** YouTube recommendation for "Go Deeper" section */
+export interface YouTubeRecommendation {
+  videoId: string;
+  title: string;
+  channelName: string;
+  thumbnailUrl: string;
+  duration: string;
+  reason: string;
+  position: number;
+}
+
+/** Result of a full content generation run */
+export interface ContentGenerationRunResult {
+  topicsProcessed: number;
+  contentGenerated: number;
+  topicsPublished: number;
+  isQuietDay: boolean;
+  errors: string[];
+  durationMs: number;
 }

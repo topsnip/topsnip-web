@@ -4,7 +4,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { TopicCard, LearnBrief, CardGenerationResult } from './card-types';
-import type { TopicType } from './types';
+import type { TopicType } from './topic-classifier';
 import { buildCardSystemPrompt, buildCardUserPrompt } from './card-prompts';
 import { buildIllustrationPrompt, generateIllustration } from './image-generator';
 import { uploadIllustration } from '../supabase/storage';

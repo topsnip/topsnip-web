@@ -3,11 +3,13 @@
 // Called by the /api/content/generate route.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { ContentGenerationRunResult } from "./types";
-import type { TopicType } from "./types";
+import type { ContentGenerationRunResult } from "./card-types";
+import type { TopicType } from "./topic-classifier";
+import Anthropic from "@anthropic-ai/sdk";
 import { generateCard } from "./card-generator";
 import { findAndSaveYouTubeRecs } from "./youtube-recs";
 import { isAIRelevant } from "./relevance-filter";
+import { classifyAIRelevance } from "./ai-classifier";
 import { sleep } from "./retry";
 
 /** Max topics to process per run */
@@ -160,13 +162,29 @@ export async function runContentGeneration(
           return `${item?.title ?? ""}: ${item?.content_snippet ?? ""} (${item?.url ?? ""})`;
         }).filter(Boolean);
 
-        // AI relevance check — reject non-AI content before wasting Claude API calls
+        // AI relevance check — two-stage:
+        //   1. Free keyword filter rejects obvious junk (religion, sports, cars, etc.)
+        //   2. Haiku classifier catches what slips through (non-English, hype, spam)
         if (!isAIRelevant(topic.title, sourceSnippets)) {
           await supabase
             .from("topics")
             .update({ status: "archived" })
             .eq("id", topic.id);
           return null;
+        }
+
+        const anthropicKey = process.env.ANTHROPIC_API_KEY;
+        if (anthropicKey) {
+          const classifier = new Anthropic({ apiKey: anthropicKey });
+          const verdict = await classifyAIRelevance(topic.title, sourceSnippets, classifier);
+          if (!verdict.keep) {
+            console.log(`[classifier] archived "${topic.title}": ${verdict.reason} (confidence ${verdict.confidence.toFixed(2)})`);
+            await supabase
+              .from("topics")
+              .update({ status: "archived" })
+              .eq("id", topic.id);
+            return null;
+          }
         }
 
         const result = await withTimeout(

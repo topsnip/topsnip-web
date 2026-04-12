@@ -119,12 +119,5 @@ export async function incrementYoutubeQuota(units: number): Promise<boolean> {
 }
 
 // Instantiate specific limiters (shared across module)
-export const anonymousSearchLimiter = new RateLimiter({ limit: 5, windowMs: 60_000 });
-export const freeSearchLimiter = new RateLimiter({ limit: 5, windowMs: 60_000 });
-export const proSearchLimiter = new RateLimiter({ limit: 20, windowMs: 60_000 });
 export const checkoutLimiter = new RateLimiter({ limit: 3, windowMs: 60_000 });
-export const feedPollLimiter = new RateLimiter({ limit: 15, windowMs: 60_000 });
-export const feedStatsLimiter = new RateLimiter({ limit: 10, windowMs: 60_000 });
-export const deleteAccountLimiter = new RateLimiter({ limit: 2, windowMs: 60_000 });
-export const xpLimiter = new RateLimiter({ limit: 30, windowMs: 60_000 });
 export const portalLimiter = new RateLimiter({ limit: 5, windowMs: 60_000 });

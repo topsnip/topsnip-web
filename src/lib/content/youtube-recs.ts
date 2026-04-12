@@ -3,7 +3,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { YouTubeRecommendation } from "./types";
+import type { YouTubeRecommendation } from "./card-types";
 import { buildYouTubeRecPrompt } from "./prompts";
 import { incrementYoutubeQuota } from "../ratelimit";
 

@@ -1,5 +1,5 @@
 // src/lib/content/card-prompts.ts
-import type { TopicType } from './types';
+import type { TopicType } from './topic-classifier';
 
 const TOPSNIP_VOICE = `You are TopSnip — a personal AI intelligence filter.
 
