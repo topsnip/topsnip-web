@@ -6,7 +6,7 @@
  * Defense-in-depth: strip XML-like tags from source content
  * before embedding in prompt XML structure, preventing tag injection.
  */
-export function sanitizeForPrompt(text: string): string {
+function sanitizeForPrompt(text: string): string {
   return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 

@@ -144,14 +144,14 @@ function countMatches(text: string, patterns: RegExp[]): number {
   return count;
 }
 
-export function classifyTopic(
+function classifyTopicWithScore(
   title: string,
   contentSnippets: string[],
   platforms: string[]
-): TopicType {
+): FastPassResult {
   const combined = [title, ...contentSnippets].join(" ");
 
-  // Special boost: arxiv platform is a strong signal for research_paper
+  // Arxiv platform is a strong signal for research_paper
   const platformBoost: Partial<Record<string, TopicType>> = {
     arxiv: "research_paper",
   };
@@ -163,7 +163,6 @@ export function classifyTopic(
     const patterns = TOPIC_PATTERNS[topicType];
     let score = countMatches(combined, patterns);
 
-    // Platform-based boost
     for (const platform of platforms) {
       if (platformBoost[platform.toLowerCase()] === topicType) {
         score += 3;
@@ -177,44 +176,6 @@ export function classifyTopic(
   }
 
   // Confidence threshold: need at least 2 keyword matches to override default
-  if (bestScore < 2) {
-    return "industry_news";
-  }
-
-  return bestType;
-}
-
-// Internal version that also returns match count for smart classifier
-function classifyTopicWithScore(
-  title: string,
-  contentSnippets: string[],
-  platforms: string[]
-): FastPassResult {
-  const combined = [title, ...contentSnippets].join(" ");
-
-  const platformBoost: Partial<Record<string, TopicType>> = {
-    arxiv: "research_paper",
-  };
-
-  let bestType: TopicType = "industry_news";
-  let bestScore = 0;
-
-  for (const topicType of TYPE_PRIORITY) {
-    const patterns = TOPIC_PATTERNS[topicType];
-    let score = countMatches(combined, patterns);
-
-    for (const platform of platforms) {
-      if (platformBoost[platform.toLowerCase()] === topicType) {
-        score += 3;
-      }
-    }
-
-    if (score > bestScore) {
-      bestScore = score;
-      bestType = topicType;
-    }
-  }
-
   if (bestScore < 2) {
     return { type: "industry_news", matchCount: bestScore };
   }

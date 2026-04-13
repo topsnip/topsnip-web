@@ -24,11 +24,11 @@ const PER_TOPIC_TIMEOUT_MS = 90_000;
 /** Run-level timeout — 110s to leave 10s buffer before Vercel's 120s maxDuration kills it */
 const RUN_TIMEOUT_MS = 110_000;
 
-/** Max Claude API calls per day (v3: each topic = ~1 card gen call + 1 quality check = ~2) */
+/** Max Claude API calls per day */
 const MAX_DAILY_API_CALLS = 200;
 
-/** Approximate calls per topic (1 card gen + 1 quality check) */
-const CALLS_PER_TOPIC = 2;
+/** Approximate Claude calls per topic: relevance classify + card gen + quality check + YouTube rec pick */
+const CALLS_PER_TOPIC = 4;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -126,6 +126,10 @@ export async function runContentGeneration(
 
   const topics = pendingTopics ?? [];
 
+  // Hoist Anthropic client above per-topic loop — one instance serves the whole run.
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const classifierClient = anthropicKey ? new Anthropic({ apiKey: anthropicKey }) : null;
+
   if (topics.length === 0) {
     return {
       topicsProcessed: 0,
@@ -173,10 +177,8 @@ export async function runContentGeneration(
           return null;
         }
 
-        const anthropicKey = process.env.ANTHROPIC_API_KEY;
-        if (anthropicKey) {
-          const classifier = new Anthropic({ apiKey: anthropicKey });
-          const verdict = await classifyAIRelevance(topic.title, sourceSnippets, classifier);
+        if (classifierClient) {
+          const verdict = await classifyAIRelevance(topic.title, sourceSnippets, classifierClient);
           if (!verdict.keep) {
             console.log(`[classifier] archived "${topic.title}": ${verdict.reason} (confidence ${verdict.confidence.toFixed(2)})`);
             await supabase

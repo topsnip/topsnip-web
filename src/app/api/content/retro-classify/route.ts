@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
 
   const url = new URL(req.url);
   const limit = Math.min(parseInt(url.searchParams.get("limit") ?? "25", 10) || BATCH_SIZE, 100);
-  const offset = Math.max(parseInt(url.searchParams.get("offset") ?? "0", 10) || 0, 0);
+  const rawOffset = Math.max(parseInt(url.searchParams.get("offset") ?? "0", 10) || 0, 0);
+  const offset = Math.min(rawOffset, 10_000);
   const dryRun = url.searchParams.get("dryRun") === "1";
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
@@ -98,6 +99,16 @@ export async function POST(req: NextRequest) {
 
     // Stage 2: Haiku classifier
     const verdict = await classifyAIRelevance(topic.title, sourceSnippets, classifier);
+
+    // Classifier fail-open returns keep=true with confidence=0 and a reason
+    // containing "classifier unavailable". Treat that as a skip, not a keep —
+    // avoids silent pass-through when Anthropic is down during retro-sweep.
+    if (verdict.confidence === 0 && /classifier unavailable/i.test(verdict.reason)) {
+      console.warn(`[retro-classify] classifier unavailable for "${topic.title}" — skipping`);
+      results.push({ title: topic.title, slug: topic.slug, keep: true, reason: verdict.reason, action: "error-skipped" });
+      continue;
+    }
+
     if (!verdict.keep) {
       if (!dryRun) {
         await supabase.from("topics").update({ status: "archived" }).eq("id", topic.id);

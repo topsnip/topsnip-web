@@ -17,20 +17,6 @@ export function slugify(title: string): string {
 }
 
 /**
- * Normalize a title for fuzzy matching.
- * Strips common prefixes, lowercases, removes punctuation.
- */
-export function normalizeTitle(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/^(show hn|ask hn|launch hn|tell hn):\s*/i, "")
-    .replace(/[\[\](){}'"]/g, "")
-    .replace(/[^a-z0-9\s]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/**
  * Compute engagement velocity from an item's engagement_history snapshots.
  *
  * velocity = engagement_delta / hours_between_snapshots
