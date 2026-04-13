@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
     .from("topics")
     .select("id, slug, title")
     .eq("status", "published")
+    .eq("is_evergreen", false)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
