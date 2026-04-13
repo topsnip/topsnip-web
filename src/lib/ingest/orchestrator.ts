@@ -4,6 +4,9 @@ import { fetchHN, fetchRSS, fetchReddit, fetchYouTube, fetchArxiv, fetchGitHub }
 import { scoreAndDedup } from "./scorer";
 import { sanitizeText, sanitizeUrl, isSafeUrl } from "./safe-fetch";
 import { classifyTopicSmart } from "../content/topic-classifier";
+import { computeSimHash, isDuplicate } from "./simhash";
+import { extractEntities } from "./ai-entities";
+import { jaccardSimilarity } from "./clusterer";
 
 /** Max items to store per source per run */
 const MAX_ITEMS_PER_SOURCE = 100;
@@ -194,8 +197,60 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
   // 5. Score and detect new topics (velocity-based with clustering)
   const candidates = await scoreAndDedup(supabase, 1);
 
-  // 6. Insert new topics with topic_type and enrichment fields
+  // 6. Fetch recent topics once for cross-run duplicate detection
+  const dedupLookback = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: recentTopicRows } = await supabase
+    .from("topics")
+    .select("id, title")
+    .gte("first_detected_at", dedupLookback)
+    .in("status", ["detected", "generating", "published"]);
+
+  const recentTopics = (recentTopicRows ?? []).map((t: { id: string; title: string }) => ({
+    id: t.id,
+    title: t.title,
+    simhash: computeSimHash(t.title),
+    entities: new Set(extractEntities(t.title)),
+  }));
+
+  const TITLE_JACCARD_THRESHOLD = 0.6;
+
+  // 7. Insert new topics with topic_type and enrichment fields
   for (const candidate of candidates.slice(0, 10)) {
+    // Cross-run dedup: check if this candidate matches an existing recent topic.
+    // If so, link source items to the existing topic instead of creating a duplicate.
+    const candSimhash = computeSimHash(candidate.title);
+    const candEntities = new Set(extractEntities(candidate.title));
+
+    let mergeTargetId: string | null = null;
+    for (const existing of recentTopics) {
+      if (isDuplicate(candSimhash, existing.simhash)) {
+        mergeTargetId = existing.id;
+        break;
+      }
+      if (
+        existing.entities.size > 0 &&
+        candEntities.size > 0 &&
+        jaccardSimilarity(candEntities, existing.entities) >= TITLE_JACCARD_THRESHOLD
+      ) {
+        mergeTargetId = existing.id;
+        break;
+      }
+    }
+
+    if (mergeTargetId) {
+      console.log(`[Ingest] Merging "${candidate.title}" into existing topic ${mergeTargetId}`);
+      if (candidate.sourceItemIds.length > 0) {
+        const links = candidate.sourceItemIds.map((siId) => ({
+          topic_id: mergeTargetId,
+          source_item_id: siId,
+        }));
+        await supabase
+          .from("topic_sources")
+          .upsert(links, { onConflict: "topic_id,source_item_id", ignoreDuplicates: true });
+      }
+      continue;
+    }
+
     // Find unique slug with counter fallback
     const slug = candidate.slug;
     let finalSlug = slug;
@@ -257,6 +312,16 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
       await supabase
         .from("topic_sources")
         .upsert(links, { onConflict: "topic_id,source_item_id", ignoreDuplicates: true });
+    }
+
+    // Append to in-memory dedup set so later candidates in this run merge into this topic
+    if (topic) {
+      recentTopics.push({
+        id: topic.id,
+        title: candidate.title,
+        simhash: candSimhash,
+        entities: candEntities,
+      });
     }
 
     newTopics++;

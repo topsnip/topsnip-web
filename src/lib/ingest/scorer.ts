@@ -117,9 +117,24 @@ export async function scoreAndDedup(
     return [];
   }
 
+  // Exclude source_items that already belong to a topic — otherwise the same
+  // items re-cluster every ingestion run and produce duplicate topic candidates.
+  const itemIds = items.map((i: Record<string, any>) => i.id as string);
+  const { data: linkedRows } = await supabase
+    .from("topic_sources")
+    .select("source_item_id")
+    .in("source_item_id", itemIds);
+
+  const linkedIds = new Set((linkedRows ?? []).map((r: { source_item_id: string }) => r.source_item_id));
+  const unlinkedItems = items.filter((item: Record<string, any>) => !linkedIds.has(item.id));
+
+  if (unlinkedItems.length === 0) {
+    return [];
+  }
+
   // Map DB rows to SourceItemWithPlatform
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase .rpc() returns untyped rows
-  const mapped: SourceItemWithPlatform[] = items.map((item: Record<string, any>) => ({
+  const mapped: SourceItemWithPlatform[] = unlinkedItems.map((item: Record<string, any>) => ({
     id: item.id,
     title: item.title,
     content_snippet: item.content_snippet || "",

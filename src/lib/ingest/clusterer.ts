@@ -43,7 +43,7 @@ interface ItemMeta {
  * Compute Jaccard similarity between two sets.
  * Returns 0-1 where 1 means identical sets.
  */
-function jaccardSimilarity(a: Set<string>, b: Set<string>): number {
+export function jaccardSimilarity(a: Set<string>, b: Set<string>): number {
   if (a.size === 0 && b.size === 0) return 0;
 
   let intersection = 0;
