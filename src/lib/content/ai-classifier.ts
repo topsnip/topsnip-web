@@ -36,6 +36,7 @@ ARCHIVE if the topic is:
 - Individual tutorials and one-person ChatGPT blog posts with no broader signal
 - Engagement-farm content, low-effort summaries, content-mill reposts
 - Junk that happens to mention "AI" tangentially
+- Backward-looking commentary, reaction videos, or compilations about older AI model generations, previous-generation behavior, or stale failures (e.g. "GPT-3.5 can't explain X", "I tried Claude 2 in 2026", "ChatGPT 5.2 fails at Y") — UNLESS it surfaces a concrete new development, benchmark result, or policy change about a current frontier model
 
 Default to ARCHIVE when uncertain. Better to miss a marginal story than to publish noise.
 
