@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   const supabase = createServiceClient();
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
+  // Fetch one extra row so `has_more` is accurate at exact page boundaries.
   const { data: cards, error } = await supabase
     .from('topic_cards')
     .select(`
@@ -29,13 +30,17 @@ export async function GET(request: NextRequest) {
     .eq('topics.status', 'published')
     .gte('topics.published_at', since)
     .order('generated_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+    .range(offset, offset + limit);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const formatted = (cards || []).map((c: any) => ({
+  const rows = cards ?? [];
+  const hasMore = rows.length > limit;
+  const page = hasMore ? rows.slice(0, limit) : rows;
+
+  const formatted = page.map((c: any) => ({
     slug: c.topics.slug,
     headline: c.headline,
     summary: c.summary,
@@ -50,6 +55,6 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     topics: formatted,
     total: formatted.length,
-    has_more: formatted.length === limit,
+    has_more: hasMore,
   });
 }

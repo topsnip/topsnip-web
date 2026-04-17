@@ -14,6 +14,36 @@ const MAX_ITEMS_PER_SOURCE = 100;
 /** Max engagement history entries to keep per item */
 const MAX_ENGAGEMENT_SNAPSHOTS = 20;
 
+/** Max parallel source fetches — protects remote rate limits and Vercel runtime */
+const FETCH_CONCURRENCY = 5;
+
+/** Run N async tasks with a concurrency cap. Preserves input ordering. */
+async function runWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T) => Promise<R>,
+): Promise<PromiseSettledResult<R>[]> {
+  const results: PromiseSettledResult<R>[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function runLane() {
+    while (true) {
+      const i = nextIndex++;
+      if (i >= items.length) return;
+      try {
+        const value = await worker(items[i]);
+        results[i] = { status: "fulfilled", value };
+      } catch (reason) {
+        results[i] = { status: "rejected", reason };
+      }
+    }
+  }
+
+  const lanes = Array.from({ length: Math.min(limit, items.length) }, () => runLane());
+  await Promise.all(lanes);
+  return results;
+}
+
 /**
  * Run a single fetch for one source based on its platform type.
  */
@@ -104,13 +134,14 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
   let newItems = 0;
   let newTopics = 0;
 
-  // 1. Load active sources
-  const { data: sources, error: srcErr } = await supabase
+  // 1. Load active sources, filtered to those whose check_interval_min has elapsed
+  //    since last_checked_at. last_checked_at NULL means "never fetched", always due.
+  const { data: allSources, error: srcErr } = await supabase
     .from("sources")
     .select("*")
     .eq("is_active", true);
 
-  if (srcErr || !sources) {
+  if (srcErr || !allSources) {
     return {
       fetchedSources: 0,
       newItems: 0,
@@ -120,9 +151,28 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
     };
   }
 
-  // 2. Fetch from all sources in parallel
-  const fetchResults = await Promise.allSettled(
-    sources.map((source) => fetchSource(source as Source))
+  const now = Date.now();
+  const sources = (allSources as Source[]).filter((s) => {
+    if (!s.last_checked_at) return true;
+    const intervalMs = (s.check_interval_min ?? 120) * 60_000;
+    return now - new Date(s.last_checked_at).getTime() >= intervalMs;
+  });
+
+  if (sources.length === 0) {
+    return {
+      fetchedSources: 0,
+      newItems: 0,
+      newTopics: 0,
+      errors: [],
+      durationMs: Date.now() - start,
+    };
+  }
+
+  // 2. Fetch from sources with a concurrency cap
+  const fetchResults = await runWithConcurrency(
+    sources as Source[],
+    FETCH_CONCURRENCY,
+    (source) => fetchSource(source),
   );
 
   // 3. Process results

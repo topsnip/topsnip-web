@@ -34,6 +34,17 @@ export async function POST(req: NextRequest) {
       console.warn("Failed to reset stuck topics:", stuckErr.message);
     }
 
+    // H1b: also self-heal topics stuck at status="generating" (from the atomic
+    // topic-claim step) if the run that claimed them crashed before resetting.
+    const { error: stuckStatusErr } = await supabase
+      .from("topics")
+      .update({ status: "detected" })
+      .eq("status", "generating")
+      .lt("updated_at", new Date(Date.now() - 10 * 60 * 1000).toISOString());
+    if (stuckStatusErr) {
+      console.warn("Failed to reset topics stuck at status=generating:", stuckStatusErr.message);
+    }
+
     // Rate limit: check most recent content generation timestamp
     const { data: recentContent } = await supabase
       .from("topic_cards")

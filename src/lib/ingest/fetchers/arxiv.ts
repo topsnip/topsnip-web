@@ -1,7 +1,7 @@
 import type { FetchResult, RawSourceItem } from "../types";
 import { safeText } from "../safe-fetch";
 
-const ARXIV_API_URL = "http://export.arxiv.org/api/query";
+const ARXIV_API_URL = "https://export.arxiv.org/api/query";
 
 // arXiv categories for AI/ML papers
 const CATEGORIES = ["cs.AI", "cs.CL", "cs.LG", "cs.CV", "cs.IR", "cs.MA"];

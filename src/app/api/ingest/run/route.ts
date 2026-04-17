@@ -7,11 +7,12 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Allow up to 60 seconds for full ingestion
 
 const MIN_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes minimum between runs
+const LOCK_NAME = "ingest";
 
 /**
  * POST /api/ingest/run
  * Triggers a full ingestion cycle: fetch all sources → score → detect topics.
- * Protected by CRON_SECRET + DB-backed rate limiting.
+ * Protected by CRON_SECRET + DB-backed lock.
  */
 export async function POST(req: NextRequest) {
   const authError = verifyCronAuth(req);
@@ -20,38 +21,29 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = createServiceClient();
 
-    // Atomic rate-limit + concurrency guard:
-    // Check last run time AND claim the slot in one step.
-    // If another run started within MIN_INTERVAL_MS, skip gracefully.
-    const { data: lastCheck } = await supabase
-      .from("sources")
-      .select("last_checked_at")
-      .not("last_checked_at", "is", null)
-      .order("last_checked_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // Atomic claim: a single UPDATE that only succeeds if the lock is stale.
+    // Two concurrent requests cannot both match the WHERE clause because
+    // Postgres serializes row updates, so the second sees the fresh timestamp.
+    const cutoffIso = new Date(Date.now() - MIN_INTERVAL_MS).toISOString();
+    const nowIso = new Date().toISOString();
 
-    if (lastCheck?.last_checked_at) {
-      const elapsed = Date.now() - new Date(lastCheck.last_checked_at).getTime();
-      if (elapsed < MIN_INTERVAL_MS) {
-        return NextResponse.json(
-          { ok: true, skipped: true, reason: "Too soon since last run or another run in progress" },
-          { status: 429, headers: { "Retry-After": String(Math.ceil((MIN_INTERVAL_MS - elapsed) / 1000)) } }
-        );
-      }
-    }
-
-    // Touch a source's last_checked_at immediately to claim the slot.
-    // Any concurrent request arriving after this will see the fresh timestamp
-    // and exit via the rate limit above.
-    const { error: claimErr } = await supabase
-      .from("sources")
-      .update({ last_checked_at: new Date().toISOString() })
-      .eq("is_active", true)
-      .limit(1);
+    const { data: claimed, error: claimErr } = await supabase
+      .from("locks")
+      .update({ last_acquired_at: nowIso })
+      .eq("name", LOCK_NAME)
+      .or(`last_acquired_at.is.null,last_acquired_at.lt.${cutoffIso}`)
+      .select("last_acquired_at");
 
     if (claimErr) {
-      console.warn("[Ingest] Failed to claim ingestion slot:", claimErr.message);
+      console.error("[Ingest] Lock acquire query failed:", claimErr.message);
+      return NextResponse.json({ ok: false, error: "Lock check failed" }, { status: 500 });
+    }
+
+    if (!claimed || claimed.length === 0) {
+      return NextResponse.json(
+        { ok: true, skipped: true, reason: "Another ingest run is already in progress or completed recently" },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(MIN_INTERVAL_MS / 1000)) } }
+      );
     }
 
     const result = await runIngestion(supabase);

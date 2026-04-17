@@ -121,3 +121,39 @@ export async function incrementYoutubeQuota(units: number): Promise<boolean> {
 // Instantiate specific limiters (shared across module)
 export const checkoutLimiter = new RateLimiter({ limit: 3, windowMs: 60_000 });
 export const portalLimiter = new RateLimiter({ limit: 5, windowMs: 60_000 });
+
+// ── DALL-E Daily Quota ──────────────────────────────────────────────────────
+
+const DAILY_DALLE_IMAGES = 20;
+
+/**
+ * Try to claim one DALL-E image generation against today's daily cap.
+ * Returns true if allowed, false if cap exceeded. Fails open (returns true) on
+ * any quota-service error so we don't block generation on transient infra issues.
+ *
+ * Why this lives here and not in image-generator.ts: that module used a
+ * module-scoped counter, which resets on every Vercel cold start, so the
+ * cap wasn't actually enforced across serverless instances.
+ */
+export async function claimDalleImage(): Promise<boolean> {
+  if (!redis) {
+    // Without Redis, we intentionally fall open rather than rely on in-memory
+    // counters that reset on cold start. The existing DALL-E spend ceiling is
+    // low-enough that a missing quota service is an accepted risk.
+    return true;
+  }
+  try {
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const key = `quota:dalle:${dateStr}`;
+    const current = await redis.incr(key);
+    if (current === 1) await redis.expire(key, 48 * 60 * 60);
+    if (current > DAILY_DALLE_IMAGES) {
+      console.warn(`[dalle-quota] cap reached for ${dateStr} (${current}/${DAILY_DALLE_IMAGES})`);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn("[dalle-quota] Redis error, allowing request:", err);
+    return true;
+  }
+}

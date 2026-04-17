@@ -1,17 +1,5 @@
 import OpenAI from 'openai';
-
-const MAX_DAILY_IMAGES = 20;
-let dailyImageCount = 0;
-let lastResetDate = '';
-
-function checkAndResetDailyCount(): boolean {
-  const today = new Date().toISOString().slice(0, 10);
-  if (today !== lastResetDate) {
-    dailyImageCount = 0;
-    lastResetDate = today;
-  }
-  return dailyImageCount < MAX_DAILY_IMAGES;
-}
+import { claimDalleImage } from '../ratelimit';
 
 export function buildIllustrationPrompt(
   topicTitle: string,
@@ -35,7 +23,7 @@ export async function generateIllustration(
     return null;
   }
 
-  if (!checkAndResetDailyCount()) {
+  if (!(await claimDalleImage())) {
     console.warn('[image-gen] Daily cap reached, skipping');
     return null;
   }
@@ -59,7 +47,6 @@ export async function generateIllustration(
     });
     if (!imageResponse.ok) return null;
 
-    dailyImageCount++;
     return await imageResponse.arrayBuffer();
   } catch (error) {
     console.error('[image-gen] Failed:', error);

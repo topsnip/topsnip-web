@@ -29,12 +29,35 @@ function extractTag(xml: string, tag: string): string {
 }
 
 function extractLink(itemXml: string): string {
-  // Atom: <link href="..." />
-  const atomLink = itemXml.match(/<link[^>]+href="([^"]+)"/i);
-  if (atomLink) return atomLink[1];
+  // Atom: collect all <link> tags, prefer rel="alternate" (the article URL)
+  // over rel="self" (the feed's own URL). Support both single and double quotes.
+  const linkPattern = /<link\b([^>]*?)\/?\s*>/gi;
+  type AtomLink = { href: string; rel: string };
+  const atomLinks: AtomLink[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = linkPattern.exec(itemXml)) !== null) {
+    const attrs = m[1];
+    const hrefMatch = attrs.match(/\bhref\s*=\s*["']([^"']+)["']/i);
+    if (!hrefMatch) continue;
+    const relMatch = attrs.match(/\brel\s*=\s*["']([^"']+)["']/i);
+    atomLinks.push({ href: hrefMatch[1], rel: relMatch?.[1] ?? "" });
+  }
+  if (atomLinks.length > 0) {
+    const alternate = atomLinks.find((l) => l.rel === "alternate" || l.rel === "");
+    return (alternate ?? atomLinks[0]).href;
+  }
 
   // RSS: <link>...</link>
   return extractTag(itemXml, "link");
+}
+
+function toISODateSafe(raw: string): string {
+  // Return a valid ISO date string, or fall back to now() if input is garbage.
+  // Prevents a single malformed pubDate from taking down the whole feed.
+  if (!raw) return new Date().toISOString();
+  const ms = Date.parse(raw);
+  if (Number.isNaN(ms)) return new Date().toISOString();
+  return new Date(ms).toISOString();
 }
 
 function parseItems(xml: string): FeedItem[] {
@@ -111,10 +134,13 @@ export async function fetchRSS(
       url: item.link,
       contentSnippet: item.description,
       engagementScore: 0, // RSS items don't have engagement metrics
-      publishedAt: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
+      publishedAt: toISODateSafe(item.pubDate),
     }));
 
-    return { sourceId, items, health: "healthy" };
+    // Zero items usually means the regex parser silently failed on a new feed
+    // format (not that the feed is legitimately empty). Flag as degraded.
+    const health = items.length === 0 ? "degraded" : "healthy";
+    return { sourceId, items, health };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return { sourceId, items: [], health: "down", error: `RSS fetch failed: ${msg}` };

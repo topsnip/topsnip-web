@@ -98,7 +98,11 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Create Checkout Session ────────────────────────────────────────────────
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) {
+    console.error("[checkout] NEXT_PUBLIC_APP_URL is not set; refusing to use localhost fallback");
+    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+  }
 
   const session = await stripe.checkout.sessions.create({
     customer: customerId,

@@ -48,7 +48,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!appUrl) {
+      console.error("[portal] NEXT_PUBLIC_APP_URL is not set; refusing to use localhost fallback");
+      return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+    }
     const stripe = getStripe();
 
     const portalSession = await stripe.billingPortal.sessions.create({

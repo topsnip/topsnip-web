@@ -104,8 +104,8 @@ export async function runContentGeneration(
     };
   }
 
-  // 1. Find detected topics, ordered by trending score (most important first)
-  const { data: pendingTopics, error: fetchErr } = await supabase
+  // 1. Find candidate topics, ordered by trending score (most important first).
+  const { data: candidates, error: fetchErr } = await supabase
     .from("topics")
     .select("id, slug, title, trending_score, topic_type")
     .eq("status", "detected")
@@ -124,7 +124,21 @@ export async function runContentGeneration(
     };
   }
 
-  const topics = pendingTopics ?? [];
+  // Atomically claim each candidate: status detected -> generating, only for
+  // rows still in "detected". Concurrent runs race at the row level; losers
+  // get no row back and skip that topic. Expensive work below only runs on
+  // successfully-claimed topics.
+  const topics: Array<{ id: string; slug: string; title: string; trending_score: number; topic_type: string | null }> = [];
+  for (const candidate of candidates ?? []) {
+    const { data: claimed } = await supabase
+      .from("topics")
+      .update({ status: "generating", updated_at: new Date().toISOString() })
+      .eq("id", candidate.id)
+      .eq("status", "detected")
+      .select("id")
+      .maybeSingle();
+    if (claimed) topics.push(candidate);
+  }
 
   // Hoist Anthropic client above per-topic loop — one instance serves the whole run.
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
@@ -209,6 +223,12 @@ export async function runContentGeneration(
         if (errMsg.includes("429") || errMsg.includes("rate")) {
           console.warn(`Rate limit hit processing "${topic.title}" — degrading`);
         }
+        // Release the claim so the next run can retry this topic.
+        await supabase
+          .from("topics")
+          .update({ status: "detected", updated_at: new Date().toISOString() })
+          .eq("id", topic.id)
+          .eq("status", "generating");
         return null;
       }
     })();

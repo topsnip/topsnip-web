@@ -43,7 +43,9 @@ export async function POST(req: NextRequest) {
   const db = createServiceClient();
 
   // ── Prevent Replay Attacks (Idempotency) ──────────────────────────────────
-  // Atomic upsert — if the row already exists, ON CONFLICT DO NOTHING returns no rows
+  // Atomic claim — if the row already exists, ON CONFLICT DO NOTHING returns no rows.
+  // We delete this claim row at the end if the handler throws so Stripe's retries
+  // can re-process the event.
   const { data: upsertResult } = await db
     .from("stripe_events")
     .upsert(
@@ -57,7 +59,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true, duplicate: true });
   }
 
+  let handlerFailed = false;
+
   // ── Handle events ──────────────────────────────────────────────────────────
+  try {
   switch (event.type) {
 
     // Payment succeeded — activate Pro
@@ -96,7 +101,7 @@ export async function POST(req: NextRequest) {
         })
         .eq("id", userId);
 
-      if (error) console.error("checkout.session.completed DB update error:", error);
+      if (error) { console.error("checkout.session.completed DB update error:", error); throw error; }
       break;
     }
 
@@ -123,7 +128,7 @@ export async function POST(req: NextRequest) {
         })
         .eq("stripe_customer_id", customerId);
 
-      if (error) console.error("customer.subscription.updated DB update error:", error);
+      if (error) { console.error("customer.subscription.updated DB update error:", error); throw error; }
       break;
     }
 
@@ -146,7 +151,7 @@ export async function POST(req: NextRequest) {
         })
         .eq("stripe_customer_id", customerId);
 
-      if (error) console.error("customer.subscription.deleted DB update error:", error);
+      if (error) { console.error("customer.subscription.deleted DB update error:", error); throw error; }
       break;
     }
 
@@ -169,13 +174,23 @@ export async function POST(req: NextRequest) {
         })
         .eq("stripe_customer_id", customerId);
 
-      if (error) console.error("invoice.payment_failed DB update error:", error);
+      if (error) { console.error("invoice.payment_failed DB update error:", error); throw error; }
       break;
     }
 
     default:
       // Unhandled event — not an error, just ignore
       break;
+  }
+  } catch (err) {
+    handlerFailed = true;
+    console.error(`[Stripe Webhook] Handler failed for event ${event.id}:`, err instanceof Error ? err.message : err);
+  }
+
+  if (handlerFailed) {
+    // Release the idempotency claim so Stripe's retries re-process this event.
+    await db.from("stripe_events").delete().eq("id", event.id);
+    return NextResponse.json({ error: "Handler failed, will retry" }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });
