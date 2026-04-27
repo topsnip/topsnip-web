@@ -11,6 +11,14 @@ export const maxDuration = 300;
 const BATCH_SIZE = 25;
 const RUN_TIMEOUT_MS = 280_000;
 
+type TopicSourceRow = {
+  source_items?: {
+    title?: string | null;
+    content_snippet?: string | null;
+    url?: string | null;
+  } | null;
+};
+
 /**
  * POST /api/content/retro-classify
  * Re-runs the AI relevance classifier over already-published topics and
@@ -79,8 +87,8 @@ export async function POST(req: NextRequest) {
       .select("source_items(title, content_snippet, url)")
       .eq("topic_id", topic.id);
 
-    const sourceSnippets = (topicSources ?? [])
-      .map((ts: any) => {
+    const sourceSnippets = ((topicSources ?? []) as TopicSourceRow[])
+      .map((ts) => {
         const item = ts.source_items;
         return `${item?.title ?? ""}: ${item?.content_snippet ?? ""} (${item?.url ?? ""})`;
       })

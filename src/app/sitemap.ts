@@ -1,31 +1,21 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@/lib/supabase/server";
 
+const SITE_URL = "https://www.topsnip.co";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     {
-      url: "https://topsnip.co",
+      url: SITE_URL,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 1,
     },
     {
-      url: "https://topsnip.co/about",
+      url: `${SITE_URL}/feed`,
       lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.5,
-    },
-    {
-      url: "https://topsnip.co/upgrade",
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    {
-      url: "https://topsnip.co/auth/login",
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.3,
+      changeFrequency: "daily",
+      priority: 1,
     },
   ];
 
@@ -38,7 +28,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .eq("status", "published");
 
     const topicPages: MetadataRoute.Sitemap = (topics ?? []).map((topic) => ({
-      url: `https://topsnip.co/topic/${topic.slug}`,
+      url: `${SITE_URL}/learn/${topic.slug}`,
       lastModified: topic.published_at ? new Date(topic.published_at) : new Date(),
       changeFrequency: "weekly" as const,
       priority: 0.8,

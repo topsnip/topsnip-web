@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
-  // Canonical domain: redirect non-www → www (production only)
+export async function proxy(request: NextRequest) {
+  // Canonical domain: redirect non-www to www (production only)
   const hostname = request.nextUrl.hostname;
   if (
     hostname === "topsnip.co" &&

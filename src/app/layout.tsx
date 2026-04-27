@@ -1,25 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Instrument_Serif, Inter, Geist_Mono } from "next/font/google";
 import PostHogProvider from "@/components/providers/PostHogProvider";
 import "./globals.css";
-
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-heading",
-  subsets: ["latin"],
-  weight: "400",
-});
-
-const inter = Inter({
-  variable: "--font-body",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.topsnip.co"),
@@ -65,9 +47,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#0C0C0E" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body
-        className={`${instrumentSerif.variable} ${inter.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="antialiased">
         <Suspense fallback={null}>
           <PostHogProvider>
             {children}

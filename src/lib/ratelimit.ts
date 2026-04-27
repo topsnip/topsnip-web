@@ -63,7 +63,7 @@ export class RateLimiter {
     if (redis) {
       try {
         await redis.del(`rl:${key}`);
-      } catch (e) {}
+      } catch {}
     }
     this.log.delete(key);
   }

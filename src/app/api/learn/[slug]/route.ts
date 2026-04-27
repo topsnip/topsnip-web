@@ -1,12 +1,31 @@
-import { createServiceClient } from '@/lib/ingest/service-client';
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
+
+type TopicSourceRow = {
+  source_items?: {
+    title?: string | null;
+    url?: string | null;
+    sources?: { platform?: string | null } | null;
+  } | null;
+};
+
+type YouTubeRecRow = {
+  video_id: string;
+  title: string;
+  channel_name: string;
+  duration: string | null;
+  reason: string | null;
+  position: number;
+};
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   // Fetch topic
   const { data: topic } = await supabase
@@ -44,7 +63,7 @@ export async function GET(
     .select('source_items(title, url, sources(platform))')
     .eq('topic_id', topic.id);
 
-  const sources = (topicSources || []).map((ts: any) => ({
+  const sources = ((topicSources || []) as TopicSourceRow[]).map((ts) => ({
     title: ts.source_items?.title || 'Source',
     url: ts.source_items?.url || '',
     platform: ts.source_items?.sources?.platform || 'web',
@@ -65,7 +84,7 @@ export async function GET(
       learn_brief: card.learn_brief,
       quality_score: card.quality_score,
     },
-    youtube_recs: (youtubeRecs || []).map((r: any) => ({
+    youtube_recs: ((youtubeRecs || []) as YouTubeRecRow[]).map((r) => ({
       video_id: r.video_id,
       title: r.title,
       channel_name: r.channel_name,

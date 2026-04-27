@@ -1,16 +1,39 @@
-import { createServiceClient } from '@/lib/ingest/service-client';
+import { createClient } from '@/lib/supabase/server';
 import { CardStack } from '@/components/feed/CardStack';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'TopSnip — AI Intelligence Feed',
   description: 'Your personal AI news dashboard',
 };
 
+type FeedCardRow = {
+  headline: string;
+  summary: string;
+  key_fact: string | null;
+  category_tag: string;
+  image_url: string | null;
+  topics: {
+    slug: string;
+    platform_count: number;
+    published_at: string;
+  } | Array<{
+    slug: string;
+    platform_count: number;
+    published_at: string;
+  }>;
+};
+
+function daysAgoIso(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
 export default async function FeedPage() {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   // Show last 3 days of topics
-  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+  const threeDaysAgo = daysAgoIso(3);
 
   const { data: cards, error } = await supabase
     .from('topic_cards')
@@ -37,16 +60,21 @@ export default async function FeedPage() {
     console.error('[feed] Query error:', error.message);
   }
 
-  const formatted = (cards || []).map((c: any) => ({
-    slug: c.topics.slug,
-    headline: c.headline,
-    summary: c.summary,
-    key_fact: c.key_fact,
-    category_tag: c.category_tag,
-    image_url: c.image_url,
-    platform_count: c.topics.platform_count,
-    published_at: c.topics.published_at,
-  }));
+  const formatted = ((cards || []) as unknown as FeedCardRow[]).flatMap((c) => {
+    const topic = Array.isArray(c.topics) ? c.topics[0] : c.topics;
+    if (!topic) return [];
+
+    return [{
+      slug: topic.slug,
+      headline: c.headline,
+      summary: c.summary,
+      key_fact: c.key_fact,
+      category_tag: c.category_tag,
+      image_url: c.image_url,
+      platform_count: topic.platform_count,
+      published_at: topic.published_at,
+    }];
+  });
 
   return (
     <main className="min-h-screen bg-[#080808]">

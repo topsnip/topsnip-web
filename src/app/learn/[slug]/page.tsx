@@ -1,4 +1,4 @@
-import { createServiceClient } from '@/lib/ingest/service-client';
+import { createClient } from '@/lib/supabase/server';
 import { LearnBrief } from '@/components/learn/LearnBrief';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -9,9 +9,32 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+export const dynamic = 'force-dynamic';
+
+type TopicMetaRow = {
+  headline?: string | null;
+  topics?: { title?: string | null } | null;
+};
+
+type TopicSourceRow = {
+  source_items?: {
+    title?: string | null;
+    url?: string | null;
+    sources?: { platform?: string | null } | null;
+  } | null;
+};
+
+type YouTubeRecRow = {
+  video_id: string;
+  title: string;
+  channel_name: string;
+  duration: string | null;
+  reason: string | null;
+};
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   // Query card directly, join to topic
   const { data: card } = await supabase
@@ -20,14 +43,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .eq('topics.slug', slug)
     .single();
 
+  const typedCard = card as TopicMetaRow | null;
+
   return {
-    title: card?.headline || (card?.topics as any)?.title || 'TopSnip',
+    title: typedCard?.headline || typedCard?.topics?.title || 'TopSnip',
   };
 }
 
 export default async function LearnPage({ params }: Props) {
   const { slug } = await params;
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   // Fetch topic
   const { data: topic } = await supabase
@@ -61,7 +86,7 @@ export default async function LearnPage({ params }: Props) {
     .select('source_items(title, url, sources(platform))')
     .eq('topic_id', topic.id);
 
-  const sources = (topicSources || []).map((ts: any) => ({
+  const sources = ((topicSources || []) as TopicSourceRow[]).map((ts) => ({
     title: ts.source_items?.title || 'Source',
     url: ts.source_items?.url || '',
     platform: ts.source_items?.sources?.platform || 'web',
@@ -81,13 +106,13 @@ export default async function LearnPage({ params }: Props) {
         categoryTag={card.category_tag || topic.topic_type}
         publishedAt={topic.published_at}
         imageUrl={card.image_url}
-        brief={card.learn_brief as any}
-        youtubeRecs={(youtubeRecs || []).map((r: any) => ({
+        brief={card.learn_brief as Parameters<typeof LearnBrief>[0]['brief']}
+        youtubeRecs={((youtubeRecs || []) as YouTubeRecRow[]).map((r) => ({
           video_id: r.video_id,
           title: r.title,
           channel_name: r.channel_name,
-          duration: r.duration,
-          reason: r.reason,
+          duration: r.duration ?? '',
+          reason: r.reason ?? '',
         }))}
         sources={sources}
       />

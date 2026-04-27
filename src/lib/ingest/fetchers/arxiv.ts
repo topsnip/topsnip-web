@@ -45,11 +45,6 @@ export async function fetchArxiv(
       const summary = entry.match(/<summary>([\s\S]*?)<\/summary>/)?.[1]?.trim().replace(/\s+/g, " ") || "";
       const published = entry.match(/<published>([\s\S]*?)<\/published>/)?.[1]?.trim() || "";
 
-      // Extract PDF link
-      const pdfLink = entry.match(/<link[^>]+title="pdf"[^>]+href="([^"]+)"/)?.[1]
-        || entry.match(/<link[^>]+href="([^"]+)"[^>]+title="pdf"/)?.[1]
-        || id;
-
       // Extract arXiv ID from the full URL
       const arxivId = id.replace("http://arxiv.org/abs/", "").replace(/v\d+$/, "");
 

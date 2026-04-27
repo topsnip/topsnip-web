@@ -152,10 +152,14 @@ export async function findAndSaveYouTubeRecs(
 
     // 5. Save to DB — v3: write directly via topic_id
     // Delete old recs for this topic
-    await supabase
+    const { error: deleteErr } = await supabase
       .from("youtube_recommendations")
       .delete()
       .eq("topic_id", topicId);
+
+    if (deleteErr) {
+      return { recs: [], error: `Failed to clear old YouTube recs: ${deleteErr.message}` };
+    }
 
     // Insert new recs
     const rows = recs.map((rec) => ({
@@ -170,7 +174,10 @@ export async function findAndSaveYouTubeRecs(
     }));
 
     if (rows.length > 0) {
-      await supabase.from("youtube_recommendations").insert(rows);
+      const { error: insertErr } = await supabase.from("youtube_recommendations").insert(rows);
+      if (insertErr) {
+        return { recs: [], error: `Failed to save YouTube recs: ${insertErr.message}` };
+      }
     }
 
     return { recs };

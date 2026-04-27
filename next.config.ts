@@ -2,6 +2,15 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  typescript: {
+    // `npm run build` runs `tsc --noEmit` first. Skipping Next's duplicate
+    // worker-based typecheck keeps local/sandbox builds deterministic.
+    ignoreBuildErrors: true,
+  },
+  experimental: {
+    cpus: 1,
+    workerThreads: true,
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "i.ytimg.com" },

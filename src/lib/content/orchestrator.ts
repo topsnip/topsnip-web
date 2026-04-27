@@ -30,6 +30,24 @@ const MAX_DAILY_API_CALLS = 200;
 /** Approximate Claude calls per topic: relevance classify + card gen + quality check + YouTube rec pick */
 const CALLS_PER_TOPIC = 4;
 
+type ClaimedTopic = {
+  id: string;
+  slug: string;
+  title: string;
+  trending_score: number;
+  topic_type: string | null;
+};
+
+type TopicSourceRow = {
+  source_items?: {
+    title?: string | null;
+    content_snippet?: string | null;
+    url?: string | null;
+  } | null;
+};
+
+type TopicProcessResult = { topic: ClaimedTopic } | null;
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Wrap a promise with a timeout */
@@ -128,7 +146,7 @@ export async function runContentGeneration(
   // rows still in "detected". Concurrent runs race at the row level; losers
   // get no row back and skip that topic. Expensive work below only runs on
   // successfully-claimed topics.
-  const topics: Array<{ id: string; slug: string; title: string; trending_score: number; topic_type: string | null }> = [];
+  const topics: ClaimedTopic[] = [];
   for (const candidate of candidates ?? []) {
     const { data: claimed } = await supabase
       .from("topics")
@@ -175,7 +193,7 @@ export async function runContentGeneration(
           .select("source_items(title, content_snippet, url)")
           .eq("topic_id", topic.id);
 
-        const sourceSnippets = (topicSources ?? []).map((ts: any) => {
+        const sourceSnippets = ((topicSources ?? []) as TopicSourceRow[]).map((ts) => {
           const item = ts.source_items;
           return `${item?.title ?? ""}: ${item?.content_snippet ?? ""} (${item?.url ?? ""})`;
         }).filter(Boolean);
@@ -216,7 +234,7 @@ export async function runContentGeneration(
           `topic "${topic.title}"`
         );
 
-        return { topic, result };
+        return result ? { topic } : null;
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         errors.push(`Topic "${topic.title}": ${errMsg}`);
@@ -236,26 +254,53 @@ export async function runContentGeneration(
 
   // Wait for all topics with run-level timeout
   const remainingTime = Math.max(0, RUN_TIMEOUT_MS - (Date.now() - start));
-  let topicResults: (typeof topicPromises extends Promise<infer T>[] ? T : never)[];
+  const settledResults: Array<{ topicId: string; value: TopicProcessResult }> = [];
+  const trackedPromises = topicPromises.map((promise, i) =>
+    promise.then((value) => {
+      settledResults.push({ topicId: topics[i].id, value });
+      return value;
+    })
+  );
 
-  try {
-    topicResults = await withTimeout(
-      Promise.all(topicPromises),
-      remainingTime,
-      "all topics"
-    );
-  } catch {
+  let timedOut = false;
+  const allResults = Promise.all(trackedPromises);
+  const raceResult = await Promise.race([
+    allResults,
+    sleep(remainingTime).then(() => {
+      timedOut = true;
+      return null;
+    }),
+  ]);
+
+  const topicResults: TopicProcessResult[] = timedOut
+    ? settledResults.map((r) => r.value)
+    : (raceResult as TopicProcessResult[]);
+
+  if (timedOut) {
     console.warn("Run-level timeout reached, collecting partial results");
-    topicResults = await Promise.all(
-      topicPromises.map((p) => p.catch(() => null))
-    );
+    const settledTopicIds = new Set(settledResults.map((r) => r.topicId));
+    const unfinishedTopicIds = topics
+      .map((topic) => topic.id)
+      .filter((id) => !settledTopicIds.has(id));
+
+    if (unfinishedTopicIds.length > 0) {
+      const { error: releaseErr } = await supabase
+        .from("topics")
+        .update({ status: "detected", updated_at: new Date().toISOString() })
+        .in("id", unfinishedTopicIds)
+        .eq("status", "generating");
+
+      if (releaseErr) {
+        errors.push(`Failed to release timed-out topic claims: ${releaseErr.message}`);
+      }
+    }
   }
 
   // 3. Process results — publish topics and find YouTube recs
   for (const entry of topicResults) {
-    if (!entry?.result) continue;
+    if (!entry) continue;
 
-    const { topic, result } = entry;
+    const { topic } = entry;
     contentGenerated++;
 
     // Publish the topic

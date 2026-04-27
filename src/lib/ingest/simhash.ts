@@ -13,8 +13,6 @@
  * This catches paraphrased content that fuzzy title matching would miss.
  */
 
-/* eslint-disable no-bitwise */
-
 // FNV-1a constants for 64-bit hashing (using BigInt() to stay compatible with ES2017 target)
 const ZERO = BigInt(0);
 const ONE = BigInt(1);
