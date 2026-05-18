@@ -24,6 +24,22 @@ function getTimeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
+// Per-category fallback thumbnail (1200x630) when no DALL-E illustration was generated.
+// Files live in /public/categories/<slug>.png.
+const CATEGORY_FALLBACK: Record<string, string> = {
+  'Model Launch': '/categories/model-launch.png',
+  'Tool Update':  '/categories/tool-update.png',
+  'Research':     '/categories/research.png',
+  'Policy':       '/categories/policy.png',
+  'Tutorial':     '/categories/tutorial.png',
+  'Industry':     '/categories/industry.png',
+  'Opinion':      '/categories/opinion.png',
+};
+
+function fallbackImage(category: string): string {
+  return CATEGORY_FALLBACK[category] || '/categories/default.png';
+}
+
 export function FeedCard({
   slug, headline, summary, keyFact,
   categoryTag, imageUrl, sourceCount, publishedAt,
@@ -33,17 +49,17 @@ export function FeedCard({
   return (
     <Link href={`/learn/${slug}`} className="block flex-shrink-0 w-[85vw] max-w-[340px] snap-center">
       <article className="bg-[#111] border border-white/5 rounded-2xl overflow-hidden hover:border-[#7C6AF7]/30 transition-all h-full flex flex-col">
-        {/* Image — hero section */}
+        {/* Image — hero section. Falls back to per-category themed thumbnail when no DALL-E image. */}
         <div className="relative aspect-[3/2] bg-[#0a0a0a]">
-          {imageUrl ? (
-            <Image src={imageUrl} alt={headline} fill className="object-cover" sizes="340px" />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#7C6AF7]/20 to-[#080808]">
-              <div className="w-14 h-14 rounded-full bg-[#7C6AF7]/20 flex items-center justify-center">
-                <span className="text-xl text-[#7C6AF7]">AI</span>
-              </div>
-            </div>
-          )}
+          <Image
+            src={imageUrl || fallbackImage(categoryTag)}
+            alt={headline}
+            fill
+            className="object-cover"
+            sizes="340px"
+          />
+          {/* subtle dark wash so headline area stays legible if needed */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
           {/* Category badge overlaid on image */}
           <div className="absolute top-3 left-3">
             <CategoryBadge category={categoryTag} />
