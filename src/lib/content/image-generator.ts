@@ -30,24 +30,24 @@ export async function generateIllustration(
 
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // gpt-image-1 replaced dall-e-3 (deprecated by OpenAI ~2026-05-13).
+    // Returns base64 directly, not a URL, and rejects `response_format`.
+    // quality 'medium' is the closest $/image match to old `dall-e-3 standard`.
     const response = await openai.images.generate({
-      model: 'dall-e-3',
+      model: 'gpt-image-1',
       prompt,
       n: 1,
       size: '1024x1024',
-      quality: 'standard',
-      response_format: 'url',
+      quality: 'medium',
     });
 
-    const imageUrl = response.data?.[0]?.url;
-    if (!imageUrl) return null;
-
-    const imageResponse = await fetch(imageUrl, {
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!imageResponse.ok) return null;
-
-    return await imageResponse.arrayBuffer();
+    const b64 = response.data?.[0]?.b64_json;
+    if (!b64) {
+      console.warn('[image-gen] No b64_json in response');
+      return null;
+    }
+    const buf = Buffer.from(b64, 'base64');
+    return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
   } catch (error) {
     console.error('[image-gen] Failed:', error);
     return null;
