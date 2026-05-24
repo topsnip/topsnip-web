@@ -44,6 +44,21 @@ async function runWithConcurrency<T, R>(
   return results;
 }
 
+async function runLimited<T>(
+  items: T[],
+  limit: number,
+  worker: (item: T) => Promise<void>
+): Promise<void> {
+  let nextIndex = 0;
+  async function lane() {
+    while (nextIndex < items.length) {
+      const item = items[nextIndex++];
+      await worker(item);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, lane));
+}
+
 /**
  * Run a single fetch for one source based on its platform type.
  */
@@ -90,31 +105,26 @@ async function snapshotEngagement(
     return;
   }
 
-  // Run engagement updates concurrently instead of sequentially
-  const updateResults = await Promise.all(
-    items.map((item) => {
-      const history: Array<{ score: number; timestamp: string }> =
-        Array.isArray(item.engagement_history) ? item.engagement_history : [];
+  const updateErrors: string[] = [];
 
-      // Add new snapshot
-      history.push({ score: item.engagement_score || 0, timestamp: now });
+  await runLimited(items, 10, async (item) => {
+    const history: Array<{ score: number; timestamp: string }> =
+      Array.isArray(item.engagement_history) ? item.engagement_history : [];
 
-      // Prune to last N entries
-      const pruned = history.slice(-MAX_ENGAGEMENT_SNAPSHOTS);
+    history.push({ score: item.engagement_score || 0, timestamp: now });
+    const pruned = history.slice(-MAX_ENGAGEMENT_SNAPSHOTS);
 
-      return supabase
-        .from("source_items")
-        .update({ engagement_history: pruned })
-        .eq("id", item.id);
-    })
-  );
+    const { error: updateErr } = await supabase
+      .from("source_items")
+      .update({ engagement_history: pruned })
+      .eq("id", item.id);
 
-  for (let i = 0; i < updateResults.length; i++) {
-    const { error: updateErr } = updateResults[i];
     if (updateErr) {
-      errors.push(`Engagement snapshot update failed for ${items[i].id}: ${updateErr.message}`);
+      updateErrors.push(`Engagement snapshot update failed for ${item.id}: ${updateErr.message}`);
     }
-  }
+  });
+
+  errors.push(...updateErrors);
 }
 
 /**
@@ -176,7 +186,7 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
   );
 
   // 3. Process results
-  const allUpsertedIds: string[] = [];
+  const touchedSourceItemIds: string[] = [];
 
   for (let i = 0; i < fetchResults.length; i++) {
     const source = sources[i];
@@ -228,21 +238,21 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
 
       const { data: upserted, error: upsertErr } = await supabase
         .from("source_items")
-        .upsert(rows, { onConflict: "source_id,external_id", ignoreDuplicates: true })
+        .upsert(rows, { onConflict: "source_id,external_id" })
         .select("id");
 
       if (upsertErr) {
         errors.push(`Upsert failed for ${source.name}: ${upsertErr.message}`);
       } else {
         const ids = (upserted || []).map((r: { id: string }) => r.id);
-        allUpsertedIds.push(...ids);
+        touchedSourceItemIds.push(...ids);
         newItems += ids.length;
       }
     }
   }
 
   // 4. Snapshot engagement scores for velocity tracking
-  await snapshotEngagement(supabase, allUpsertedIds, errors);
+  await snapshotEngagement(supabase, touchedSourceItemIds, errors);
 
   // 5. Score and detect new topics (velocity-based with clustering)
   const candidates = await scoreAndDedup(supabase, 1);

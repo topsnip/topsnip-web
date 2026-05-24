@@ -34,7 +34,7 @@ export function slugify(title: string): string {
  *
  * Falls back to raw engagement score when fewer than 2 snapshots exist.
  */
-function computeVelocity(
+export function computeVelocity(
   engagementHistory: Array<{ score: number; timestamp: string }> | undefined,
   currentEngagement: number
 ): number {
