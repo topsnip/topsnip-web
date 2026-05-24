@@ -9,7 +9,7 @@ export function buildIllustrationPrompt(
 ): string {
   return [
     'Clean, minimal infographic on dark background (#080808).',
-    'Purple accent color (#7C6AF7). White text (#F0F0F0).',
+    'Purple accent color (#7C6AF7). Use simple geometric shapes and clear visual hierarchy.',
     'Modern tech aesthetic. No photorealism. Diagram/flowchart style.',
     'No watermarks, no logos, no text overlays.',
     `Topic: ${topicTitle}`,

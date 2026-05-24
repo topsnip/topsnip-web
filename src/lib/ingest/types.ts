@@ -15,6 +15,7 @@ export interface RawSourceItem {
   contentSnippet: string;
   engagementScore: number;
   publishedAt: string; // ISO 8601
+  imageUrl?: string | null;
 }
 
 /** A source registered in the database */

@@ -254,6 +254,7 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
           content_snippet: sanitizeText(item.contentSnippet),
           engagement_score: item.engagementScore,
           published_at: item.publishedAt,
+          image_url: item.imageUrl ? sanitizeUrl(item.imageUrl) : null,
           ingested_at: new Date().toISOString(),
         };
       });

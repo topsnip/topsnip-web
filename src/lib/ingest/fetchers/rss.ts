@@ -11,6 +11,7 @@ interface FeedItem {
   description: string;
   pubDate: string;
   guid: string;
+  imageUrl: string;
 }
 
 function extractTag(xml: string, tag: string): string {
@@ -51,6 +52,16 @@ function extractLink(itemXml: string): string {
   return extractTag(itemXml, "link");
 }
 
+function extractImage(itemXml: string): string {
+  const mediaMatch = itemXml.match(/<media:content\b[^>]*\burl=["']([^"']+)["']/i);
+  if (mediaMatch?.[1]) return mediaMatch[1];
+
+  const enclosureMatch = itemXml.match(/<enclosure\b[^>]*\burl=["']([^"']+)["'][^>]*\btype=["']image\/[^"']+["']/i);
+  if (enclosureMatch?.[1]) return enclosureMatch[1];
+
+  return "";
+}
+
 function toISODateSafe(raw: string): string {
   // Return a valid ISO date string, or fall back to now() if input is garbage.
   // Prevents a single malformed pubDate from taking down the whole feed.
@@ -82,6 +93,7 @@ function parseItems(xml: string): FeedItem[] {
       extractTag(entry, "published") ||
       extractTag(entry, "updated");
     const guid = extractTag(entry, "guid") || extractTag(entry, "id") || link;
+    const imageUrl = extractImage(entry);
 
     if (title && link) {
       items.push({
@@ -90,6 +102,7 @@ function parseItems(xml: string): FeedItem[] {
         description: description.replace(/<[^>]+>/g, "").slice(0, 500),
         pubDate,
         guid,
+        imageUrl,
       });
     }
   }
@@ -135,6 +148,7 @@ export async function fetchRSS(
       contentSnippet: item.description,
       engagementScore: 0, // RSS items don't have engagement metrics
       publishedAt: toISODateSafe(item.pubDate),
+      imageUrl: item.imageUrl,
     }));
 
     // Zero items usually means the regex parser silently failed on a new feed

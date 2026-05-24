@@ -22,6 +22,23 @@ interface ParsedCardResponse {
   learn_brief: LearnBrief;
 }
 
+async function findSourceImageFallback(
+  supabase: SupabaseClient,
+  topicId: string
+): Promise<string | null> {
+  const { data } = await supabase
+    .from('topic_sources')
+    .select('source_items(image_url, engagement_score)')
+    .eq('topic_id', topicId);
+
+  const rows = (data ?? [])
+    .map((row: any) => row.source_items)
+    .filter((item: any) => item?.image_url)
+    .sort((a: any, b: any) => (b.engagement_score ?? 0) - (a.engagement_score ?? 0));
+
+  return rows[0]?.image_url ?? null;
+}
+
 /**
  * Parse Claude's JSON response into card + brief.
  * Handles raw JSON and JSON wrapped in markdown code blocks.
@@ -124,6 +141,9 @@ export async function generateCard(
   const imageBuffer = await generateIllustration(illustrationPrompt, supabase, topicId);
   if (imageBuffer) {
     imageUrl = await uploadIllustration(supabase, topicSlug, imageBuffer);
+  }
+  if (!imageUrl) {
+    imageUrl = await findSourceImageFallback(supabase, topicId);
   }
 
   // 4. Write to DB
