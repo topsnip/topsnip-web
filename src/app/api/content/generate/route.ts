@@ -14,7 +14,7 @@ const MIN_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes between runs
  * Protected by CRON_SECRET + rate limiting.
  *
  * Designed to run after ingestion — picks up topics with status "detected"
- * and generates role-specific learning briefs.
+ * and generates v3 cards, learn briefs, illustrations, and video recommendations.
  */
 export async function POST(req: NextRequest) {
   const authError = verifyCronAuth(req);

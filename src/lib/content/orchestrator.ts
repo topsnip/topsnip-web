@@ -64,6 +64,17 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   });
 }
 
+async function releaseTopicClaim(
+  supabase: SupabaseClient,
+  topicId: string
+): Promise<void> {
+  await supabase
+    .from("topics")
+    .update({ status: "detected", updated_at: new Date().toISOString() })
+    .eq("id", topicId)
+    .eq("status", "generating");
+}
+
 /** Check daily API call budget — count topic_cards rows generated in last 24h */
 async function checkDailyBudget(supabase: SupabaseClient): Promise<{ allowed: boolean; used: number }> {
   try {
@@ -234,7 +245,12 @@ export async function runContentGeneration(
           `topic "${topic.title}"`
         );
 
-        return result ? { topic } : null;
+        if (!result) {
+          await releaseTopicClaim(supabase, topic.id);
+          return null;
+        }
+
+        return { topic };
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         errors.push(`Topic "${topic.title}": ${errMsg}`);
@@ -242,11 +258,7 @@ export async function runContentGeneration(
           console.warn(`Rate limit hit processing "${topic.title}" — degrading`);
         }
         // Release the claim so the next run can retry this topic.
-        await supabase
-          .from("topics")
-          .update({ status: "detected", updated_at: new Date().toISOString() })
-          .eq("id", topic.id)
-          .eq("status", "generating");
+        await releaseTopicClaim(supabase, topic.id);
         return null;
       }
     })();
