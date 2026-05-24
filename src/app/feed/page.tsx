@@ -1,28 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
 import { CardStack } from '@/components/feed/CardStack';
+import { formatFeedRows, type FeedCardRow } from '@/lib/feed/format-feed';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'TopSnip — AI Intelligence Feed',
   description: 'Your personal AI news dashboard',
-};
-
-type FeedCardRow = {
-  headline: string;
-  summary: string;
-  key_fact: string | null;
-  category_tag: string;
-  image_url: string | null;
-  topics: {
-    slug: string;
-    platform_count: number;
-    published_at: string;
-  } | Array<{
-    slug: string;
-    platform_count: number;
-    published_at: string;
-  }>;
 };
 
 function daysAgoIso(days: number): string {
@@ -43,10 +27,13 @@ export default async function FeedPage() {
       key_fact,
       category_tag,
       image_url,
+      action_label,
+      novelty_note,
       topics!inner (
         slug,
         trending_score,
         platform_count,
+        source_count,
         published_at,
         status
       )
@@ -58,23 +45,22 @@ export default async function FeedPage() {
 
   if (error) {
     console.error('[feed] Query error:', error.message);
+    return (
+      <main className="min-h-screen bg-[#080808]">
+        <header className="sticky top-0 z-10 bg-[#080808]/95 backdrop-blur-sm border-b border-white/5 px-4 py-3">
+          <h1 className="text-lg font-bold text-[#F0F0F0]">
+            Top<span className="text-[#7C6AF7]">Snip</span>
+          </h1>
+        </header>
+        <div className="flex min-h-[60vh] items-center justify-center px-6 text-center">
+          <p className="text-sm text-[#999]">The feed could not load. Try again shortly.</p>
+        </div>
+      </main>
+    );
   }
 
-  const formatted = ((cards || []) as unknown as FeedCardRow[]).flatMap((c) => {
-    const topic = Array.isArray(c.topics) ? c.topics[0] : c.topics;
-    if (!topic) return [];
-
-    return [{
-      slug: topic.slug,
-      headline: c.headline,
-      summary: c.summary,
-      key_fact: c.key_fact,
-      category_tag: c.category_tag,
-      image_url: c.image_url,
-      platform_count: topic.platform_count,
-      published_at: topic.published_at,
-    }];
-  });
+  const formatted = formatFeedRows((cards ?? []) as unknown as FeedCardRow[])
+    .sort((a, b) => b.trending_score - a.trending_score);
 
   return (
     <main className="min-h-screen bg-[#080808]">

@@ -42,7 +42,7 @@ test.describe("API health", () => {
     expect(Array.isArray(data.topics)).toBe(true);
   });
 
-  test("feed API supports date parameter", async ({ request }) => {
+  test("feed API accepts date parameter and returns pagination metadata", async ({ request }) => {
     const resp = await request.get("/api/feed?date=2026-04-09&limit=5");
     expect(resp.status()).toBe(200);
     const data = await resp.json();
