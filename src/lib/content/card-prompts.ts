@@ -73,7 +73,9 @@ Generate JSON with this exact structure:
     "headline": "string — max 15 words, punchy, attention-grabbing",
     "summary": "string — EXACTLY 60 words or fewer. InShorts-style. What happened + why you should care. TopSnip voice.",
     "key_fact": "string — one standout number, stat, or claim. Or null if nothing stands out.",
-    "category_tag": "string — one of: Model Launch, Tool Update, Research, Policy, Tutorial, Industry, Opinion"
+    "category_tag": "string — one of: Model Launch, Tool Update, Research, Policy, Tutorial, Industry, Opinion",
+    "action_label": "string - one of: Ignore, Monitor, Try, Migrate, Watch",
+    "novelty_note": "string - one sentence explaining what changed compared with normal background noise"
   },
   "learn_brief": {
     "what_it_is": "string — 2-3 sentences explaining the concept. Use visual language.",
@@ -87,6 +89,7 @@ Generate JSON with this exact structure:
 Rules:
 - Card summary MUST be 60 words or fewer. Count carefully.
 - Every claim must be traceable to the source material. No hallucination.
+- For every concrete claim, ensure the fact appears in source material. If source support is weak, say less.
 - Rewrite everything in TopSnip voice — never copy source phrasing.
 - illustration_description should describe a diagram, not a photo.`;
 }

@@ -12,6 +12,7 @@ import { checkCardQuality } from './card-quality';
 import { enforceWordLimit } from '../utils/word-limit';
 import { callClaudeWithRetry } from './retry';
 import { recordUsage } from './usage-ledger';
+import { verifySourceGrounding } from './source-verifier';
 
 const MODEL = 'claude-sonnet-4-5';
 const MAX_TOKENS = 2000;
@@ -96,6 +97,20 @@ export async function generateCard(
   const quality = checkCardQuality(parsed.card, parsed.learn_brief);
   if (!quality.pass) {
     console.warn(`[card-gen] Quality check failed for ${topicSlug}:`, quality.reasons);
+    return null;
+  }
+
+  const verification = await verifySourceGrounding(parsed.card, parsed.learn_brief, sourceSnippets);
+  await recordUsage(supabase, {
+    provider: 'anthropic',
+    operation: 'source_verification',
+    units: 1,
+    topicId,
+    metadata: { model: 'claude-haiku-4-5' },
+  });
+
+  if (!verification.pass) {
+    console.warn(`[card-gen] Source verification failed for ${topicSlug}:`, verification);
     return null;
   }
 
