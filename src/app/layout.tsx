@@ -3,8 +3,10 @@ import { Suspense } from "react";
 import PostHogProvider from "@/components/providers/PostHogProvider";
 import "./globals.css";
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.topsnip.co";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.topsnip.co"),
+  metadataBase: new URL(appUrl),
   title: "TopSnip — Your AI Intelligence Feed",
   description:
     "Stay current on everything happening in AI. InShorts-style cards, visual explainers, and curated videos — no noise, just signal.",
@@ -26,7 +28,7 @@ export const metadata: Metadata = {
       "Stay current on everything happening in AI. No noise, just signal.",
     type: "website",
     siteName: "TopSnip",
-    url: "https://www.topsnip.co",
+    url: appUrl,
   },
   twitter: {
     card: "summary_large_image",

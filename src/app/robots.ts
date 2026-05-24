@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/auth/", "/settings", "/onboarding", "/history"],
+        disallow: ["/api/"],
       },
     ],
     sitemap: "https://www.topsnip.co/sitemap.xml",

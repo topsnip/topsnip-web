@@ -253,47 +253,6 @@
 }
 
 /* ── Mobile Tab Bar ──────────────────────────────────────────────── */
-.mobile-tab-bar {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  height: 64px;
-  background: var(--background);
-  border-top: 1px solid var(--border);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  align-items: center;
-  justify-content: space-around;
-}
-
-@media (max-width: 639px) {
-  .mobile-tab-bar {
-    display: flex;
-  }
-  /* Pad body so content isn't hidden behind tab bar (auth pages) */
-  body.has-tab-bar {
-    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
-  }
-}
-
-.mobile-tab-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  flex: 1;
-  text-decoration: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.mobile-tab-icon {
-  width: 22px;
-  height: 22px;
-}
-
 /* Accent glow utility */
 .accent-glow {
   box-shadow: 0 0 0 3px var(--ts-glow);
@@ -380,20 +339,6 @@
 
 .bg-glow {
   animation: float 10s ease-in-out infinite;
-}
-
-/* Pulse animation for status dot */
-@keyframes pulse-dot {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.3;
-  }
-}
-.pulse-dot {
-  animation: pulse-dot 2s ease-in-out infinite;
 }
 
 /* Fade-in-up for result page stagger reveals */
@@ -559,22 +504,6 @@
   animation: flicker 1.5s ease-in-out infinite;
 }
 
-/* ── Pulse dot on search bar ──────────────────────────────────────── */
-.feed-search-container::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 12px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--ts-accent);
-  transform: translateY(-50%);
-  animation: pulse-dot 2s ease-in-out infinite;
-  z-index: 20;
-  pointer-events: none;
-}
-
 /* ── Topic Card hover & badge styles ─────────────────────────────── */
 .topic-card {
   transition:
@@ -597,20 +526,6 @@
 
 .breaking-badge {
   animation: breakingPulse 2s ease-in-out infinite;
-}
-
-/* ── Login page: floating headlines ───────────────────────────────── */
-@keyframes headlineFade {
-  0% { opacity: 0; }
-  15% { opacity: 0.12; }
-  50% { opacity: 0.12; }
-  65% { opacity: 0; }
-  100% { opacity: 0; }
-}
-
-.headline-float {
-  opacity: 0;
-  animation: headlineFade 8s ease-in-out infinite;
 }
 
 /* ── Unified Interaction System ──────────────────────────────────── */
@@ -694,26 +609,6 @@
   box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ts-accent);
 }
 
-/* Social/OAuth button */
-.btn-social {
-  background: #ffffff;
-  color: #1f1f1f;
-  border: 1px solid var(--border);
-  cursor: pointer;
-  transition: all var(--duration-fast) ease;
-}
-.btn-social:hover {
-  transform: scale(1.02);
-  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
-  border-color: var(--border-focus);
-}
-.btn-social:active {
-  transform: scale(0.98);
-}
-.btn-social:focus-visible {
-  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ts-accent);
-}
-
 /* Interactive card */
 .card-interactive {
   cursor: pointer;
@@ -758,22 +653,6 @@
 .link-interactive:hover {
   opacity: 0.8;
   text-decoration: underline;
-}
-
-/* ── Login page: input styles ───────────────────────────────────── */
-.login-input {
-  transition: border-color 200ms ease, box-shadow 200ms ease;
-}
-.login-input:focus {
-  border-color: var(--ts-accent) !important;
-  box-shadow: 0 0 0 2px var(--ts-accent-30);
-}
-
-.login-back-link {
-  transition: color 200ms ease;
-}
-.login-back-link:hover {
-  color: var(--foreground) !important;
 }
 
 /* ── Parallax container ──────────────────────────────────────────── */
@@ -969,8 +848,7 @@
   }
   .bg-glow,
   .trending-pill,
-  .empty-state-gradient,
-  .feed-search-container::before {
+  .empty-state-gradient {
     animation: none;
   }
   .trending-pill {
@@ -983,10 +861,6 @@
   }
   .breaking-badge {
     animation: none;
-  }
-  .headline-float {
-    animation: none;
-    opacity: 0.08;
   }
   .animate-float,
   .animate-pulse-glow {
@@ -1003,7 +877,6 @@
   .btn-primary:hover,
   .btn-secondary:hover,
   .btn-ghost:hover,
-  .btn-social:hover,
   .pill-interactive:hover {
     transform: none;
   }
