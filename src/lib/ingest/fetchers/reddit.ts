@@ -1,16 +1,5 @@
 import type { FetchResult, RawSourceItem } from "../types";
 
-const SUBREDDITS = [
-  "MachineLearning",
-  "LocalLLaMA",
-  "artificial",
-  "ChatGPT",
-  "singularity",
-  "ClaudeAI",
-  "OpenAI",
-  "StableDiffusion",
-];
-
 interface RedditPost {
   id: string;
   title: string;
@@ -28,69 +17,78 @@ interface RedditListing {
   };
 }
 
+export function getSubredditFromSourceUrl(sourceUrl: string): string {
+  try {
+    const parsed = new URL(sourceUrl);
+    const match = parsed.pathname.match(/\/r\/([^/]+)/i);
+    return match?.[1] || "MachineLearning";
+  } catch {
+    return "MachineLearning";
+  }
+}
+
 /**
- * Fetch hot AI posts from Reddit using the public JSON API.
- * No auth required — uses .json suffix on subreddit URLs.
+ * Fetch hot posts from a configured subreddit using the public JSON API.
+ * No auth required; uses .json suffix on subreddit URLs.
  * Rate: ~60 req/min without OAuth.
  */
 export async function fetchReddit(
   sourceId: string,
+  sourceUrl: string,
   minScore: number = 50
 ): Promise<FetchResult> {
+  const sub = getSubredditFromSourceUrl(sourceUrl);
+
   try {
-    const allItems: RawSourceItem[] = [];
-    const seen = new Set<string>();
+    const res = await fetch(`https://www.reddit.com/r/${sub}/hot.json?limit=25`, {
+      signal: AbortSignal.timeout(10_000),
+      headers: {
+        "User-Agent": "TopSnip/1.0 (AI Intelligence Dashboard)",
+      },
+    });
 
-    for (const sub of SUBREDDITS) {
-      const res = await fetch(
-        `https://www.reddit.com/r/${sub}/hot.json?limit=25`,
-        {
-          signal: AbortSignal.timeout(10_000),
-          headers: {
-            "User-Agent": "TopSnip/1.0 (AI Learning Platform)",
-          },
-        }
-      );
-
-      if (!res.ok) {
-        // Reddit may rate-limit; skip this sub but don't fail entirely
-        console.warn(`Reddit r/${sub} returned ${res.status}, skipping`);
-        continue;
-      }
-
-      const listing: RedditListing = await res.json();
-
-      for (const child of listing.data.children) {
-        const post = child.data;
-        if (seen.has(post.id)) continue;
-        if (post.score < minScore) continue;
-        seen.add(post.id);
-
-        allItems.push({
-          externalId: post.id,
-          sourceId,
-          title: post.title,
-          url: post.url.startsWith("http")
-            ? post.url
-            : `https://www.reddit.com${post.permalink}`,
-          contentSnippet: post.selftext?.slice(0, 500) || post.title,
-          engagementScore: post.score + post.num_comments,
-          publishedAt: new Date(post.created_utc * 1000).toISOString(),
-        });
-      }
-
-      // Small delay between subreddit fetches to be respectful
-      await new Promise((r) => setTimeout(r, 500));
+    if (!res.ok) {
+      return {
+        sourceId,
+        items: [],
+        health: res.status === 429 ? "degraded" : "down",
+        error: `Reddit r/${sub} returned ${res.status}`,
+      };
     }
 
-    return { sourceId, items: allItems, health: "healthy" };
+    const listing: RedditListing = await res.json();
+    const items: RawSourceItem[] = [];
+
+    for (const child of listing.data.children) {
+      const post = child.data;
+      if (post.score < minScore) continue;
+
+      items.push({
+        externalId: post.id,
+        sourceId,
+        title: post.title,
+        url: post.url.startsWith("http")
+          ? post.url
+          : `https://www.reddit.com${post.permalink}`,
+        contentSnippet: post.selftext?.slice(0, 500) || post.title,
+        engagementScore: post.score + post.num_comments,
+        publishedAt: new Date(post.created_utc * 1000).toISOString(),
+      });
+    }
+
+    return {
+      sourceId,
+      items,
+      health: items.length > 0 ? "healthy" : "degraded",
+      error: items.length === 0 ? `No qualifying Reddit posts for r/${sub}` : undefined,
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return {
       sourceId,
       items: [],
       health: "down",
-      error: `Reddit fetch failed: ${msg}`,
+      error: `Reddit fetch failed for r/${sub}: ${msg}`,
     };
   }
 }

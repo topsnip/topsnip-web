@@ -52,13 +52,13 @@ async function fetchSource(source: Source): Promise<FetchResult> {
     case "hn":
       return fetchHN(source.id);
     case "reddit":
-      return fetchReddit(source.id);
+      return fetchReddit(source.id, source.url);
     case "rss":
       return fetchRSS(source.id, source.url);
     case "youtube":
       return fetchYouTube(source.id);
     case "arxiv":
-      return fetchArxiv(source.id);
+      return fetchArxiv(source.id, source.url);
     case "github":
       return fetchGitHub(source.id);
     default:
