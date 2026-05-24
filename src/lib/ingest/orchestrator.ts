@@ -59,6 +59,28 @@ async function runLimited<T>(
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, lane));
 }
 
+export function mergeTopicAggregates(
+  existing: {
+    trending_score: number | null;
+    source_count: number | null;
+    platforms: string[] | null;
+  },
+  candidate: {
+    trendingScore: number;
+    sourceCount: number;
+    platforms: string[];
+  }
+) {
+  const platforms = Array.from(new Set([...(existing.platforms ?? []), ...candidate.platforms]));
+  return {
+    trending_score: Math.max(existing.trending_score ?? 0, candidate.trendingScore),
+    source_count: Math.max(existing.source_count ?? 0, 0) + candidate.sourceCount,
+    platform_count: platforms.length,
+    platforms,
+    updated_at: new Date().toISOString(),
+  };
+}
+
 /**
  * Run a single fetch for one source based on its platform type.
  */
@@ -307,6 +329,19 @@ export async function runIngestion(supabase: SupabaseClient): Promise<IngestRunR
         await supabase
           .from("topic_sources")
           .upsert(links, { onConflict: "topic_id,source_item_id", ignoreDuplicates: true });
+      }
+
+      const { data: existingTopic } = await supabase
+        .from("topics")
+        .select("trending_score, source_count, platforms")
+        .eq("id", mergeTargetId)
+        .maybeSingle();
+
+      if (existingTopic) {
+        await supabase
+          .from("topics")
+          .update(mergeTopicAggregates(existingTopic, candidate))
+          .eq("id", mergeTargetId);
       }
       continue;
     }

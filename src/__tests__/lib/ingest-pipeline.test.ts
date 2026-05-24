@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildArxivFetchUrl } from '@/lib/ingest/fetchers/arxiv';
 import { getSubredditFromSourceUrl } from '@/lib/ingest/fetchers/reddit';
+import { mergeTopicAggregates } from '@/lib/ingest/orchestrator';
 import { computeVelocity } from '@/lib/ingest/scorer';
 
 describe('ingest pipeline remediation guardrails', () => {
@@ -40,5 +41,19 @@ describe('engagement velocity', () => {
     );
 
     expect(velocity).toBe(30);
+  });
+});
+
+describe('topic merge aggregates', () => {
+  it('unions platforms and increases source count when merging candidates', () => {
+    const merged = mergeTopicAggregates(
+      { trending_score: 1.5, source_count: 2, platforms: ['rss'] },
+      { trendingScore: 2.25, sourceCount: 3, platforms: ['reddit', 'rss'] }
+    );
+
+    expect(merged.trending_score).toBe(2.25);
+    expect(merged.source_count).toBe(5);
+    expect(merged.platform_count).toBe(2);
+    expect(merged.platforms.sort()).toEqual(['reddit', 'rss']);
   });
 });
