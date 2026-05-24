@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { LearnBrief } from '@/components/learn/LearnBrief';
+import { getLearnTopic } from '@/lib/learn/get-learn-topic';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -14,14 +15,6 @@ export const dynamic = 'force-dynamic';
 type TopicMetaRow = {
   headline?: string | null;
   topics?: { title?: string | null } | null;
-};
-
-type TopicSourceRow = {
-  source_items?: {
-    title?: string | null;
-    url?: string | null;
-    sources?: { platform?: string | null } | null;
-  } | null;
 };
 
 type YouTubeRecRow = {
@@ -54,43 +47,10 @@ export default async function LearnPage({ params }: Props) {
   const { slug } = await params;
   const supabase = await createClient();
 
-  // Fetch topic
-  const { data: topic } = await supabase
-    .from('topics')
-    .select('id, slug, title, topic_type, platform_count, published_at')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single();
+  const data = await getLearnTopic(supabase, slug);
+  if (!data) notFound();
 
-  if (!topic) notFound();
-
-  // Fetch card separately
-  const { data: card } = await supabase
-    .from('topic_cards')
-    .select('headline, summary, image_url, learn_brief, quality_score, category_tag')
-    .eq('topic_id', topic.id)
-    .single();
-
-  if (!card) notFound();
-
-  // Fetch YouTube recs separately
-  const { data: youtubeRecs } = await supabase
-    .from('youtube_recommendations')
-    .select('video_id, title, channel_name, duration, reason, position')
-    .eq('topic_id', topic.id)
-    .order('position', { ascending: true });
-
-  // Fetch sources
-  const { data: topicSources } = await supabase
-    .from('topic_sources')
-    .select('source_items(title, url, sources(platform))')
-    .eq('topic_id', topic.id);
-
-  const sources = ((topicSources || []) as TopicSourceRow[]).map((ts) => ({
-    title: ts.source_items?.title || 'Source',
-    url: ts.source_items?.url || '',
-    platform: ts.source_items?.sources?.platform || 'web',
-  }));
+  const { topic, card, youtubeRecs, sources } = data;
 
   return (
     <main className="min-h-screen bg-[#080808]">

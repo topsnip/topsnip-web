@@ -12,6 +12,7 @@ interface FeedCardProps {
   categoryTag: string;
   imageUrl: string | null;
   sourceCount: number;
+  platformCount: number;
   publishedAt: string;
 }
 
@@ -42,7 +43,7 @@ function fallbackImage(category: string): string {
 
 export function FeedCard({
   slug, headline, summary, keyFact,
-  categoryTag, imageUrl, sourceCount, publishedAt,
+  categoryTag, imageUrl, sourceCount, platformCount, publishedAt,
 }: FeedCardProps) {
   const timeAgo = getTimeAgo(publishedAt);
 
@@ -90,6 +91,8 @@ export function FeedCard({
 
           <div className="flex items-center gap-1.5 text-[11px] text-[#555] pt-0.5">
             <span>{sourceCount} source{sourceCount !== 1 ? 's' : ''}</span>
+            <span>·</span>
+            <span>{platformCount} platform{platformCount !== 1 ? 's' : ''}</span>
             <span>·</span>
             <span>Tap to learn</span>
           </div>

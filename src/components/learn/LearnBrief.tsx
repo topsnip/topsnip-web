@@ -102,8 +102,8 @@ export function LearnBrief({
               />
             ))}
           </div>
-          <p className="text-[10px] text-[#444] mt-2">
-            Video data provided by YouTube. Videos link to youtube.com.
+          <p className="text-[10px] text-[#666] mt-2">
+            YouTube recommendations use YouTube Data API metadata. Thumbnails and titles link to youtube.com.
           </p>
         </section>
       )}

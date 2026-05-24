@@ -9,6 +9,7 @@ interface Topic {
   key_fact: string | null;
   category_tag: string;
   image_url: string | null;
+  source_count: number;
   platform_count: number;
   published_at: string;
 }
@@ -21,7 +22,7 @@ export function CardStack({ topics }: { topics: Topic[] }) {
           <span className="text-2xl">📡</span>
         </div>
         <h2 className="text-lg font-semibold text-[#F0F0F0] mb-2">No topics yet today</h2>
-        <p className="text-sm text-[#666]">Check back later — the pipeline runs every few hours.</p>
+        <p className="text-sm text-[#666]">Check back after the next daily pipeline run.</p>
       </div>
     );
   }
@@ -48,7 +49,8 @@ export function CardStack({ topics }: { topics: Topic[] }) {
               keyFact={topic.key_fact}
               categoryTag={topic.category_tag}
               imageUrl={topic.image_url}
-              sourceCount={topic.platform_count}
+              sourceCount={topic.source_count}
+              platformCount={topic.platform_count}
               publishedAt={topic.published_at}
             />
           ))}
@@ -72,7 +74,8 @@ export function CardStack({ topics }: { topics: Topic[] }) {
                 keyFact={topic.key_fact}
                 categoryTag={topic.category_tag}
                 imageUrl={topic.image_url}
-                sourceCount={topic.platform_count}
+                sourceCount={topic.source_count}
+                platformCount={topic.platform_count}
                 publishedAt={topic.published_at}
               />
             ))}

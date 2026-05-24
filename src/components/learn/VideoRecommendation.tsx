@@ -38,6 +38,7 @@ export function VideoRecommendation({ videoId, title, channelName, duration, rea
         </span>
       </div>
       <div className="flex flex-col justify-center min-w-0">
+        <span className="text-[10px] uppercase tracking-wide text-red-300">YouTube</span>
         <p className="text-sm font-medium text-[#F0F0F0] line-clamp-2">{title}</p>
         <p className="text-xs text-[#666] mt-0.5">{channelName}</p>
         <p className="text-xs text-[#7C6AF7] mt-1 line-clamp-1">{reason}</p>
