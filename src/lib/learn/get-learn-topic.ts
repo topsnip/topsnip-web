@@ -1,5 +1,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+type SourcePlatformRow = { platform?: string | null };
+
+type SourceItemRow = {
+  title?: string | null;
+  url?: string | null;
+  sources?: SourcePlatformRow | SourcePlatformRow[] | null;
+};
+
+type TopicSourceRow = {
+  source_items?: SourceItemRow | SourceItemRow[] | null;
+};
+
 export async function getLearnTopic(supabase: SupabaseClient, slug: string) {
   const { data: topic } = await supabase
     .from('topics')
@@ -29,11 +41,15 @@ export async function getLearnTopic(supabase: SupabaseClient, slug: string) {
 
   if (!card) return null;
 
-  const sources = ((topicSources || []) as any[])
+  const sources = ((topicSources || []) as TopicSourceRow[])
     .map((ts) => ({
-      title: ts.source_items?.title || 'Source',
-      url: ts.source_items?.url || '',
-      platform: ts.source_items?.sources?.platform || 'web',
+      title: (Array.isArray(ts.source_items) ? ts.source_items[0] : ts.source_items)?.title || 'Source',
+      url: (Array.isArray(ts.source_items) ? ts.source_items[0] : ts.source_items)?.url || '',
+      platform: (() => {
+        const item = Array.isArray(ts.source_items) ? ts.source_items[0] : ts.source_items;
+        const source = Array.isArray(item?.sources) ? item.sources[0] : item?.sources;
+        return source?.platform || 'web';
+      })(),
     }))
     .filter((source) => Boolean(source.title));
 

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { getUsageSince, recordUsage } from '@/lib/content/usage-ledger';
 
 function fakeSupabase() {
@@ -13,7 +14,7 @@ function fakeSupabase() {
 describe('usage ledger', () => {
   it('records usage events when a Supabase client is available', async () => {
     const { client, insert } = fakeSupabase();
-    await recordUsage(client as any, {
+    await recordUsage(client as unknown as SupabaseClient, {
       provider: 'anthropic',
       operation: 'card_generation',
       units: 1,
@@ -31,6 +32,6 @@ describe('usage ledger', () => {
 
   it('sums usage since a cutoff', async () => {
     const { client } = fakeSupabase();
-    await expect(getUsageSince(client as any, 'openai', '2026-05-23T00:00:00.000Z')).resolves.toBe(5);
+    await expect(getUsageSince(client as unknown as SupabaseClient, 'openai', '2026-05-23T00:00:00.000Z')).resolves.toBe(5);
   });
 });

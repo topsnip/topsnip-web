@@ -22,6 +22,15 @@ interface ParsedCardResponse {
   learn_brief: LearnBrief;
 }
 
+type SourceImageRow = {
+  image_url?: string | null;
+  engagement_score?: number | null;
+};
+
+type TopicSourceImageRow = {
+  source_items?: SourceImageRow | SourceImageRow[] | null;
+};
+
 async function findSourceImageFallback(
   supabase: SupabaseClient,
   topicId: string
@@ -31,10 +40,10 @@ async function findSourceImageFallback(
     .select('source_items(image_url, engagement_score)')
     .eq('topic_id', topicId);
 
-  const rows = (data ?? [])
-    .map((row: any) => row.source_items)
-    .filter((item: any) => item?.image_url)
-    .sort((a: any, b: any) => (b.engagement_score ?? 0) - (a.engagement_score ?? 0));
+  const rows = ((data ?? []) as TopicSourceImageRow[])
+    .map((row) => (Array.isArray(row.source_items) ? row.source_items[0] : row.source_items))
+    .filter((item): item is SourceImageRow => Boolean(item?.image_url))
+    .sort((a, b) => (b.engagement_score ?? 0) - (a.engagement_score ?? 0));
 
   return rows[0]?.image_url ?? null;
 }
