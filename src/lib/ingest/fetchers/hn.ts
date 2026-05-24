@@ -1,4 +1,5 @@
 import type { FetchResult, RawSourceItem } from "../types";
+import { fetchWithRetry } from "./retry-fetch";
 
 const HN_ALGOLIA_URL = "https://hn.algolia.com/api/v1";
 
@@ -50,7 +51,7 @@ export async function fetchHN(
         hitsPerPage: "30",
       });
 
-      const res = await fetch(
+      const res = await fetchWithRetry(
         `${HN_ALGOLIA_URL}/search_by_date?${params}`,
         { signal: AbortSignal.timeout(10_000) }
       );
@@ -79,7 +80,12 @@ export async function fetchHN(
       }
     }
 
-    return { sourceId, items: allItems, health: "healthy" };
+    return {
+      sourceId,
+      items: allItems,
+      health: allItems.length > 0 ? "healthy" : "degraded",
+      error: allItems.length === 0 ? "No HN stories matched AI filters" : undefined,
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return { sourceId, items: [], health: "down", error: `HN fetch failed: ${msg}` };

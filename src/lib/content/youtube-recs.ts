@@ -7,6 +7,7 @@ import type { YouTubeRecommendation } from "./card-types";
 import { buildYouTubeRecPrompt } from "./prompts";
 import { recordUsage } from "./usage-ledger";
 import { incrementYoutubeQuota } from "../ratelimit";
+import { fetchWithRetry } from "../ingest/fetchers/retry-fetch";
 
 const MODEL = "claude-haiku-4-5";
 
@@ -66,7 +67,7 @@ export async function findAndSaveYouTubeRecs(
       key: apiKey,
     });
 
-    const searchRes = await fetch(
+    const searchRes = await fetchWithRetry(
       `https://www.googleapis.com/youtube/v3/search?${searchParams}`,
       { signal: AbortSignal.timeout(10_000) }
     );
@@ -90,7 +91,7 @@ export async function findAndSaveYouTubeRecs(
       key: apiKey,
     });
 
-    const detailRes = await fetch(
+    const detailRes = await fetchWithRetry(
       `https://www.googleapis.com/youtube/v3/videos?${detailParams}`,
       { signal: AbortSignal.timeout(10_000) }
     );

@@ -1,4 +1,5 @@
 import type { FetchResult, RawSourceItem } from "../types";
+import { fetchWithRetry } from "./retry-fetch";
 
 // AI-related GitHub repos to track releases
 const TRACKED_REPOS = [
@@ -64,7 +65,7 @@ export async function fetchGitHub(sourceId: string): Promise<FetchResult> {
 
     for (const repo of TRACKED_REPOS) {
       try {
-        const res = await fetch(
+        const res = await fetchWithRetry(
           `https://api.github.com/repos/${repo}/releases?per_page=3`,
           { signal: AbortSignal.timeout(8_000), headers }
         );
@@ -106,6 +107,7 @@ export async function fetchGitHub(sourceId: string): Promise<FetchResult> {
       sourceId,
       items: allItems,
       health: allItems.length > 0 ? "healthy" : "degraded",
+      error: allItems.length === 0 ? "No recent GitHub releases found" : undefined,
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

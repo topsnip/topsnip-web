@@ -1,5 +1,6 @@
 import type { FetchResult, RawSourceItem } from "../types";
 import { isSafeUrl, safeText } from "../safe-fetch";
+import { fetchWithRetry } from "./retry-fetch";
 
 /**
  * Minimal RSS/Atom parser — no external dependency.
@@ -124,7 +125,7 @@ export async function fetchRSS(
       return { sourceId, items: [], health: "down", error: "Feed URL blocked by SSRF policy" };
     }
 
-    const res = await fetch(feedUrl, {
+    const res = await fetchWithRetry(feedUrl, {
       signal: AbortSignal.timeout(15_000),
       headers: {
         "User-Agent": "TopSnip/1.0 (AI Learning Platform)",
@@ -154,7 +155,12 @@ export async function fetchRSS(
     // Zero items usually means the regex parser silently failed on a new feed
     // format (not that the feed is legitimately empty). Flag as degraded.
     const health = items.length === 0 ? "degraded" : "healthy";
-    return { sourceId, items, health };
+    return {
+      sourceId,
+      items,
+      health,
+      error: items.length === 0 ? "RSS parser returned no items" : undefined,
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return { sourceId, items: [], health: "down", error: `RSS fetch failed: ${msg}` };

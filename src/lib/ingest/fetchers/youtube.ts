@@ -1,5 +1,6 @@
 import type { FetchResult, RawSourceItem } from "../types";
 import { incrementYoutubeQuota } from "../../ratelimit";
+import { fetchWithRetry } from "./retry-fetch";
 
 const YOUTUBE_API_URL = "https://www.googleapis.com/youtube/v3";
 
@@ -95,7 +96,7 @@ export async function fetchYouTube(
         key: apiKey,
       });
 
-      const res = await fetch(`${YOUTUBE_API_URL}/search?${params}`, {
+      const res = await fetchWithRetry(`${YOUTUBE_API_URL}/search?${params}`, {
         signal: AbortSignal.timeout(10_000),
       });
 
@@ -118,7 +119,7 @@ export async function fetchYouTube(
       const statsMap = new Map<string, number>();
 
       if (videoIds) {
-        const statsRes = await fetch(
+        const statsRes = await fetchWithRetry(
           `${YOUTUBE_API_URL}/videos?part=statistics&id=${videoIds}&key=${apiKey}`,
           { signal: AbortSignal.timeout(10_000) }
         );
@@ -147,7 +148,12 @@ export async function fetchYouTube(
       }
     }
 
-    return { sourceId, items: allItems, health: "healthy" };
+    return {
+      sourceId,
+      items: allItems,
+      health: allItems.length > 0 ? "healthy" : "degraded",
+      error: allItems.length === 0 ? "No YouTube videos matched current queries" : undefined,
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return {
