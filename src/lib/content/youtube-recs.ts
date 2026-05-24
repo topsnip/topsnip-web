@@ -5,6 +5,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { YouTubeRecommendation } from "./card-types";
 import { buildYouTubeRecPrompt } from "./prompts";
+import { recordUsage } from "./usage-ledger";
 import { incrementYoutubeQuota } from "../ratelimit";
 
 const MODEL = "claude-haiku-4-5";
@@ -36,11 +37,23 @@ export async function findAndSaveYouTubeRecs(
     return { recs: [], error: "YOUTUBE_API_KEY not configured" };
   }
 
+  const apiKeyAnthropic = process.env.ANTHROPIC_API_KEY;
+  if (!apiKeyAnthropic) {
+    return { recs: [], error: "ANTHROPIC_API_KEY not configured" };
+  }
+
   try {
     const allowed = await incrementYoutubeQuota(101); // 100 for search, 1 for details
     if (!allowed) {
       return { recs: [], error: "YouTube API daily quota exhausted" };
     }
+
+    await recordUsage(supabase, {
+      provider: 'youtube',
+      operation: 'recommendation_search',
+      units: 101,
+      topicId,
+    });
 
     // 1. Search YouTube for the topic
     const searchParams = new URLSearchParams({
@@ -91,11 +104,6 @@ export async function findAndSaveYouTubeRecs(
     }
 
     // 3. Use Claude to pick the best 2-3
-    // [H1 fix] Validate API key before use
-    const apiKeyAnthropic = process.env.ANTHROPIC_API_KEY;
-    if (!apiKeyAnthropic) {
-      return { recs: [], error: "ANTHROPIC_API_KEY not configured" };
-    }
     const anthropic = new Anthropic({ apiKey: apiKeyAnthropic });
 
     const candidateVideos = videos.map((v) => ({

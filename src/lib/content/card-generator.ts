@@ -11,6 +11,7 @@ import { uploadIllustration } from '../supabase/storage';
 import { checkCardQuality } from './card-quality';
 import { enforceWordLimit } from '../utils/word-limit';
 import { callClaudeWithRetry } from './retry';
+import { recordUsage } from './usage-ledger';
 
 const MODEL = 'claude-sonnet-4-5';
 const MAX_TOKENS = 2000;
@@ -76,6 +77,14 @@ export async function generateCard(
     })
   );
 
+  await recordUsage(supabase, {
+    provider: 'anthropic',
+    operation: 'card_generation',
+    units: 1,
+    topicId,
+    metadata: { model: MODEL },
+  });
+
   const text = response.content[0]?.type === 'text' ? response.content[0].text : '';
   const parsed = parseCardResponse(text);
   if (!parsed) {
@@ -97,7 +106,7 @@ export async function generateCard(
   );
 
   let imageUrl: string | null = null;
-  const imageBuffer = await generateIllustration(illustrationPrompt);
+  const imageBuffer = await generateIllustration(illustrationPrompt, supabase, topicId);
   if (imageBuffer) {
     imageUrl = await uploadIllustration(supabase, topicSlug, imageBuffer);
   }

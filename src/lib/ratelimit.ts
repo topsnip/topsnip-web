@@ -91,7 +91,12 @@ export class RateLimiter {
 const DAILY_YOUTUBE_QUOTA = 10000;
 
 export async function incrementYoutubeQuota(units: number): Promise<boolean> {
-  if (!redis) return true; // Fail open if no redis configured
+  if (!redis) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("[quota] Redis is not configured in production; durable quota caps are disabled");
+    }
+    return true;
+  }
 
   try {
     const dateStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -137,9 +142,9 @@ const DAILY_DALLE_IMAGES = 20;
  */
 export async function claimDalleImage(): Promise<boolean> {
   if (!redis) {
-    // Without Redis, we intentionally fall open rather than rely on in-memory
-    // counters that reset on cold start. The existing DALL-E spend ceiling is
-    // low-enough that a missing quota service is an accepted risk.
+    if (process.env.NODE_ENV === "production") {
+      console.error("[quota] Redis is not configured in production; durable quota caps are disabled");
+    }
     return true;
   }
   try {

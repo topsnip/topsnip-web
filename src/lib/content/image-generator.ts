@@ -1,5 +1,7 @@
 import OpenAI from 'openai';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { claimDalleImage } from '../ratelimit';
+import { recordUsage } from './usage-ledger';
 
 export function buildIllustrationPrompt(
   topicTitle: string,
@@ -16,7 +18,9 @@ export function buildIllustrationPrompt(
 }
 
 export async function generateIllustration(
-  prompt: string
+  prompt: string,
+  supabase: SupabaseClient | null = null,
+  topicId: string | null = null
 ): Promise<ArrayBuffer | null> {
   if (!process.env.OPENAI_API_KEY) {
     console.warn('[image-gen] OPENAI_API_KEY not set, skipping');
@@ -39,6 +43,13 @@ export async function generateIllustration(
       n: 1,
       size: '1024x1024',
       quality: 'medium',
+    });
+
+    await recordUsage(supabase, {
+      provider: 'openai',
+      operation: 'image_generation',
+      units: 1,
+      topicId,
     });
 
     const b64 = response.data?.[0]?.b64_json;
